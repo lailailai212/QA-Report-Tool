@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QA 测试执行日报</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .sub { color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .toolbar .field { flex: 1; min-width: 220px; }
+    .toolbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    .toolbar label { margin-top: 0; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font: inherit;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    button.secondary { background: #e5e7eb; color: #111; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .preview-card { margin-bottom: 16px; }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .preview-head h2 { margin: 0; font-size: 16px; }
+    .preview-meta { font-size: 13px; color: var(--muted); }
+    .preview {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 520px;
+      overflow: auto;
+      background: #fff;
+    }
+    .preview-placeholder {
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
+    .weekdays label {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    table.sched {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.sched th, table.sched td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(640px, 100%);
+      max-height: min(88vh, 900px);
+      overflow: auto;
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+      padding: 18px 18px 16px;
+    }
+    .modal.wide { width: min(860px, 100%); }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .modal-head h2 { margin: 0; font-size: 17px; }
+    .modal-close {
+      background: #e5e7eb;
+      color: #111;
+      padding: 6px 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>测试执行日报</h1>
+    <div class="sub">打开页面即拉取并展示当前模块预览。发信、定时与收件人配置通过工具按钮打开。</div>
+
+    <div class="card preview-card">
+      <div class="preview-head">
+        <h2>日报预览</h2>
+        <div id="previewMeta" class="preview-meta">准备加载…</div>
+      </div>
+      <div class="toolbar">
+        <div class="field">
+          <label>Module</label>
+          <select id="moduleSelect"></select>
+        </div>
+        <div class="actions">
+          <button id="btnPreview" class="secondary">刷新预览</button>
+          <button id="btnOpenSend">手动发送</button>
+          <button id="btnOpenSchedule" class="secondary">定时任务</button>
+          <button id="btnOpenRecipients" class="secondary">收件人</button>
+        </div>
+      </div>
+      <div id="previewMsg" class="msg" style="margin-top:0;margin-bottom:8px;"></div>
+      <div id="preview" class="preview">
+        <div class="preview-placeholder">正在加载模块…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手动发送 -->
+  <div id="sendModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="sendTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="sendTitle">手动发送</h2>
+        <button type="button" class="modal-close" data-close="sendModal">关闭</button>
+      </div>
+      <label>Test ENV</label>
+      <input id="testEnv" placeholder="例如：SIT、UAT1、UAT2" />
+      <label>Risk / Block</label>
+      <textarea id="riskBlock" placeholder="风险与阻塞说明（可选）"></textarea>
+      <label>To（逗号分隔）</label>
+      <textarea id="toEmails" rows="2" placeholder="a@x.com, b@x.com"></textarea>
+      <div class="hint">默认来自「收件人」本地存储；发送成功后会写回保存。</div>
+      <label>CC（逗号分隔）</label>
+      <textarea id="ccEmails" rows="2" placeholder="c@x.com, d@x.com"></textarea>
+      <label>Subject</label>
+      <input id="subject" placeholder="默认自动生成" />
+      <div class="row">
+        <button id="btnSend">确认发送</button>
+        <button type="button" class="secondary" id="btnSaveRecipientsFromSend">保存为默认收件人</button>
+      </div>
+      <div id="manualMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- 定时任务 -->
+  <div id="scheduleModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="schTitle">
+    <div class="modal wide">
+      <div class="modal-head">
+        <h2 id="schTitle">定时任务</h2>
+        <button type="button" class="modal-close" data-close="scheduleModal">关闭</button>
+      </div>
+      <div class="hint" style="margin-bottom:8px;">定时发送时 ENV / Risk / Review 留空；仍合并本地飞书快照。</div>
+      <label>任务名称</label>
+      <input id="schName" placeholder="OBIS 工作日日报" />
+      <label>Module</label>
+      <select id="schModule"></select>
+      <label>To</label>
+      <textarea id="schTo" rows="2"></textarea>
+      <label>CC</label>
+      <textarea id="schCc" rows="2"></textarea>
+      <label>时刻（HH:MM）</label>
+      <input id="schTime" value="18:00" />
+      <label>星期</label>
+      <div class="weekdays" id="schWeekdays">
+        <label><input type="checkbox" value="1" checked />一</label>
+        <label><input type="checkbox" value="2" checked />二</label>
+        <label><input type="checkbox" value="3" checked />三</label>
+        <label><input type="checkbox" value="4" checked />四</label>
+        <label><input type="checkbox" value="5" checked />五</label>
+        <label><input type="checkbox" value="6" />六</label>
+        <label><input type="checkbox" value="7" />日</label>
+      </div>
+      <div class="row">
+        <button id="btnCreateSch">创建定时任务</button>
+        <button class="secondary" id="btnReloadSch">刷新列表</button>
+      </div>
+      <div id="schMsg" class="msg"></div>
+      <div style="margin-top:12px; overflow:auto;">
+        <table class="sched">
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>模块</th>
+              <th>时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="schBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 收件人 -->
+  <div id="recipientsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rcpTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="rcpTitle">收件人设置</h2>
+        <button type="button" class="modal-close" data-close="recipientsModal">关闭</button>
+      </div>
+      <div class="hint">自定义默认 To / CC，保存在本机浏览器（localStorage），手动发送与定时任务会自动带入。</div>
+      <label>默认 To List（逗号 / 分号 / 换行分隔）</label>
+      <textarea id="rcpTo" rows="3"></textarea>
+      <label>默认 CC List（逗号 / 分号 / 换行分隔）</label>
+      <textarea id="rcpCc" rows="3"></textarea>
+      <div class="row">
+        <button id="btnSaveRecipients">保存</button>
+        <button type="button" class="secondary" id="btnResetRecipients">恢复内置默认</button>
+      </div>
+      <div id="rcpMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const RECIPIENTS_KEY = "qa-report-tool.recipients.v1";
+    const BUILTIN_RECIPIENTS = {
+      to: ["future.wei@snowballtech.com"],
+      cc: ["qian.xie@snowballtech.com", "yanren.chen@snowballtech.com"],
+    };
+
+    let modules = [];
+    let lastReport = null;
+    let previewSeq = 0;
+
+    function parseEmails(text) {
+      return (text || "")
+        .split(/[,;\s\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    function joinEmails(list) {
+      return (list || []).join(", ");
+    }
+    function setMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok ? "ok" : "err");
+    }
+    function loadRecipients() {
+      try {
+        const raw = localStorage.getItem(RECIPIENTS_KEY);
+        if (!raw) return { ...BUILTIN_RECIPIENTS, to: [...BUILTIN_RECIPIENTS.to], cc: [...BUILTIN_RECIPIENTS.cc] };
+        const data = JSON.parse(raw);
+        return {
+          to: Array.isArray(data.to) ? data.to.map(String) : [...BUILTIN_RECIPIENTS.to],
+          cc: Array.isArray(data.cc) ? data.cc.map(String) : [...BUILTIN_RECIPIENTS.cc],
+        };
+      } catch {
+        return { to: [...BUILTIN_RECIPIENTS.to], cc: [...BUILTIN_RECIPIENTS.cc] };
+      }
+    }
+    function saveRecipients(to, cc) {
+      const payload = {
+        to: parseEmails(Array.isArray(to) ? joinEmails(to) : to),
+        cc: parseEmails(Array.isArray(cc) ? joinEmails(cc) : cc),
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(RECIPIENTS_KEY, JSON.stringify(payload));
+      return payload;
+    }
+    function applyRecipientsToForms(rcp) {
+      const data = rcp || loadRecipients();
+      $("toEmails").value = joinEmails(data.to);
+      $("ccEmails").value = joinEmails(data.cc);
+      $("schTo").value = joinEmails(data.to);
+      $("schCc").value = joinEmails(data.cc);
+      $("rcpTo").value = joinEmails(data.to);
+      $("rcpCc").value = joinEmails(data.cc);
+    }
+
+    function openModal(id) {
+      $(id).classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal(id) {
+      $(id).classList.remove("open");
+      if (![...document.querySelectorAll(".modal-backdrop.open")].length) {
+        document.body.style.overflow = "";
+      }
+    }
+    function selectedModule(selectEl) {
+      const id = selectEl.value;
+      return modules.find((x) => x.id === id) || null;
+    }
+    function fillModuleSelects() {
+      const opts = modules.map((m) => `<option value="${m.id}">${m.fullPath || m.name}</option>`).join("");
+      $("moduleSelect").innerHTML = opts;
+      $("schModule").innerHTML = opts;
+      const prefer = modules.find((m) => m.name === "OBIS-20260622-20260703");
+      if (prefer) {
+        $("moduleSelect").value = prefer.id;
+        $("schModule").value = prefer.id;
+      }
+    }
+    function setPreviewPlaceholder(text) {
+      $("preview").innerHTML = `<div class="preview-placeholder">${text}</div>`;
+    }
+
+    async function loadModules() {
+      const res = await fetch("/api/modules");
+      if (!res.ok) throw new Error(await res.text());
+      modules = await res.json();
+      fillModuleSelects();
+    }
+
+    async function preview() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) {
+        setPreviewPlaceholder("暂无可用模块");
+        $("previewMeta").textContent = "无模块";
+        return;
+      }
+      const seq = ++previewSeq;
+      setMsg($("previewMsg"), "正在拉取预览…", true);
+      $("previewMeta").textContent = `${m.name} · 拉取中…`;
+      setPreviewPlaceholder("正在从 MeterSphere 拉取并合并飞书快照…");
+      $("btnPreview").disabled = true;
+      try {
+        const res = await fetch("/api/reports/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            module_id: m.id,
+            module_name: m.name,
+            test_env: $("testEnv").value,
+            risk_block: $("riskBlock").value,
+            mode: "manual",
+          }),
+        });
+        const data = await res.json();
+        if (seq !== previewSeq) return;
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+        lastReport = data.report;
+        $("preview").innerHTML = data.html;
+        const feishu = data.report.feishu && data.report.feishu.loaded ? "飞书已合并" : "无飞书快照";
+        $("previewMeta").textContent = `${m.name} · ${data.report.rows.length} 行 · ${feishu}`;
+        setMsg($("previewMsg"), `预览已更新 · ${data.report.rows.length} 行`, true);
+      } catch (e) {
+        if (seq !== previewSeq) return;
+        setPreviewPlaceholder("预览失败，请点击「刷新预览」重试");
+        $("previewMeta").textContent = `${m.name} · 失败`;
+        setMsg($("previewMsg"), String(e.message || e), false);
+      } finally {
+        if (seq === previewSeq) $("btnPreview").disabled = false;
+      }
+    }
+
+    async function send() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      const to = parseEmails($("toEmails").value);
+      if (!to.length) {
+        setMsg($("manualMsg"), "请填写 To", false);
+        return;
+      }
+      const cc = parseEmails($("ccEmails").value);
+      setMsg($("manualMsg"), "发送中...", true);
+      $("btnSend").disabled = true;
+      try {
+        const res = await fetch("/api/reports/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            module_id: m.id,
+            module_name: m.name,
+            test_env: $("testEnv").value,
+            risk_block: $("riskBlock").value,
+            to,
+            cc,
+            subject: $("subject").value || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+        saveRecipients(to, cc);
+        applyRecipientsToForms(loadRecipients());
+        setMsg($("manualMsg"), `已发送：${data.subject}（收件人已保存）`, true);
+      } catch (e) {
+        setMsg($("manualMsg"), String(e.message || e), false);
+      } finally {
+        $("btnSend").disabled = false;
+      }
+    }
+
+    function selectedWeekdays() {
+      return [...document.querySelectorAll("#schWeekdays input:checked")].map((x) => Number(x.value));
+    }
+
+    async function loadSchedules() {
+      const res = await fetch("/api/schedules");
+      const list = await res.json();
+      $("schBody").innerHTML = list.map((s) => `
+        <tr>
+          <td>${s.name}</td>
+          <td>${s.module_name}</td>
+          <td>${(s.weekdays || []).join(",")} @ ${s.time}<br/><span style="color:#6b7280">下次：${s.next_run_time || "-"}</span></td>
+          <td>${s.enabled ? "启用" : "停用"}<br/>${s.last_status || ""}</td>
+          <td>
+            <button class="secondary" onclick="toggleSch('${s.id}', ${s.enabled ? "false" : "true"})">${s.enabled ? "停用" : "启用"}</button>
+            <button class="secondary" onclick="runSch('${s.id}')">试跑</button>
+            <button class="danger" onclick="delSch('${s.id}')">删除</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function createSchedule() {
+      const m = selectedModule($("schModule"));
+      const to = parseEmails($("schTo").value);
+      if (!m || !to.length) {
+        setMsg($("schMsg"), "请选择模块并填写 To", false);
+        return;
+      }
+      const cc = parseEmails($("schCc").value);
+      const res = await fetch("/api/schedules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: $("schName").value || `${m.name} 定时日报`,
+          module_id: m.id,
+          module_name: m.name,
+          to_emails: to,
+          cc_emails: cc,
+          weekdays: selectedWeekdays(),
+          time: $("schTime").value || "18:00",
+          enabled: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg($("schMsg"), data.detail || JSON.stringify(data), false);
+        return;
+      }
+      saveRecipients(to, cc);
+      applyRecipientsToForms(loadRecipients());
+      setMsg($("schMsg"), "已创建定时任务（收件人已保存）", true);
+      await loadSchedules();
+    }
+
+    window.toggleSch = async (id, enabled) => {
+      await fetch(`/api/schedules/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      await loadSchedules();
+    };
+    window.runSch = async (id) => {
+      setMsg($("schMsg"), "试跑中...", true);
+      const res = await fetch(`/api/schedules/${id}/run-now`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg($("schMsg"), data.detail || JSON.stringify(data), false);
+      } else {
+        setMsg($("schMsg"), `试跑成功：${data.subject}`, true);
+      }
+      await loadSchedules();
+    };
+    window.delSch = async (id) => {
+      if (!confirm("确认删除该定时任务？")) return;
+      await fetch(`/api/schedules/${id}`, { method: "DELETE" });
+      await loadSchedules();
+    };
+
+    $("btnPreview").onclick = preview;
+    $("btnSend").onclick = send;
+    $("btnCreateSch").onclick = createSchedule;
+    $("btnReloadSch").onclick = loadSchedules;
+
+    $("btnOpenSend").onclick = () => {
+      applyRecipientsToForms();
+      setMsg($("manualMsg"), "", true);
+      openModal("sendModal");
+    };
+    $("btnOpenSchedule").onclick = async () => {
+      applyRecipientsToForms();
+      const m = selectedModule($("moduleSelect"));
+      if (m) $("schModule").value = m.id;
+      setMsg($("schMsg"), "", true);
+      openModal("scheduleModal");
+      try { await loadSchedules(); } catch (_) {}
+    };
+    $("btnOpenRecipients").onclick = () => {
+      applyRecipientsToForms();
+      setMsg($("rcpMsg"), "", true);
+      openModal("recipientsModal");
+    };
+
+    $("btnSaveRecipients").onclick = () => {
+      const saved = saveRecipients($("rcpTo").value, $("rcpCc").value);
+      applyRecipientsToForms(saved);
+      setMsg($("rcpMsg"), `已保存（To ${saved.to.length} / CC ${saved.cc.length}）`, true);
+    };
+    $("btnSaveRecipientsFromSend").onclick = () => {
+      const saved = saveRecipients($("toEmails").value, $("ccEmails").value);
+      applyRecipientsToForms(saved);
+      setMsg($("manualMsg"), `默认收件人已保存（To ${saved.to.length} / CC ${saved.cc.length}）`, true);
+    };
+    $("btnResetRecipients").onclick = () => {
+      localStorage.removeItem(RECIPIENTS_KEY);
+      applyRecipientsToForms(loadRecipients());
+      setMsg($("rcpMsg"), "已恢复内置默认收件人", true);
+    };
+
+    document.querySelectorAll("[data-close]").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+    });
+    document.querySelectorAll(".modal-backdrop").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        if (e.target === el) closeModal(el.id);
+      });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      [...document.querySelectorAll(".modal-backdrop.open")].forEach((el) => closeModal(el.id));
+    });
+
+    $("moduleSelect").onchange = () => {
+      const m = selectedModule($("moduleSelect"));
+      if (m) $("schModule").value = m.id;
+      preview();
+    };
+
+    (async () => {
+      try {
+        applyRecipientsToForms();
+        await loadModules();
+        await preview();
+      } catch (e) {
+        setPreviewPlaceholder("加载失败，请刷新页面重试");
+        setMsg($("previewMsg"), "加载模块失败: " + (e.message || e), false);
+      }
+    })();
+  </script>
+</body>
+</html>
