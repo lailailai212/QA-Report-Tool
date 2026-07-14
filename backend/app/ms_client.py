@@ -162,7 +162,9 @@ class MeterSphereClient:
             design = int(st.get("caseTotal") or 0)
             passed = int(st.get("successCount") or 0)
             failed = int(st.get("errorCount") or 0) + int(st.get("fakeErrorCount") or 0)
-            blocked = int(st.get("blockCount") or 0) + int(st.get("pendingCount") or 0)
+            # MS: blockCount=阻塞, pendingCount=未执行 — 不可合并
+            blocked = int(st.get("blockCount") or 0)
+            no_run = int(st.get("pendingCount") or 0)
             children.append(
                 {
                     "id": p.get("id"),
@@ -172,6 +174,7 @@ class MeterSphereClient:
                     "passed": passed,
                     "failed": failed,
                     "blocked": blocked,
+                    "noRun": no_run,
                     "status": st.get("status") or p.get("status"),
                 }
             )
@@ -185,6 +188,7 @@ class MeterSphereClient:
             "successCount": success_total,
             "errorCount": sum(r["failed"] for r in children),
             "blockCount": sum(r["blocked"] for r in children),
+            "pendingCount": sum(r["noRun"] for r in children),
             "passRate": round(success_total * 100.0 / case_total, 2) if case_total else None,
         }
         return {"module": mod, "summary": summary, "plans": children}

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Callable
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -12,6 +11,7 @@ from .config import settings
 from .email_sender import EmailSender
 from .report_service import build_report, render_html
 from .schedule_repo import Schedule, ScheduleRepo
+from .timeutil import now_beijing_mmdd
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class ScheduleManager:
             )
             html = render_html(report)
             subject = item.subject_template.format(
-                date=datetime.now().strftime("%m/%d"),
+                date=now_beijing_mmdd(),
                 module=item.module_name,
             )
             self.mailer.send_html(

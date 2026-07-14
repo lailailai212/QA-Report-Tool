@@ -12,10 +12,10 @@ SNAPSHOT_DIR = ROOT / "exports" / "feishu"
 READY_YES_STATUSES = frozenset({"待测试", "测试中", "待验收"})
 BUG_STATUS_COLS = (
     "To Do",
-    "Testing",
     "Fixing",
     "Confirming",
     "Clarifying",
+    "Testing",
     "Done",
     "Closed",
 )
@@ -141,6 +141,13 @@ def aggregate_bugs(bugs: list[dict[str, Any]]) -> dict[str, Any]:
         st = (b.get("status") or "").strip().lower()
         if pri in {"P0", "P1"} and st not in CLOSED_LIKE:
             p0p1_rows.append(b)
+    _pri_rank = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+    p0p1_rows.sort(
+        key=lambda b: (
+            _pri_rank.get(_norm_priority(str(b.get("priority") or "")), 99),
+            str(b.get("summary") or b.get("name") or ""),
+        )
+    )
 
     return {
         "total": len(bugs),

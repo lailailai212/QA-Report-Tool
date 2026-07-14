@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,9 +11,11 @@ from pydantic import BaseModel, Field
 
 from .email_sender import EmailSender
 from .ms_client import MeterSphereClient, MeterSphereError
+from .override_store import load_override, save_override
 from .report_service import build_report, render_html
 from .schedule_repo import ScheduleRepo
 from .scheduler import schedule_manager
+from .timeutil import now_beijing_mmdd
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -75,6 +76,29 @@ class ScheduleUpdatePayload(BaseModel):
     enabled: bool | None = None
 
 
+class OverrideStoryFields(BaseModel):
+    ready: str | None = None
+    readyDate: str | None = None
+    comment: str | None = None
+
+
+class OverrideReopenRow(BaseModel):
+    priority: str = ""
+    status: str = ""
+    summary: str
+    url: str = ""
+    reopenTimes: int = 0
+
+
+class OverridePayload(BaseModel):
+    testEnv: str | None = None
+    riskBlock: str | None = None
+    stories: dict[str, OverrideStoryFields] | None = None
+    # omit = leave unchanged; null = revert to feishu; list = manual replace
+    reopenRows: list[OverrideReopenRow] | None = None
+    clearReopenManual: bool = False
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
@@ -91,6 +115,30 @@ def list_modules() -> list[dict[str, Any]]:
         return MeterSphereClient().list_modules()
     except MeterSphereError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/api/overrides/{sprint}")
+def get_override(sprint: str) -> dict[str, Any]:
+    return load_override(sprint)
+
+
+@app.put("/api/overrides/{sprint}")
+def put_override(sprint: str, body: OverridePayload) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
+    if body.testEnv is not None:
+        payload["testEnv"] = body.testEnv
+    if body.riskBlock is not None:
+        payload["riskBlock"] = body.riskBlock
+    if body.stories is not None:
+        payload["stories"] = {
+            name: {k: v for k, v in fields.model_dump().items() if v is not None}
+            for name, fields in body.stories.items()
+        }
+    if body.clearReopenManual:
+        payload["reopenRows"] = None
+    elif body.reopenRows is not None:
+        payload["reopenRows"] = [r.model_dump() for r in body.reopenRows]
+    return save_override(sprint, payload)
 
 
 @app.post("/api/reports/preview")
@@ -122,7 +170,7 @@ def send_report(body: SendRequest) -> dict[str, Any]:
         )
         html = render_html(report)
         subject = body.subject or (
-            f"Sprint_Daily_Report_{datetime.now().strftime('%m/%d')} 【{report['moduleName']}】"
+            f"Sprint_Daily_Report_{now_beijing_mmdd()} 【{report['moduleName']}】"
         )
         mailer.send_html(subject=subject, html=html, to_emails=body.to, cc_emails=body.cc)
         return {"ok": True, "subject": subject, "rows": len(report["rows"])}

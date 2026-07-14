@@ -4,10 +4,10 @@ import json
 import sqlite3
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from typing import Any
 
 from .config import settings
+from .timeutil import now_beijing_iso
 
 
 @dataclass
@@ -99,7 +99,7 @@ class ScheduleRepo:
         return self._row_to_schedule(row) if row else None
 
     def create(self, payload: dict[str, Any]) -> Schedule:
-        now = datetime.now().isoformat(timespec="seconds")
+        now = now_beijing_iso()
         item = Schedule(
             id=str(uuid.uuid4()),
             name=payload["name"],
@@ -151,7 +151,7 @@ class ScheduleRepo:
             raise KeyError(schedule_id)
         data = current.to_dict()
         data.update({k: v for k, v in payload.items() if v is not None and k != "id"})
-        data["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        data["updated_at"] = now_beijing_iso()
         with self._connect() as conn:
             conn.execute(
                 """
@@ -194,10 +194,10 @@ class ScheduleRepo:
                 WHERE id=?
                 """,
                 (
-                    datetime.now().isoformat(timespec="seconds"),
+                    now_beijing_iso(),
                     status,
                     error,
-                    datetime.now().isoformat(timespec="seconds"),
+                    now_beijing_iso(),
                     schedule_id,
                 ),
             )

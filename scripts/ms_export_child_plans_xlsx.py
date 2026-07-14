@@ -142,7 +142,7 @@ def build_workbook(module_name: str, summary: dict, plans: list[dict]) -> Workbo
         review = design
         passed = int(p.get("successCount") or 0)
         failed = int(p.get("errorCount") or 0) + int(p.get("fakeErrorCount") or 0)
-        blocked = int(p.get("blockCount") or 0) + int(p.get("pendingCount") or 0)
+        blocked = int(p.get("blockCount") or 0)
 
         ws.cell(r, 2, p.get("name") or "")
         ws.cell(r, 3, design)

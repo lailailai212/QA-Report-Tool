@@ -51,8 +51,13 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
 
 - **默认预览**：进入页面后自动选中优先模块（当前硬编码 `OBIS-20260622-20260703`）并拉取预览；切换模块也会自动刷新。
 - **表格行来源**：行 = MeterSphere 模块下的**子计划（TEST_PLAN）**；飞书 Story / Ready 按**标题精确匹配**合并。MS 无同名子计划的飞书 Story **不会单独成行**；标题不一致则该行 Status/Ready 为空。
+- **Sprint 维护数据**（服务端持久化，路径 `backend/data/overrides/{Sprint}.json`）：
+  - **Test ENV / Risk/Block**：主页填写并「保存 ENV/Risk」；同 Sprint 下次预览、发信、**定时任务**都会用。
+  - **Ready for Test**（Yes/No、Ready Date、Comment）：「编辑 Ready / Reopen」按 Story 维护；**人工值优先于飞书推导**。
+  - **Bug Reopen**：可人工增删改；保存后覆盖飞书快照 Reopen；可「恢复飞书 Reopen」。
 - **工具按钮**：手动发送、定时任务、收件人以弹窗打开。
 - **收件人存储**：默认 To / CC 保存在浏览器 `localStorage`；发信成功或创建定时任务时也会写回。
-- **手动发送**：可选填 Test ENV、Risk/Block 后发信；**会重新拉取** MS + 读本地飞书快照（不用当前预览缓存）。
-- **定时发送**：ENV / Risk 留空；仍读本地飞书快照（需事先刷新）。
+- **手动发送**：使用当前表单 ENV/Risk + 已保存 Ready/Reopen；**会重新拉取** MS + 读本地飞书快照。
+- **定时发送**：读取该模块已保存的维护数据 + 飞书快照 + MS（需事先刷新快照、保存维护数据）。
 - 进程需常驻，关闭后定时任务不会触发。
+- 主表列分组：Story（Name/Status）· Testing（含 Case Num / No Run 等）· Ready for Test。
