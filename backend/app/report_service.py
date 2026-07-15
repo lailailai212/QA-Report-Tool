@@ -5,7 +5,12 @@ from typing import Any, Literal
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 
-from .feishu_snapshot import aggregate_bugs, load_feishu_snapshot, story_index
+from .feishu_snapshot import (
+    aggregate_bugs,
+    load_feishu_snapshot,
+    match_feishu_story,
+    match_override_story,
+)
 from .ms_client import MeterSphereClient
 from .override_store import load_override
 from .timeutil import now_beijing_iso, now_beijing_mmdd
@@ -41,7 +46,7 @@ def build_report(
     sprint_name = module.get("name") or module_name or ""
 
     snapshot = load_feishu_snapshot(sprint_name) if sprint_name else None
-    by_story = story_index(snapshot) if snapshot else {}
+    stories = list(snapshot.get("stories") or []) if snapshot else []
     bugs_agg = aggregate_bugs(list(snapshot.get("bugs") or [])) if snapshot else None
 
     ov = load_override(sprint_name) if sprint_name else {}
@@ -68,9 +73,8 @@ def build_report(
         else:
             no_run = max(0, design - passed - failed - blocked)
         name = p["name"]
-        fs = by_story.get(name) or {}
-        so = stories_ov.get(name) or {}
-
+        fs = match_feishu_story(name, stories) or {}
+        so = match_override_story(name, stories_ov)
         ready = so["ready"] if "ready" in so else (fs.get("ready") or "")
         ready_date = so["readyDate"] if "readyDate" in so else (fs.get("readyDate") or "")
         comment = so["comment"] if "comment" in so else (fs.get("comment") or "")

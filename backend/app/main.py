@@ -104,6 +104,11 @@ def index() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
 
 
+@app.get("/help", response_class=HTMLResponse)
+def help_doc() -> str:
+    return (STATIC_DIR / "help.html").read_text(encoding="utf-8")
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

@@ -2,6 +2,8 @@
 
 Web 工具：打开页面即自动拉取并预览当前模块日报（MeterSphere 执行数据 + 本地飞书 Story/Bug 快照）。手动发信、定时任务、收件人配置作为工具按钮按需使用。
 
+**组员上手（含注意事项）：** 打开网页右上角 **「使用教程」**（`/help`），或看 [docs/组员使用教程.md](docs/组员使用教程.md)。
+
 ## 启动（单 worker，定时才可靠）
 
 ```powershell
@@ -10,6 +12,12 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
 浏览器打开：http://127.0.0.1:8000/
+
+**开机自启动（Windows）：** 见 [docs/开机自启动.md](docs/开机自启动.md)。快速注册：
+
+```powershell
+.\scripts\register_autostart.ps1
+```
 
 改了 `backend/app/*.py` 需**重启** uvicorn；仅改模板 / `static/index.html` 一般刷新即可。
 
@@ -50,13 +58,13 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
 ## 行为说明
 
 - **默认预览**：进入页面后自动选中优先模块（当前硬编码 `OBIS-20260622-20260703`）并拉取预览；切换模块也会自动刷新。
-- **表格行来源**：行 = MeterSphere 模块下的**子计划（TEST_PLAN）**；飞书 Story / Ready 按**标题精确匹配**合并。MS 无同名子计划的飞书 Story **不会单独成行**；标题不一致则该行 Status/Ready 为空。
+- **表格行来源**：行 = MeterSphere 模块下的**子计划（TEST_PLAN）**；飞书 Story / Ready 按标题合并（**忽略大小写**、规范化空白/全半角、去掉 `[数字]` 前缀，相似度 ≥ 0.88；歧义则不匹配）。MS 无对应子计划的飞书 Story **不会单独成行**。
 - **Sprint 维护数据**（服务端持久化，路径 `backend/data/overrides/{Sprint}.json`）：
   - **Test ENV / Risk/Block**：主页填写并「保存 ENV/Risk」；同 Sprint 下次预览、发信、**定时任务**都会用。
-  - **Ready for Test**（Yes/No、Ready Date、Comment）：「编辑 Ready / Reopen」按 Story 维护；**人工值优先于飞书推导**。
-  - **Bug Reopen**：可人工增删改；保存后覆盖飞书快照 Reopen；可「恢复飞书 Reopen」。
+  - **Ready for Test**（Yes/No、Ready Date、Comment）：「编辑 Ready for Test」独立弹窗维护；**人工值优先于飞书推导**。
+  - **Bug Reopen**：「编辑 Bug Reopen」独立弹窗维护；保存后覆盖飞书快照 Reopen；可「恢复飞书 Reopen」。
 - **工具按钮**：手动发送、定时任务、收件人以弹窗打开。
-- **收件人存储**：默认 To / CC 保存在浏览器 `localStorage`；发信成功或创建定时任务时也会写回。
+- **收件人存储**：默认 To / CC 仅在「收件人设置」写入浏览器 `localStorage`；手动发送 / 创建定时任务**不会**改默认收件人。
 - **手动发送**：使用当前表单 ENV/Risk + 已保存 Ready/Reopen；**会重新拉取** MS + 读本地飞书快照。
 - **定时发送**：读取该模块已保存的维护数据 + 飞书快照 + MS（需事先刷新快照、保存维护数据）。
 - 进程需常驻，关闭后定时任务不会触发。

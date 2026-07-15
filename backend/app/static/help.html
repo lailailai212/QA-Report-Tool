@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>使用教程 · QA 测试执行日报</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #1E5A96;
+      --accent-soft: #E8F0F8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .topbar a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .topbar a:hover { text-decoration: underline; }
+    h1 { margin: 0 0 8px; font-size: 26px; color: #1E4A7A; }
+    .lead {
+      color: var(--muted);
+      margin: 0 0 20px;
+      padding: 12px 14px;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      border: 1px solid #c5d6ea;
+    }
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .toc h2 { margin: 0 0 8px; font-size: 15px; color: #1E4A7A; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 20px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #1E4A7A;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    section h3 { margin: 16px 0 8px; font-size: 15px; }
+    section h3:first-of-type { margin-top: 0; }
+    p, li { font-size: 14px; }
+    ul, ol { padding-left: 1.3em; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 8px 0 12px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--accent-soft); color: #1E4A7A; }
+    .note {
+      background: #FFF8EB;
+      border: 1px solid #F0D9A8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+    .check li { margin: 4px 0; }
+    pre {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .role-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 4px;
+      padding: 2px 8px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a href="/">← 返回日报</a>
+      <a href="#toc">目录</a>
+    </div>
+
+    <h1>QA 测试执行日报 · 使用教程</h1>
+    <p class="lead">按<strong>角色</strong>说明谁维护什么、怎么用。发信前请先看「全局注意事项」。</p>
+
+    <nav class="toc" id="toc">
+      <h2>目录</h2>
+      <ol>
+        <li><a href="#global">全局注意事项（全员必读）</a></li>
+        <li><a href="#member">角色一：测试同学</a></li>
+        <li><a href="#sender">角色二：发信人</a></li>
+        <li><a href="#ui">页面入口速查</a></li>
+        <li><a href="#data">数据从哪来</a></li>
+        <li><a href="#faq">常见问题</a></li>
+      </ol>
+    </nav>
+
+    <section id="global">
+      <h2>全局注意事项（全员必读）</h2>
+
+      <h3>1. 迭代一开始就要在 MeterSphere 建子计划</h3>
+      <p>每个 Sprint 开始后，<strong>尽快</strong>在 MeterSphere 对应 Module（与 Sprint 同名，如 <code>OBIS-20260706-20260717</code>）下为相关 Story 创建<strong>子计划（TEST_PLAN）</strong>，并持续执行用例。</p>
+      <p>日报主表的每一行来自 MS 子计划；<strong>没有子计划 = 日报里不会出现这条 Story</strong>。</p>
+
+      <h3>2. 子计划名称尽量与飞书 Story 一致（支持模糊匹配）</h3>
+      <table>
+        <thead><tr><th>要求</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>推荐做法</td><td>与飞书 User Story 标题<strong>尽量一致</strong>（从飞书复制最稳）</td></tr>
+          <tr><td>工具容错</td><td>不区分大小写；全半角/多余空格会规范化；去掉 MS 前缀如 <code>[100274]</code>；相似度 ≥ <strong>88%</strong> 也可匹配</td></tr>
+          <tr><td>仍可能对不上</td><td>改名过多、关键词差太多，或两条 Story 太像（歧义时为防错挂会放弃匹配）</td></tr>
+          <tr><td>为何仍要对齐</td><td>匹配失败 → 该行 Status / Ready 为空</td></tr>
+        </tbody>
+      </table>
+
+    </section>
+
+    <section id="member">
+      <h2><span class="role-tag">组员</span>每位测试同学</h2>
+      <p>负责自己 Story / Bug 的<strong>提测与质量侧数据</strong>，以及把阻塞及时同步给发信人。</p>
+
+      <h3>要维护什么</h3>
+      <table>
+        <thead><tr><th>数据</th><th>在哪里</th><th>做什么</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MeterSphere 子计划 + 执行</strong></td><td>MeterSphere</td><td>迭代开始后创建子计划（名尽量=飞书 Story）；执行用例，保证 Passed/Failed/<strong>Blocked</strong>/<strong>No Run</strong> 真实</td></tr>
+          <tr><td><strong>Ready for Test（提测）</strong></td><td>「编辑 Ready for Test」弹窗 → <strong>保存 Ready</strong></td><td>提测后核对/修正 Yes/No、Ready Date、Comment；与 Reopen 分入口，互不覆盖</td></tr>
+          <tr><td><strong>Bug Reopen</strong></td><td>「编辑 Bug Reopen」弹窗 → <strong>保存 Reopen</strong></td><td>维护 Priority / Status / Summary / Times；与 Ready 分入口，互不覆盖</td></tr>
+          <tr><td><strong>阻塞点 / Risk</strong></td><td>同步给发信人</td><td>把阻塞、风险说清楚；由发信人汇总进页面的 <strong>Risk/Block</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="note">Ready / Reopen 保存后，同 Sprint 的预览、发信、定时都会用。清空某 Story 的 Ready 三列并保存 → 该行恢复用飞书推导。</div>
+
+      <h3>组员自查</h3>
+      <ul class="check">
+        <li>我的 Story 在 MS 有子计划（名称接近飞书、Module 正确）</li>
+        <li>执行状态（尤其 Blocked / No Run）正确</li>
+        <li>已提测的 Story，Ready 信息已保存或已确认无误</li>
+        <li>Reopen Bug 已维护（如有）</li>
+        <li>阻塞/风险已同步给发信人</li>
+        <li>改完看过预览</li>
+      </ul>
+    </section>
+
+    <section id="sender">
+      <h2><span class="role-tag">发信人</span>轮值 / 当日发日报的人</h2>
+      <p>负责把日报「凑齐、核对、发出」。重点维护下面三类信息。</p>
+
+      <h3>要维护什么</h3>
+      <table>
+        <thead><tr><th>数据</th><th>在哪里</th><th>做什么</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Test ENV</strong></td><td>主页「Sprint 维护数据」</td><td>填写当前测试环境（如 <code>SIT，UAT1，UAT2</code>）→ <strong>保存 ENV/Risk</strong></td></tr>
+          <tr><td><strong>Risk / Block</strong></td><td>同上</td><td><strong>审核并整理</strong>全员反馈的阻塞/风险，写成对外可读的说明 → 保存</td></tr>
+          <tr><td><strong>收件人（To / CC）</strong></td><td>「收件人」按钮</td><td>维护默认收件人并保存；发信时可临时改，<strong>临时改不会写回默认</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h3>建议操作顺序</h3>
+      <ol>
+        <li>Module 选对当前 Sprint → <strong>刷新预览</strong></li>
+        <li>填 / 改 <strong>Test ENV</strong>，审核 <strong>Risk/Block</strong> → <strong>保存 ENV/Risk</strong></li>
+        <li>必要时分别打开「编辑 Ready for Test」/「编辑 Bug Reopen」做最后核对并各自保存</li>
+        <li>再 <strong>刷新预览</strong>，确认主表、Bug、ENV、Risk 无误</li>
+        <li><strong>手动发送</strong>，或确认定时任务已启用且收件人正确</li>
+      </ol>
+
+      <h3>发信人检查清单</h3>
+      <ul class="check">
+        <li>MS 侧子计划已建齐、名称与飞书足够接近（抽查预览 Status/Ready）</li>
+        <li>Test ENV 已保存</li>
+        <li>Risk/Block 已审核并保存</li>
+        <li>收件人正确</li>
+        <li>预览已刷新且数字、Ready、Bug 看起来合理</li>
+        <li>再点发送</li>
+      </ul>
+    </section>
+
+    <section id="ui">
+      <h2>页面入口速查（两角色共用）</h2>
+      <table>
+        <thead><tr><th>按钮 / 区域</th><th>谁常用</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>Module + 刷新预览</td><td>全员</td><td>选 Sprint、核对日报</td></tr>
+          <tr><td>保存 ENV/Risk</td><td>发信人</td><td>持久化环境与风险说明</td></tr>
+          <tr><td>编辑 Ready for Test</td><td>组员为主，发信人可终审</td><td>仅维护 Ready（独立弹窗）</td></tr>
+          <tr><td>编辑 Bug Reopen</td><td>组员为主，发信人可终审</td><td>仅维护 Reopen（独立弹窗）</td></tr>
+          <tr><td>收件人</td><td>发信人</td><td>默认 To/CC（仅此处保存默认）</td></tr>
+          <tr><td>手动发送</td><td>发信人</td><td>立即发信（会重拉 MS）</td></tr>
+          <tr><td>定时任务</td><td>发信人</td><td>按星期/时刻自动发</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="data">
+      <h2>数据从哪来（对照）</h2>
+      <pre>MeterSphere 子计划执行 ──┐
+飞书快照（Story/Bug）  ──┼──→ 合并 → 预览 / 邮件
+页面人工维护           ──┘
+         │
+         ├─ 组员：Ready for Test、Bug Reopen；（阻塞点同步给发信人写进 Risk）
+         └─ 发信人：Test ENV、Risk/Block、收件人</pre>
+    </section>
+
+    <section id="faq">
+      <h2>常见问题</h2>
+      <p><strong>预览没有我的 Story？</strong> → MS 未建子计划，或名称与飞书差太多，或 Module 不对。</p>
+      <p><strong>Ready 和飞书不一致？</strong> → 可能已人工保存（人工优先）；清空三列保存可恢复飞书。</p>
+      <p><strong>改完 Risk/Ready 邮件还是旧的？</strong> → 是否点了保存？是否刷新了预览？</p>
+      <p><strong>默认收件人为何没变？</strong> → 只在「收件人设置」里保存才会改默认；发送弹窗里的修改是一次性的。</p>
+    </section>
+
+    <p class="footer"><a href="/">返回日报首页</a></p>
+  </div>
+</body>
+</html>

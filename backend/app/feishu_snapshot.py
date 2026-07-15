@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 from datetime import date
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +25,11 @@ BUG_STATUS_COLS = (
 PRIORITY_ROWS = ("P0", "P1", "P2", "P3")
 CLOSED_LIKE = frozenset({"done", "closed"})
 
+# MS 子计划 ↔ 飞书 Story 标题匹配：规范化后全等，或相似度 ≥ 阈值
+STORY_MATCH_MIN_RATIO = 0.88
+# 第一、第二名分数差小于此值视为歧义，放弃匹配以免错挂
+STORY_MATCH_AMBIGUITY_DELTA = 0.03
+
 
 def snapshot_path(sprint: str) -> Path:
     return SNAPSHOT_DIR / f"{sprint}_latest.json"
@@ -40,13 +48,111 @@ def load_feishu_snapshot(sprint: str) -> dict[str, Any] | None:
     return data
 
 
+def normalize_story_title(name: str) -> str:
+    """Match-oriented title key: casefold, NFKC, collapse space, strip MS [id] prefix."""
+    s = (name or "").strip()
+    if not s:
+        return ""
+    # MeterSphere 偶发前缀：[100274] Story Name
+    s = re.sub(r"^\[\d+\]\s*", "", s)
+    s = unicodedata.normalize("NFKC", s)
+    s = s.casefold()
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
 def story_index(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Exact original-name index (legacy). Prefer match_feishu_story for merges."""
     out: dict[str, dict[str, Any]] = {}
     for s in snapshot.get("stories") or []:
         name = (s.get("name") or "").strip()
         if name:
             out[name] = s
     return out
+
+
+def match_feishu_story(
+    plan_name: str,
+    stories: list[dict[str, Any]],
+    *,
+    min_ratio: float = STORY_MATCH_MIN_RATIO,
+) -> dict[str, Any] | None:
+    """
+    Resolve Feishu story for an MS plan name.
+    1) normalize + exact
+    2) else best SequenceMatcher ratio ≥ min_ratio (default 0.88)
+    Ambiguous top-2 → None.
+    """
+    needle = normalize_story_title(plan_name)
+    if not needle:
+        return None
+
+    exact: list[dict[str, Any]] = []
+    scored: list[tuple[float, dict[str, Any]]] = []
+    for s in stories:
+        name = (s.get("name") or "").strip()
+        if not name:
+            continue
+        hay = normalize_story_title(name)
+        if not hay:
+            continue
+        if hay == needle:
+            exact.append(s)
+            continue
+        ratio = SequenceMatcher(None, needle, hay).ratio()
+        if ratio >= min_ratio:
+            scored.append((ratio, s))
+
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        # Identical normalized titles — pick first (rare duplicate summaries)
+        return exact[0]
+
+    if not scored:
+        return None
+    scored.sort(key=lambda x: (-x[0], x[1].get("name") or ""))
+    best_ratio, best = scored[0]
+    if len(scored) > 1:
+        second = scored[1][0]
+        if best_ratio - second < STORY_MATCH_AMBIGUITY_DELTA:
+            return None
+    return best
+
+
+def match_override_story(
+    plan_name: str,
+    stories_ov: dict[str, Any],
+    *,
+    min_ratio: float = STORY_MATCH_MIN_RATIO,
+) -> dict[str, Any]:
+    """Lookup Sprint Ready override by MS plan name (exact, then fuzzy on keys)."""
+    if not stories_ov:
+        return {}
+    if plan_name in stories_ov:
+        return stories_ov[plan_name] or {}
+    needle = normalize_story_title(plan_name)
+    if not needle:
+        return {}
+    exact_key = None
+    scored: list[tuple[float, str]] = []
+    for key in stories_ov:
+        hay = normalize_story_title(key)
+        if hay == needle:
+            exact_key = key
+            break
+        ratio = SequenceMatcher(None, needle, hay).ratio()
+        if ratio >= min_ratio:
+            scored.append((ratio, key))
+    if exact_key is not None:
+        return stories_ov.get(exact_key) or {}
+    if not scored:
+        return {}
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    best_ratio, best_key = scored[0]
+    if len(scored) > 1 and best_ratio - scored[1][0] < STORY_MATCH_AMBIGUITY_DELTA:
+        return {}
+    return stories_ov.get(best_key) or {}
 
 
 def _norm_status(status: str) -> str:

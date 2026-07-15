@@ -24,6 +24,32 @@
     }
     .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
     h1 { margin: 0 0 8px; font-size: 24px; }
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .page-head .titles { flex: 1; min-width: 240px; }
+    .page-head .sub { margin-bottom: 0; }
+    .help-link {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .help-link:hover { background: #eff6ff; border-color: #93c5fd; }
     .sub { color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
     .card {
       background: var(--card);
@@ -90,11 +116,29 @@
       margin: 0;
     }
     .maintain-grid .actions {
-      padding-top: 18px; /* align with inputs under labels */
+      padding-top: 18px;
+    }
+    .maintain-edit-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .maintain-edit-row .edit-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .maintain-edit-row button {
+      min-width: 160px;
     }
     @media (max-width: 900px) {
       .maintain-grid { grid-template-columns: 1fr; }
       .maintain-grid .actions { padding-top: 0; }
+      .maintain-edit-row button { min-width: 0; flex: 1 1 140px; }
     }
     .override-meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
     table.edit {
@@ -203,8 +247,13 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>测试执行日报</h1>
-    <div class="sub">打开页面即拉取并展示当前模块预览。Test ENV / Risk / Ready / Bug Reopen 可按 Sprint 维护并持久化，预览、发信与定时共用。</div>
+    <div class="page-head">
+      <div class="titles">
+        <h1>测试执行日报</h1>
+        <div class="sub">打开页面即拉取并展示当前模块预览。Test ENV / Risk / Ready / Bug Reopen 可按 Sprint 维护并持久化，预览、发信与定时共用。</div>
+      </div>
+      <a class="help-link" href="/help" target="_blank" rel="noopener">使用教程</a>
+    </div>
 
     <div class="card maintain-card">
       <div class="preview-head">
@@ -220,12 +269,16 @@
           <label>Risk / Block</label>
           <textarea id="riskBlock" placeholder="风险与阻塞说明（可选）" rows="2"></textarea>
         </div>
-        <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="actions">
           <button id="btnSaveMeta" type="button">保存 ENV/Risk</button>
-          <button id="btnOpenOverride" type="button" class="secondary">编辑 Ready / Reopen</button>
         </div>
       </div>
-      <div class="hint">按当前 Module（Sprint）保存到服务端；切换 Sprint 会自动加载对应维护数据。定时发信也会读取。</div>
+      <div class="maintain-edit-row">
+        <span class="edit-label">按 Story / Bug 维护：</span>
+        <button id="btnOpenReady" type="button" class="secondary">编辑 Ready for Test</button>
+        <button id="btnOpenReopen" type="button" class="secondary">编辑 Bug Reopen</button>
+      </div>
+      <div class="hint" style="margin-top:10px;">按当前 Module（Sprint）保存到服务端。Ready 与 Reopen 分入口编辑、分开保存，互不影响；多人请各改各的区块。</div>
       <div id="overrideMsg" class="msg" style="margin-top:6px;"></div>
     </div>
 
@@ -275,16 +328,15 @@
     </div>
   </div>
 
-  <!-- Ready / Reopen 维护 -->
-  <div id="overrideModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+  <!-- Ready for Test 维护 -->
+  <div id="readyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="readyTitle">
     <div class="modal wide">
       <div class="modal-head">
-        <h2 id="ovTitle">Ready / Bug Reopen 维护</h2>
-        <button type="button" class="modal-close" data-close="overrideModal">关闭</button>
+        <h2 id="readyTitle">Ready for Test 维护</h2>
+        <button type="button" class="modal-close" data-close="readyModal">关闭</button>
       </div>
-      <div class="hint">人工值优先于飞书快照；保存后同 Sprint 预览 / 发信 / 定时都会使用。清空某 Story 三列并保存即恢复飞书推导。</div>
-      <div class="section-title">Ready for Test（按 Story）</div>
-      <div style="overflow:auto;max-height:360px;">
+      <div class="hint">仅保存本弹窗的 Ready 数据，不会改动 Bug Reopen。人工值优先于飞书；清空某 Story 三列并保存即恢复飞书推导。</div>
+      <div style="overflow:auto;max-height:420px;">
         <table class="edit">
           <thead>
             <tr>
@@ -298,9 +350,22 @@
           <tbody id="readyBody"></tbody>
         </table>
       </div>
-      <div class="section-title">Bug Reopen</div>
-      <div class="hint" id="reopenHint">未启用人工 Reopen 时，邮件使用飞书快照（当前多为空）。保存下方表格后改为人工维护。</div>
-      <div style="overflow:auto;max-height:240px;">
+      <div class="row" style="margin-top:8px;">
+        <button type="button" id="btnSaveReady">保存 Ready</button>
+      </div>
+      <div id="readyMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- Bug Reopen 维护 -->
+  <div id="reopenModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reopenTitle">
+    <div class="modal wide">
+      <div class="modal-head">
+        <h2 id="reopenTitle">Bug Reopen 维护</h2>
+        <button type="button" class="modal-close" data-close="reopenModal">关闭</button>
+      </div>
+      <div class="hint" id="reopenHint">仅保存本弹窗的 Reopen 数据，不会改动 Ready。未启用人工时使用飞书快照；点「保存 Reopen」后改为人工维护。</div>
+      <div style="overflow:auto;max-height:360px;">
         <table class="edit">
           <thead>
             <tr>
@@ -317,9 +382,9 @@
       <div class="row">
         <button type="button" class="secondary" id="btnAddReopen">添加 Reopen 行</button>
         <button type="button" class="secondary" id="btnClearReopen">恢复飞书 Reopen</button>
-        <button type="button" id="btnSaveOverride">保存 Ready / Reopen</button>
+        <button type="button" id="btnSaveReopen">保存 Reopen</button>
       </div>
-      <div id="ovMsg" class="msg"></div>
+      <div id="reopenMsg" class="msg"></div>
     </div>
   </div>
 
@@ -522,7 +587,6 @@
     }
 
     function collectReopenRows() {
-      if (!reopenManual) return undefined;
       const rows = [];
       document.querySelectorAll("#reopenBody tr").forEach((tr) => {
         const summary = tr.querySelector(".rp-summary").value.trim();
@@ -585,10 +649,10 @@
       let rows = [];
       if (reopenManual && Array.isArray(fromOverride)) {
         rows = fromOverride;
-        $("reopenHint").textContent = "当前为人工维护 Reopen（保存下方表格后生效）。";
+        $("reopenHint").textContent = "当前为人工维护 Reopen（点「保存 Reopen」后生效）。";
       } else {
         rows = Array.isArray(fromReport) ? fromReport : [];
-        $("reopenHint").textContent = "当前使用飞书快照 Reopen。编辑并保存后切换为人工维护。";
+        $("reopenHint").textContent = "当前使用飞书快照 Reopen。编辑后点「保存 Reopen」切换为人工维护。";
       }
       $("reopenBody").innerHTML = rows.map(reopenRowHtml).join("") || reopenRowHtml();
     }
@@ -616,34 +680,52 @@
       }
     }
 
-    async function saveOverrideEditor() {
+    async function saveReadyStories() {
       const m = selectedModule($("moduleSelect"));
       if (!m) return;
-      setMsg($("ovMsg"), "保存中…", true);
+      setMsg($("readyMsg"), "正在保存 Ready…", true);
+      setMsg($("reopenMsg"), "", true);
       try {
-        const payload = {
-          testEnv: $("testEnv").value,
-          riskBlock: $("riskBlock").value,
-          stories: collectReadyStories(),
-        };
-        if (reopenManual) {
-          payload.reopenRows = collectReopenRows() || [];
-        }
         const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ stories: collectReadyStories() }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+        lastOverride = data;
+        await loadOverrideForSprint(m.name);
+        setMsg($("readyMsg"), "Ready 已保存，正在刷新预览…", true);
+        await preview();
+        setMsg($("readyMsg"), "Ready 已保存并刷新预览", true);
+      } catch (e) {
+        setMsg($("readyMsg"), String(e.message || e), false);
+      }
+    }
+
+    async function saveReopenRows() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      setMsg($("reopenMsg"), "正在保存 Reopen…", true);
+      setMsg($("readyMsg"), "", true);
+      try {
+        reopenManual = true;
+        const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reopenRows: collectReopenRows() }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
         lastOverride = data;
         reopenManual = data.reopenRows !== null && data.reopenRows !== undefined;
         await loadOverrideForSprint(m.name);
-        setMsg($("ovMsg"), "已保存，正在刷新预览…", true);
+        renderReopenEditor();
+        setMsg($("reopenMsg"), "Reopen 已保存，正在刷新预览…", true);
         await preview();
-        setMsg($("ovMsg"), "Ready / Reopen 已保存并刷新预览", true);
+        setMsg($("reopenMsg"), "Reopen 已保存并刷新预览", true);
       } catch (e) {
-        setMsg($("ovMsg"), String(e.message || e), false);
+        setMsg($("reopenMsg"), String(e.message || e), false);
       }
     }
 
@@ -651,6 +733,8 @@
       const m = selectedModule($("moduleSelect"));
       if (!m) return;
       if (!confirm("恢复使用飞书快照的 Bug Reopen（清除人工 Reopen）？")) return;
+      setMsg($("reopenMsg"), "处理中…", true);
+      setMsg($("readyMsg"), "", true);
       const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -658,14 +742,15 @@
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsg($("ovMsg"), data.detail || JSON.stringify(data), false);
+        setMsg($("reopenMsg"), data.detail || JSON.stringify(data), false);
         return;
       }
       lastOverride = data;
       reopenManual = false;
       renderReopenEditor();
-      setMsg($("ovMsg"), "已恢复飞书 Reopen，正在刷新预览…", true);
+      setMsg($("reopenMsg"), "已恢复飞书 Reopen，正在刷新预览…", true);
       await preview();
+      setMsg($("reopenMsg"), "已恢复飞书 Reopen 并刷新预览", true);
     }
 
     async function loadModules() {
@@ -837,29 +922,50 @@
     $("btnCreateSch").onclick = createSchedule;
     $("btnReloadSch").onclick = loadSchedules;
     $("btnSaveMeta").onclick = saveMeta;
-    $("btnSaveOverride").onclick = saveOverrideEditor;
+    $("btnSaveReady").onclick = saveReadyStories;
+    $("btnSaveReopen").onclick = saveReopenRows;
     $("btnClearReopen").onclick = clearReopenManual;
     $("btnAddReopen").onclick = () => {
       reopenManual = true;
       $("reopenBody").insertAdjacentHTML("beforeend", reopenRowHtml());
-      $("reopenHint").textContent = "当前为人工维护 Reopen（保存下方表格后生效）。";
+      $("reopenHint").textContent = "当前为人工维护 Reopen（点「保存 Reopen」后生效）。";
     };
+
+    async function openReadyModal() {
+      if (!lastReport) {
+        setMsg($("overrideMsg"), "请先刷新预览再编辑 Ready", false);
+        return;
+      }
+      const m = selectedModule($("moduleSelect"));
+      if (m) {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+      }
+      renderReadyEditor();
+      setMsg($("readyMsg"), "", true);
+      openModal("readyModal");
+    }
+
+    async function openReopenModal() {
+      if (!lastReport) {
+        setMsg($("overrideMsg"), "请先刷新预览再编辑 Bug Reopen", false);
+        return;
+      }
+      const m = selectedModule($("moduleSelect"));
+      if (m) {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+      }
+      renderReopenEditor();
+      setMsg($("reopenMsg"), "", true);
+      openModal("reopenModal");
+    }
 
     $("btnOpenSend").onclick = () => {
       applyRecipientsToForms();
       setMsg($("manualMsg"), "", true);
       openModal("sendModal");
     };
-    $("btnOpenOverride").onclick = () => {
-      if (!lastReport) {
-        setMsg($("overrideMsg"), "请先刷新预览再编辑 Ready / Reopen", false);
-        return;
-      }
-      renderReadyEditor();
-      renderReopenEditor();
-      setMsg($("ovMsg"), "", true);
-      openModal("overrideModal");
-    };
+    $("btnOpenReady").onclick = openReadyModal;
+    $("btnOpenReopen").onclick = openReopenModal;
     $("btnOpenSchedule").onclick = async () => {
       applyRecipientsToForms();
       const m = selectedModule($("moduleSelect"));
