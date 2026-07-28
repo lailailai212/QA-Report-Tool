@@ -7,12 +7,15 @@ from pathlib import Path
 
 from .feishu_snapshot import (
     aggregate_bugs,
+    enrich_reopen_rows_with_urls,
+    load_all_snapshot_bugs,
     load_feishu_snapshot,
     match_feishu_story,
     match_override_story,
+    story_status_color,
 )
 from .ms_client import MeterSphereClient
-from .override_store import load_override
+from .override_store import load_override, parse_test_env_tags
 from .timeutil import now_beijing_iso, now_beijing_mmdd
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
@@ -24,9 +27,9 @@ env = Environment(
 )
 
 
-def _pct(numer: int, denom: int) -> str | None:
+def _pct(numer: int, denom: int) -> str:
     if denom <= 0:
-        return None
+        return "-"
     return f"{round(numer * 100.0 / denom)}%"
 
 
@@ -47,19 +50,28 @@ def build_report(
 
     snapshot = load_feishu_snapshot(sprint_name) if sprint_name else None
     stories = list(snapshot.get("stories") or []) if snapshot else []
-    bugs_agg = aggregate_bugs(list(snapshot.get("bugs") or [])) if snapshot else None
+    snapshot_bugs = list(snapshot.get("bugs") or []) if snapshot else []
+    bugs_agg = aggregate_bugs(snapshot_bugs) if snapshot else None
 
     ov = load_override(sprint_name) if sprint_name else {}
     stories_ov: dict[str, Any] = ov.get("stories") or {}
 
-    # ENV / Risk: scheduled always from override; manual uses request form
-    # (form is hydrated from override on the page).
+    def _override_reopen_rows() -> list[dict[str, Any]]:
+        # Match across all local sprint snapshots (reopen bugs may belong to prior Sprint)
+        pool = load_all_snapshot_bugs(prefer_sprint=sprint_name) or snapshot_bugs
+        return enrich_reopen_rows_with_urls(
+            list(ov.get("reopenRows") or []),
+            pool,
+        )
+
+    # ENV / Risk: scheduled always from override; manual prefers request,
+    # falls back to saved override so preview still works if form is empty.
     if mode == "scheduled":
         env_text = ov.get("testEnv") or ""
         risk_text = ov.get("riskBlock") or ""
     else:
-        env_text = test_env or ""
-        risk_text = risk_block or ""
+        env_text = (test_env or "").strip() or (ov.get("testEnv") or "")
+        risk_text = (risk_block or "").strip() or (ov.get("riskBlock") or "")
 
     rows = []
     for p in raw["plans"]:
@@ -79,6 +91,7 @@ def build_report(
         ready_date = so["readyDate"] if "readyDate" in so else (fs.get("readyDate") or "")
         comment = so["comment"] if "comment" in so else (fs.get("comment") or "")
 
+        story_status = fs.get("status") or ""
         rows.append(
             {
                 "story": name,
@@ -93,7 +106,8 @@ def build_report(
                 "noRun": no_run,
                 "passRate": _pct(passed, design),
                 "executablePassRate": _pct(passed, passed + failed),
-                "storyStatus": fs.get("status") or "",
+                "storyStatus": story_status,
+                "storyStatusColor": story_status_color(story_status),
                 "readyForTesting": ready,
                 "readyDate": ready_date,
                 "readyComment": comment,
@@ -119,7 +133,7 @@ def build_report(
 
     if bugs_agg is not None and ov.get("reopenRows") is not None:
         bugs_agg = dict(bugs_agg)
-        bugs_agg["reopenRows"] = list(ov.get("reopenRows") or [])
+        bugs_agg["reopenRows"] = _override_reopen_rows()
         bugs_agg["reopenSource"] = "override"
     elif bugs_agg is not None:
         bugs_agg = dict(bugs_agg)
@@ -132,7 +146,7 @@ def build_report(
             "matrixRows": [],
             "matrixTotals": {"counts": {}, "total": 0, "fixedRate": ""},
             "p0p1Rows": [],
-            "reopenRows": list(ov.get("reopenRows") or []),
+            "reopenRows": _override_reopen_rows(),
             "reopenSource": "override",
         }
 
@@ -153,6 +167,7 @@ def build_report(
         "moduleName": module.get("name"),
         "moduleId": module.get("id"),
         "testEnv": env_text,
+        "testEnvTags": parse_test_env_tags(env_text),
         "riskBlock": risk_text,
         "testingProgress": progress,
         "summary": summary,
@@ -173,6 +188,17 @@ def build_report(
             "loaded": snapshot is not None,
             "fetchedAt": (snapshot or {}).get("fetchedAt"),
             "bugs": bugs_agg,
+            "bugsList": [
+                {
+                    "id": b.get("id"),
+                    "summary": (b.get("summary") or b.get("name") or ""),
+                    "name": (b.get("name") or b.get("summary") or ""),
+                    "url": b.get("url") or "",
+                    "priority": b.get("priority") or "",
+                    "status": b.get("status") or "",
+                }
+                for b in snapshot_bugs
+            ],
             "warning": (
                 None
                 if snapshot
@@ -185,5 +211,10 @@ def build_report(
 
 
 def render_html(report: dict[str, Any]) -> str:
+    # Ensure tags exist even if caller only provided testEnv text
+    payload = dict(report)
+    tags = payload.get("testEnvTags")
+    if not tags:
+        payload["testEnvTags"] = parse_test_env_tags(payload.get("testEnv"))
     template = env.get_template("daily_report_email.html")
-    return template.render(report=report)
+    return template.render(report=payload)

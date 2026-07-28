@@ -19,14 +19,25 @@
     </tr>
     <tr>
       <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">Test ENV</td>
-      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;color:#0F172A;height:28px;">{{ report.testEnv }}</td>
+      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#0F172A;height:28px;">
+        {% set env_tags = report.testEnvTags if report.testEnvTags else [] %}
+        {% if env_tags %}
+          {% for tag in env_tags %}
+          <span style="display:inline-block;background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;border-radius:12px;padding:2px 10px;margin:2px 6px 2px 0;font-size:12px;font-weight:600;line-height:1.4;font-family:Arial,'Microsoft YaHei',sans-serif;">{{ tag }}</span>
+          {% endfor %}
+        {% elif report.testEnv %}
+          <span style="color:#0F172A;">{{ report.testEnv }}</span>
+        {% else %}
+          <span style="color:#94A3B8;">—</span>
+        {% endif %}
+      </td>
     </tr>
     <tr>
       <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">Testing Progress</td>
       <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#1E4A7A;">{{ report.testingProgress }}{% if report.feishu and not report.feishu.loaded %}<span style="color:#DC2626;margin-left:8px;">（{{ report.feishu.warning }}）</span>{% endif %}</td>
     </tr>
     <tr>
-      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;vertical-align:top;">Risk/Block</td>
+      <td style="background:#FFFFFF;color:#E67E22;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;vertical-align:top;">Risk/Block</td>
       <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;min-height:40px;color:#0F172A;height:40px;">{{ report.riskBlock }}</td>
     </tr>
   </table>
@@ -41,7 +52,7 @@
       <th colspan="3" style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;text-align:center;font-weight:600;">Ready for Test</th>
     </tr>
     <tr>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Story Name</th>
+      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;min-width:280px;width:280px;">Story Name</th>
       <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Story Status</th>
       <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Case Num</th>
       <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Passed</th>
@@ -57,15 +68,15 @@
     {% for row in report.rows %}
     <tr>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ loop.index }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 8px;text-align:left;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{% if row.storyUrl %}<a href="{{ row.storyUrl }}" style="color:#1E5A96;text-decoration:none;">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};font-weight:600;{% if row.storyStatus == '待验收' %}color:#059669;{% elif row.storyStatus == '测试中' %}color:#1E5A96;{% else %}color:#0F172A;{% endif %}">{{ row.storyStatus }}</td>
+      <td style="border:1px solid #DCE6F0;padding:7px 8px;text-align:left;min-width:280px;width:280px;word-break:break-word;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{% if row.storyUrl %}<a href="{{ row.storyUrl }}" style="color:#1E5A96;text-decoration:none;">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
+      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};font-weight:600;color:{{ row.storyStatusColor or '#64748B' }};">{{ row.storyStatus }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.caseNum }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#059669;font-weight:600;">{{ row.passed }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#DC2626;font-weight:600;">{{ row.failed }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#EA580C;font-weight:600;">{{ row.blocked }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.noRun }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};{% if row.passRate == '100%' %}color:#059669;font-weight:700;{% else %}color:#1E4A7A;{% endif %}">{{ row.passRate or "" }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#1E4A7A;">{{ row.executablePassRate or "" }}</td>
+      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};{% if row.passRate == '100%' %}color:#059669;font-weight:700;{% else %}color:#1E4A7A;{% endif %}">{{ row.passRate or "-" }}</td>
+      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#1E4A7A;">{{ row.executablePassRate or "-" }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyForTesting }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyDate }}</td>
       <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyComment }}</td>
@@ -79,8 +90,8 @@
       <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#DC2626;">{{ report.rowTotals.failed }}</td>
       <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#EA580C;">{{ report.rowTotals.blocked }}</td>
       <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.noRun }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;{% if report.rowTotals.passRate == '100%' %}color:#059669;{% else %}color:#1E4A7A;{% endif %}">{{ report.rowTotals.passRate or "" }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.executablePassRate or "" }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;{% if report.rowTotals.passRate == '100%' %}color:#059669;{% else %}color:#1E4A7A;{% endif %}">{{ report.rowTotals.passRate or "-" }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.executablePassRate or "-" }}</td>
       <td colspan="3" style="border:1px solid #DCE6F0;padding:8px 6px;background:#E8F0F8;"></td>
     </tr>
     {% endif %}
@@ -171,5 +182,9 @@
   </table>
   {% endif %}
   {% endif %}
+  <div style="height:24px;"></div>
+  <div style="max-width:1200px;font-size:12px;color:#94A3B8;line-height:1.5;">
+    本日报由 QA Report Tool 自动生成；用例执行数据来自 MeterSphere，Story/Bug 来自飞书项目快照，Test ENV / Risk / Ready / Reopen 含人工维护项。<br/>
+  </div>
 </body>
 </html>

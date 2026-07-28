@@ -8,7 +8,7 @@
 |------|-----------|------------|
 | ID | `Item Id` | `long_value` |
 | 标题 | `Summary` | `string_value` |
-| 状态/优先级 | `Status` / `Priority` | `key_label_value` 或 list，取 **label** |
+| 状态/优先级 | `Status` / `Priority` | `key_label_value` **或** `key_label_value_list`（取首项 **label**） |
 | 待测试进入 | `待测试 进入时间` | 字符串时间，取前 10 位日期 |
 | 开发排期结束 | `开发排期 结束时间` | `string_value_list`，取 max 日期 |
 
@@ -29,5 +29,10 @@
 
 ## 与日报关系
 
-Web 只读 `exports/feishu/{sprint}_latest.json`，不调 MCP。  
+Web 读 `exports/feishu/{sprint}_latest.json`。刷新途径：
+
+1. 服务端工作日 20:20 自动刷（`MCP_USER_TOKEN`）
+2. 日报预览旁飞书图标 → 弹窗按需刷
+3. Cursor + 本 Skill
+
 刷新快照后刷新预览即可；改 `.py` 才需重启 uvicorn。

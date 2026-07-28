@@ -43,5 +43,20 @@ class Settings:
     timezone: str = os.environ.get("TZ", "Asia/Shanghai")
     db_path: Path = ROOT / "backend" / "data" / "report_tool.db"
 
+    # Feishu Project MCP (snapshot refresh; no LLM)
+    mcp_user_token: str = os.environ.get("MCP_USER_TOKEN", "")
+    feishu_mcp_domain: str = os.environ.get(
+        "FEISHU_MCP_DOMAIN", "https://project.feishu.cn"
+    ).rstrip("/")
+    feishu_project_key: str = os.environ.get(
+        "FEISHU_PROJECT_KEY", "67f5e379dd7f8a00d58f4b0e"
+    )
+    feishu_simple_name: str = os.environ.get("FEISHU_SIMPLE_NAME", "obis")
+    feishu_snapshot_weekdays: str = os.environ.get(
+        "FEISHU_SNAPSHOT_WEEKDAYS", "1,2,3,4,5"
+    )
+    feishu_snapshot_time: str = os.environ.get("FEISHU_SNAPSHOT_TIME", "20:20")
+    feishu_snapshot_sprint: str = os.environ.get("FEISHU_SNAPSHOT_SPRINT", "").strip()
+
 
 settings = Settings()

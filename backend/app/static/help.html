@@ -130,7 +130,7 @@
 <body>
   <div class="wrap">
     <div class="topbar">
-      <a href="/">← 返回日报</a>
+      <a href="/">← 返回 Home</a>
       <a href="#toc">目录</a>
     </div>
 
@@ -180,10 +180,10 @@
           <tr><td><strong>MeterSphere 子计划 + 执行</strong></td><td>MeterSphere</td><td>迭代开始后创建子计划（名尽量=飞书 Story）；执行用例，保证 Passed/Failed/<strong>Blocked</strong>/<strong>No Run</strong> 真实</td></tr>
           <tr><td><strong>Ready for Test（提测）</strong></td><td>「编辑 Ready for Test」弹窗 → <strong>保存 Ready</strong></td><td>提测后核对/修正 Yes/No、Ready Date、Comment；与 Reopen 分入口，互不覆盖</td></tr>
           <tr><td><strong>Bug Reopen</strong></td><td>「编辑 Bug Reopen」弹窗 → <strong>保存 Reopen</strong></td><td>维护 Priority / Status / Summary / Times；与 Ready 分入口，互不覆盖</td></tr>
-          <tr><td><strong>阻塞点 / Risk</strong></td><td>同步给发信人</td><td>把阻塞、风险说清楚；由发信人汇总进页面的 <strong>Risk/Block</strong></td></tr>
+          <tr><td><strong>阻塞点 / Risk</strong></td><td>同步给发信人</td><td>把阻塞、风险说清楚；由发信人在「编辑 Test ENV / Risk」中汇总</td></tr>
         </tbody>
       </table>
-      <div class="note">Ready / Reopen 保存后，同 Sprint 的预览、发信、定时都会用。清空某 Story 的 Ready 三列并保存 → 该行恢复用飞书推导。</div>
+      <div class="note">Ready / Reopen 保存后，同 Sprint 的预览、发信、定时都会用。清空某 Story 的 Ready 三列并保存 → 该行恢复用飞书推导。多人同时改同一区块时，后保存且版本过期会被拒绝并自动重新加载；打开弹窗若有人在编会有提示。ENV/Risk、Ready、Reopen 互不影响。</div>
 
       <h3>组员自查</h3>
       <ul class="check">
@@ -204,16 +204,18 @@
       <table>
         <thead><tr><th>数据</th><th>在哪里</th><th>做什么</th></tr></thead>
         <tbody>
-          <tr><td><strong>Test ENV</strong></td><td>主页「Sprint 维护数据」</td><td>填写当前测试环境（如 <code>SIT，UAT1，UAT2</code>）→ <strong>保存 ENV/Risk</strong></td></tr>
+          <tr><td><strong>Test ENV</strong></td><td>「编辑 Test ENV / Risk」→ <strong>保存 ENV/Risk</strong></td><td>打开弹窗会拉最新数据；多选标签：<code>SIT / UAT1 / UAT2 / PRE1 / PRE2 / PROD</code></td></tr>
           <tr><td><strong>Risk / Block</strong></td><td>同上</td><td><strong>审核并整理</strong>全员反馈的阻塞/风险，写成对外可读的说明 → 保存</td></tr>
           <tr><td><strong>收件人（To / CC）</strong></td><td>「收件人」按钮</td><td>维护默认收件人并保存；发信时可临时改，<strong>临时改不会写回默认</strong></td></tr>
+          <tr><td><strong>飞书快照（按需）</strong></td><td>日报预览旁飞书图标 → 弹窗</td><td>Status/Ready/Bug 过旧时刷新；MCP 有限流，勿连点。日常靠工作日 <strong>20:20</strong> 自动刷</td></tr>
         </tbody>
       </table>
 
       <h3>建议操作顺序</h3>
       <ol>
         <li>Module 选对当前 Sprint → <strong>刷新预览</strong></li>
-        <li>填 / 改 <strong>Test ENV</strong>，审核 <strong>Risk/Block</strong> → <strong>保存 ENV/Risk</strong></li>
+        <li>若飞书列明显过旧：点预览旁 <strong>飞书图标</strong> → 弹窗内刷新快照 → 再预览</li>
+        <li>打开「编辑 Test ENV / Risk」，填 / 改 <strong>Test ENV</strong>，审核 <strong>Risk/Block</strong> → <strong>保存 ENV/Risk</strong></li>
         <li>必要时分别打开「编辑 Ready for Test」/「编辑 Bug Reopen」做最后核对并各自保存</li>
         <li>再 <strong>刷新预览</strong>，确认主表、Bug、ENV、Risk 无误</li>
         <li><strong>手动发送</strong>，或确认定时任务已启用且收件人正确</li>
@@ -236,7 +238,8 @@
         <thead><tr><th>按钮 / 区域</th><th>谁常用</th><th>用途</th></tr></thead>
         <tbody>
           <tr><td>Module + 刷新预览</td><td>全员</td><td>选 Sprint、核对日报</td></tr>
-          <tr><td>保存 ENV/Risk</td><td>发信人</td><td>持久化环境与风险说明</td></tr>
+          <tr><td>飞书图标（预览旁）</td><td>发信人按需</td><td>弹窗刷新飞书快照（限流；日常 20:20 自动）</td></tr>
+          <tr><td>编辑 Test ENV / Risk</td><td>发信人</td><td>打开时拉最新；仅 ENV/Risk（独立弹窗）</td></tr>
           <tr><td>编辑 Ready for Test</td><td>组员为主，发信人可终审</td><td>仅维护 Ready（独立弹窗）</td></tr>
           <tr><td>编辑 Bug Reopen</td><td>组员为主，发信人可终审</td><td>仅维护 Reopen（独立弹窗）</td></tr>
           <tr><td>收件人</td><td>发信人</td><td>默认 To/CC（仅此处保存默认）</td></tr>
@@ -260,11 +263,12 @@
       <h2>常见问题</h2>
       <p><strong>预览没有我的 Story？</strong> → MS 未建子计划，或名称与飞书差太多，或 Module 不对。</p>
       <p><strong>Ready 和飞书不一致？</strong> → 可能已人工保存（人工优先）；清空三列保存可恢复飞书。</p>
+      <p><strong>飞书 Status/Bug 整表过旧？</strong> → 发信人点预览旁飞书图标刷新；或等工作日 20:20 自动刷。组员一般不必点。</p>
       <p><strong>改完 Risk/Ready 邮件还是旧的？</strong> → 是否点了保存？是否刷新了预览？</p>
       <p><strong>默认收件人为何没变？</strong> → 只在「收件人设置」里保存才会改默认；发送弹窗里的修改是一次性的。</p>
     </section>
 
-    <p class="footer"><a href="/">返回日报首页</a></p>
+    <p class="footer"><a href="/">返回 Home</a></p>
   </div>
 </body>
 </html>

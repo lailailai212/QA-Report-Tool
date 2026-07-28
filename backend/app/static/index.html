@@ -50,6 +50,14 @@
       font-weight: 600;
     }
     .help-link:hover { background: #eff6ff; border-color: #93c5fd; }
+    .help-link.nav-home { color: var(--text); font-weight: 500; }
+    .page-head-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
     .sub { color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
     .card {
       background: var(--card);
@@ -96,27 +104,82 @@
     .msg.err { color: var(--danger); }
     .preview-card { margin-bottom: 16px; }
     .maintain-card { margin-bottom: 16px; }
-    .maintain-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr auto;
-      gap: 12px;
-      align-items: start;
+    .maintain-summary {
+      margin: 4px 0 0;
+      width: 100%;
+      max-width: 1200px;
+      border-collapse: collapse;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      color: #0F172A;
+      background: #FFFFFF;
+      border: 1px solid #9BB7D4;
     }
-    .maintain-grid > div {
+    .maintain-summary th,
+    .maintain-summary td {
+      border: 1px solid #9BB7D4;
+      padding: 9px 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.45;
+    }
+    .maintain-summary th {
+      width: 132px;
+      color: #1E4A7A;
+      font-weight: 700;
+      background: #FFFFFF;
+      white-space: nowrap;
+    }
+    .maintain-summary td {
+      color: #0F172A;
+      font-weight: 400;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .maintain-summary td.env-cell { white-space: normal; }
+    .env-tag {
+      display: inline-block;
+      background: #E8F0F8;
+      color: #1E4A7A;
+      border: 1px solid #9BB7D4;
+      border-radius: 12px;
+      padding: 2px 10px;
+      margin: 2px 6px 2px 0;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+    }
+    .env-tag-empty { color: #94A3B8; font-family: Arial, "Microsoft YaHei", sans-serif; }
+    .env-picker {
       display: flex;
-      flex-direction: column;
-      min-width: 0;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 44px;
     }
-    .maintain-grid label {
-      margin: 0 0 4px;
-      line-height: 1.3;
+    .env-picker .env-chip {
+      appearance: none;
+      border: 1px solid #9BB7D4;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      background: #F8FAFC;
+      color: #64748B;
+      cursor: pointer;
+      line-height: 1.2;
     }
-    .maintain-grid input,
-    .maintain-grid textarea {
-      margin: 0;
-    }
-    .maintain-grid .actions {
-      padding-top: 18px;
+    .env-picker .env-chip:hover { border-color: #6B9BD1; color: #1E4A7A; }
+    .env-picker .env-chip.selected {
+      background: #E8F0F8;
+      color: #1E4A7A;
+      border-color: #1E4A7A;
+      box-shadow: inset 0 0 0 1px #1E4A7A;
     }
     .maintain-edit-row {
       display: flex;
@@ -136,8 +199,6 @@
       min-width: 160px;
     }
     @media (max-width: 900px) {
-      .maintain-grid { grid-template-columns: 1fr; }
-      .maintain-grid .actions { padding-top: 0; }
       .maintain-edit-row button { min-width: 0; flex: 1 1 140px; }
     }
     .override-meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
@@ -164,12 +225,38 @@
     .preview-head {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
       margin-bottom: 8px;
     }
     .preview-head h2 { margin: 0; font-size: 16px; }
+    .preview-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
     .preview-meta { font-size: 13px; color: var(--muted); }
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 2px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #e5e7eb; }
+    .icon-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .icon-btn img {
+      width: 22px;
+      height: 22px;
+      display: block;
+      object-fit: contain;
+    }
     .preview {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -243,6 +330,18 @@
       color: #111;
       padding: 6px 10px;
     }
+    .lock-hint {
+      display: none;
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .lock-hint.show { display: block; }
   </style>
 </head>
 <body>
@@ -252,39 +351,48 @@
         <h1>测试执行日报</h1>
         <div class="sub">打开页面即拉取并展示当前模块预览。Test ENV / Risk / Ready / Bug Reopen 可按 Sprint 维护并持久化，预览、发信与定时共用。</div>
       </div>
-      <a class="help-link" href="/help" target="_blank" rel="noopener">使用教程</a>
+      <div class="page-head-actions">
+        <a class="help-link nav-home" href="/">← Home</a>
+        <a class="help-link" href="/help" target="_blank" rel="noopener">使用教程</a>
+      </div>
     </div>
 
     <div class="card maintain-card">
       <div class="preview-head">
-        <h2>Sprint 维护数据</h2>
+        <div class="preview-title-row">
+          <h2>Sprint 维护数据</h2>
+          <button id="btnRefreshOverride" type="button" class="secondary" title="拉取服务端最新维护数据并刷新预览">刷新维护数据</button>
+        </div>
         <div id="overrideMeta" class="preview-meta">未加载</div>
       </div>
-      <div class="maintain-grid">
-        <div>
-          <label>Test ENV</label>
-          <input id="testEnv" placeholder="例如：SIT、UAT1、UAT2" />
-        </div>
-        <div>
-          <label>Risk / Block</label>
-          <textarea id="riskBlock" placeholder="风险与阻塞说明（可选）" rows="2"></textarea>
-        </div>
-        <div class="actions">
-          <button id="btnSaveMeta" type="button">保存 ENV/Risk</button>
-        </div>
-      </div>
+      <table id="maintainSummary" class="maintain-summary">
+        <tr>
+          <th>Test ENV</th>
+          <td id="summaryTestEnv" class="env-cell"><span class="env-tag-empty">—</span></td>
+        </tr>
+        <tr>
+          <th>Risk/Block</th>
+          <td id="summaryRiskBlock">—</td>
+        </tr>
+      </table>
       <div class="maintain-edit-row">
-        <span class="edit-label">按 Story / Bug 维护：</span>
+        <span class="edit-label">按区块维护：</span>
+        <button id="btnOpenMeta" type="button" class="secondary">编辑 Test ENV / Risk</button>
         <button id="btnOpenReady" type="button" class="secondary">编辑 Ready for Test</button>
         <button id="btnOpenReopen" type="button" class="secondary">编辑 Bug Reopen</button>
       </div>
-      <div class="hint" style="margin-top:10px;">按当前 Module（Sprint）保存到服务端。Ready 与 Reopen 分入口编辑、分开保存，互不影响；多人请各改各的区块。</div>
+      <div class="hint" style="margin-top:10px;">按当前 Module（Sprint）保存到服务端。各区块分开保存；若他人先保存了同一区块，你再保存会被拒绝并自动重新加载，避免互相覆盖。打开弹窗时会提示是否有人正在编辑。</div>
       <div id="overrideMsg" class="msg" style="margin-top:6px;"></div>
     </div>
 
     <div class="card preview-card">
       <div class="preview-head">
-        <h2>日报预览</h2>
+        <div class="preview-title-row">
+          <h2>日报预览</h2>
+          <button id="btnFeishuSnapshot" class="icon-btn" type="button" aria-label="飞书快照" title="飞书快照">
+            <img src="/static/img/feishu-logo.png" alt="" width="22" height="22" />
+          </button>
+        </div>
         <div id="previewMeta" class="preview-meta">准备加载…</div>
       </div>
       <div class="toolbar">
@@ -306,6 +414,26 @@
     </div>
   </div>
 
+  <!-- 飞书快照刷新 -->
+  <div id="feishuRefreshModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="feishuTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="feishuTitle">飞书快照</h2>
+        <button type="button" class="modal-close" data-close="feishuRefreshModal">关闭</button>
+      </div>
+      <div class="hint" style="margin-bottom:10px;">
+        仅发信人按需使用；飞书 MCP 有限流，勿连续点击、勿多人同时刷。日常依赖工作日 20:20 自动刷新。
+      </div>
+      <label>当前 Sprint</label>
+      <input id="feishuSprint" readonly />
+      <div id="feishuStatus" class="hint" style="margin-top:10px;">加载状态…</div>
+      <div class="actions" style="margin-top:14px;">
+        <button id="btnFeishuRefresh" type="button">刷新飞书快照</button>
+      </div>
+      <div id="feishuMsg" class="msg" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
   <!-- 手动发送 -->
   <div id="sendModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="sendTitle">
     <div class="modal">
@@ -313,7 +441,7 @@
         <h2 id="sendTitle">手动发送</h2>
         <button type="button" class="modal-close" data-close="sendModal">关闭</button>
       </div>
-      <div class="hint" style="margin-bottom:8px;">将使用上方已保存/当前填写的 Test ENV、Risk，以及 Ready / Reopen 维护数据；发信时重新拉取 MS。</div>
+      <div class="hint" style="margin-bottom:8px;">将使用服务端已保存的 Test ENV、Risk、Ready / Reopen；发信前会再拉取一次维护数据与 MS。</div>
       <label>To（逗号分隔）</label>
       <textarea id="toEmails" rows="2" placeholder="a@x.com, b@x.com"></textarea>
       <div class="hint">默认来自「收件人设置」；此处修改不会写回默认收件人。</div>
@@ -328,6 +456,28 @@
     </div>
   </div>
 
+  <!-- Test ENV / Risk 维护 -->
+  <div id="metaModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="metaTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="metaTitle">Test ENV / Risk 维护</h2>
+        <button type="button" class="modal-close" data-close="metaModal">关闭</button>
+      </div>
+      <div class="hint">打开本弹窗时会重新拉取服务端最新数据。仅保存 ENV/Risk，不会改动 Ready / Reopen。</div>
+      <div id="metaLockHint" class="lock-hint" role="status"></div>
+      <label>Test ENV（多选）</label>
+      <div id="testEnvPicker" class="env-picker" role="group" aria-label="Test ENV"></div>
+      <input type="hidden" id="testEnv" value="" />
+      <div class="hint" style="margin-top:6px;">可选：SIT / UAT1 / UAT2 / PRE1 / PRE2 / PROD，点击标签切换选中。</div>
+      <label>Risk / Block</label>
+      <textarea id="riskBlock" placeholder="风险与阻塞说明（可选）" rows="4"></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button type="button" id="btnSaveMeta">保存 ENV/Risk</button>
+      </div>
+      <div id="metaMsg" class="msg"></div>
+    </div>
+  </div>
+
   <!-- Ready for Test 维护 -->
   <div id="readyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="readyTitle">
     <div class="modal wide">
@@ -336,6 +486,7 @@
         <button type="button" class="modal-close" data-close="readyModal">关闭</button>
       </div>
       <div class="hint">仅保存本弹窗的 Ready 数据，不会改动 Bug Reopen。人工值优先于飞书；清空某 Story 三列并保存即恢复飞书推导。</div>
+      <div id="readyLockHint" class="lock-hint" role="status"></div>
       <div style="overflow:auto;max-height:420px;">
         <table class="edit">
           <thead>
@@ -364,7 +515,8 @@
         <h2 id="reopenTitle">Bug Reopen 维护</h2>
         <button type="button" class="modal-close" data-close="reopenModal">关闭</button>
       </div>
-      <div class="hint" id="reopenHint">仅保存本弹窗的 Reopen 数据，不会改动 Ready。未启用人工时使用飞书快照；点「保存 Reopen」后改为人工维护。</div>
+      <div class="hint" id="reopenHint">仅保存本弹窗的 Reopen 数据，不会改动 Ready。未启用人工时使用飞书快照；点「保存 Reopen」后改为人工维护。Summary 将按标题自动匹配飞书快照 Bug 链接，预览中可点击跳转。</div>
+      <div id="reopenLockHint" class="lock-hint" role="status"></div>
       <div style="overflow:auto;max-height:360px;">
         <table class="edit">
           <thead>
@@ -462,16 +614,31 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const RECIPIENTS_KEY = "qa-report-tool.recipients.v1";
+    const EDITOR_KEY = "qa-report-tool.editorName.v1";
     const BUILTIN_RECIPIENTS = {
       to: ["future.wei@snowballtech.com"],
       cc: ["qian.xie@snowballtech.com", "yanren.chen@snowballtech.com"],
     };
+    const SECTION_LABEL = { meta: "ENV/Risk", stories: "Ready", reopen: "Reopen" };
+    const MODAL_SECTION = {
+      metaModal: "meta",
+      readyModal: "stories",
+      reopenModal: "reopen",
+    };
+    const SECTION_LOCK_HINT = {
+      meta: "metaLockHint",
+      stories: "readyLockHint",
+      reopen: "reopenLockHint",
+    };
+    const LOCK_HEARTBEAT_MS = 60 * 1000;
 
     let modules = [];
     let lastReport = null;
     let lastOverride = null;
     let previewSeq = 0;
     let reopenManual = false;
+    /** @type {Record<string, {token:string, timer:number|null}>} */
+    const activeLocks = {};
 
     function parseEmails(text) {
       return (text || "")
@@ -523,20 +690,218 @@
       document.body.style.overflow = "hidden";
     }
     function closeModal(id) {
+      const section = MODAL_SECTION[id];
+      if (section) releaseSectionLock(section);
       $(id).classList.remove("open");
       if (![...document.querySelectorAll(".modal-backdrop.open")].length) {
         document.body.style.overflow = "";
       }
     }
+
+    function ensureEditorName() {
+      let name = "";
+      try { name = (localStorage.getItem(EDITOR_KEY) || "").trim(); } catch (_) {}
+      if (!name) {
+        name = (window.prompt("请输入你的名字（用于并发编辑提示，仅本机记住）", "") || "").trim();
+        if (!name) name = "匿名";
+        try { localStorage.setItem(EDITOR_KEY, name); } catch (_) {}
+      }
+      return name;
+    }
+
+    function currentRev() {
+      const rev = (lastOverride && lastOverride.rev) || {};
+      return {
+        meta: Number(rev.meta || 0),
+        stories: Number(rev.stories || 0),
+        reopen: Number(rev.reopen || 0),
+      };
+    }
+
+    function setLockHint(section, text) {
+      const el = $(SECTION_LOCK_HINT[section]);
+      if (!el) return;
+      if (text) {
+        el.textContent = text;
+        el.classList.add("show");
+      } else {
+        el.textContent = "";
+        el.classList.remove("show");
+      }
+    }
+
+    function stopLockHeartbeat(section) {
+      const cur = activeLocks[section];
+      if (cur && cur.timer) {
+        clearInterval(cur.timer);
+        cur.timer = null;
+      }
+    }
+
+    async function releaseSectionLock(section) {
+      stopLockHeartbeat(section);
+      const cur = activeLocks[section];
+      const token = cur && cur.token;
+      delete activeLocks[section];
+      setLockHint(section, "");
+      const m = selectedModule($("moduleSelect"));
+      if (!m || !token) return;
+      try {
+        await fetch("/api/overrides/" + encodeURIComponent(m.name) + "/locks/release", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section, token, editor: ensureEditorName() }),
+        });
+      } catch (_) {}
+    }
+
+    async function acquireSectionLock(section) {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return { acquired: false };
+      const editor = ensureEditorName();
+      const prev = activeLocks[section];
+      try {
+        const res = await fetch("/api/overrides/" + encodeURIComponent(m.name) + "/locks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section,
+            editor,
+            token: prev && prev.token ? prev.token : null,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || res.statusText);
+        if (data.acquired && data.lock && data.lock.token) {
+          stopLockHeartbeat(section);
+          activeLocks[section] = {
+            token: data.lock.token,
+            timer: setInterval(() => {
+              heartbeatSectionLock(section).catch(() => {});
+            }, LOCK_HEARTBEAT_MS),
+          };
+          setLockHint(section, "");
+          return data;
+        }
+        const holder = data.lock && data.lock.editor ? data.lock.editor : "他人";
+        setLockHint(
+          section,
+          `提示：${holder} 可能正在编辑「${SECTION_LABEL[section] || section}」。仍可打开，但若对方先保存，你的保存会被拒绝并重新加载。`
+        );
+        return data;
+      } catch (e) {
+        setLockHint(section, "编辑锁提示不可用：" + (e.message || e));
+        return { acquired: false };
+      }
+    }
+
+    async function heartbeatSectionLock(section) {
+      const m = selectedModule($("moduleSelect"));
+      const cur = activeLocks[section];
+      if (!m || !cur || !cur.token) return;
+      const res = await fetch(
+        "/api/overrides/" + encodeURIComponent(m.name) + "/locks/heartbeat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section,
+            token: cur.token,
+            editor: ensureEditorName(),
+          }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) {
+        stopLockHeartbeat(section);
+        delete activeLocks[section];
+        const holder = data.lock && data.lock.editor ? data.lock.editor : "他人";
+        setLockHint(
+          section,
+          `编辑锁已失效（可能被 ${holder} 占用）。保存时仍会校验版本，冲突会自动重新加载。`
+        );
+      }
+    }
+
+    function formatApiDetail(detail) {
+      if (detail == null) return "";
+      if (typeof detail === "string") return detail;
+      if (typeof detail === "object") {
+        if (detail.message) return String(detail.message);
+        try { return JSON.stringify(detail); } catch (_) { return String(detail); }
+      }
+      return String(detail);
+    }
+
+    async function putOverride(sprint, body) {
+      const res = await fetch("/api/overrides/" + encodeURIComponent(sprint), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data.detail && data.detail.code === "override_conflict") {
+        return { ok: false, conflict: true, detail: data.detail, data: data.detail.current || null };
+      }
+      if (!res.ok) {
+        throw new Error(formatApiDetail(data.detail) || JSON.stringify(data) || res.statusText);
+      }
+      return { ok: true, conflict: false, data };
+    }
+
+    async function applyConflictReload(section, detail, msgEl) {
+      if (detail && detail.current) {
+        lastOverride = detail.current;
+        reopenManual = lastOverride.reopenRows !== null && lastOverride.reopenRows !== undefined;
+        fillMetaFields(lastOverride);
+        const m = selectedModule($("moduleSelect"));
+        if (m) {
+          try { await loadOverrideForSprint(m.name); } catch (_) {}
+        }
+      } else {
+        const m = selectedModule($("moduleSelect"));
+        if (m) await loadOverrideForSprint(m.name);
+      }
+      if (section === "meta") fillMetaFields(lastOverride);
+      if (section === "stories") renderReadyEditor();
+      if (section === "reopen") renderReopenEditor();
+      const msg = (detail && detail.message)
+        || `「${SECTION_LABEL[section] || section}」已被他人更新，已重新加载，请核对后再保存。`;
+      setMsg(msgEl, msg, false);
+      setMsg($("overrideMsg"), msg, false);
+    }
     function selectedModule(selectEl) {
       const id = selectEl.value;
       return modules.find((x) => x.id === id) || null;
     }
+    function moduleRecencyKey(name) {
+      // Prefer YYYYMMDD fragments in names like OBIS-20260706-20260717
+      const dates = [...String(name || "").matchAll(/(\d{8})/g)].map((m) => m[1]);
+      if (!dates.length) return "";
+      return dates.sort().at(-1);
+    }
+
+    function pickLatestModule(list) {
+      if (!list || !list.length) return null;
+      let best = null;
+      let bestKey = "";
+      for (const m of list) {
+        const k = moduleRecencyKey(m.name);
+        if (k && k >= bestKey) {
+          bestKey = k;
+          best = m;
+        }
+      }
+      if (best) return best;
+      const obis = list.filter((m) => /^OBIS-/i.test(m.name || ""));
+      return obis.length ? obis[obis.length - 1] : list[0];
+    }
+
     function fillModuleSelects() {
       const opts = modules.map((m) => `<option value="${m.id}">${m.fullPath || m.name}</option>`).join("");
       $("moduleSelect").innerHTML = opts;
       $("schModule").innerHTML = opts;
-      const prefer = modules.find((m) => m.name === "OBIS-20260622-20260703");
+      const prefer = pickLatestModule(modules);
       if (prefer) {
         $("moduleSelect").value = prefer.id;
         $("schModule").value = prefer.id;
@@ -546,11 +911,80 @@
       $("preview").innerHTML = `<div class="preview-placeholder">${text}</div>`;
     }
 
+    const TEST_ENV_OPTIONS = ["SIT", "UAT1", "UAT2", "PRE1", "PRE2", "PROD"];
+
+    function parseTestEnvTags(text) {
+      const parts = String(text || "")
+        .split(/[,，、;/|\s]+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      const knownMap = Object.fromEntries(TEST_ENV_OPTIONS.map((o) => [o.toUpperCase(), o]));
+      const found = new Set();
+      const unknowns = [];
+      const seenUnknown = new Set();
+      for (const p of parts) {
+        const key = p.toUpperCase();
+        if (knownMap[key]) found.add(knownMap[key]);
+        else if (!seenUnknown.has(p)) {
+          seenUnknown.add(p);
+          unknowns.push(p);
+        }
+      }
+      return TEST_ENV_OPTIONS.filter((o) => found.has(o)).concat(unknowns);
+    }
+
+    function formatTestEnv(tags) {
+      return parseTestEnvTags((tags || []).join(", ")).join(", ");
+    }
+
+    function renderEnvTagsHtml(tags) {
+      const list = parseTestEnvTags(Array.isArray(tags) ? tags.join(", ") : tags);
+      if (!list.length) return '<span class="env-tag-empty">—</span>';
+      return list.map((t) => `<span class="env-tag">${t.replace(/</g, "&lt;")}</span>`).join("");
+    }
+
+    function selectedTestEnvTags() {
+      return [...document.querySelectorAll("#testEnvPicker .env-chip.selected")].map(
+        (el) => el.getAttribute("data-env")
+      );
+    }
+
+    function syncTestEnvHidden() {
+      $("testEnv").value = formatTestEnv(selectedTestEnvTags());
+    }
+
+    function renderTestEnvPicker(selected) {
+      const selectedSet = new Set(parseTestEnvTags(Array.isArray(selected) ? selected.join(", ") : selected));
+      $("testEnvPicker").innerHTML = TEST_ENV_OPTIONS.map((opt) => {
+        const on = selectedSet.has(opt) ? " selected" : "";
+        return `<button type="button" class="env-chip${on}" data-env="${opt}" aria-pressed="${selectedSet.has(opt)}">${opt}</button>`;
+      }).join("");
+      syncTestEnvHidden();
+    }
+
+    function fillMetaFields(data) {
+      const env = (data && data.testEnv) || "";
+      const risk = (data && data.riskBlock) || "";
+      renderTestEnvPicker(env);
+      $("riskBlock").value = risk;
+      $("summaryTestEnv").innerHTML = renderEnvTagsHtml(env);
+      $("summaryRiskBlock").textContent = risk.trim() || "—";
+    }
+
+    function currentMetaValues() {
+      if (lastOverride) {
+        return {
+          testEnv: lastOverride.testEnv || "",
+          riskBlock: lastOverride.riskBlock || "",
+        };
+      }
+      return { testEnv: "", riskBlock: "" };
+    }
+
     async function loadOverrideForSprint(sprint) {
       if (!sprint) {
         lastOverride = null;
-        $("testEnv").value = "";
-        $("riskBlock").value = "";
+        fillMetaFields(null);
         $("overrideMeta").textContent = "无 Sprint";
         return null;
       }
@@ -558,12 +992,17 @@
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       lastOverride = data;
-      $("testEnv").value = data.testEnv || "";
-      $("riskBlock").value = data.riskBlock || "";
+      fillMetaFields(data);
       reopenManual = data.reopenRows !== null && data.reopenRows !== undefined;
       const parts = [];
       if (data.updatedAt) parts.push("上次保存 " + data.updatedAt);
       else parts.push("尚无维护数据");
+      const rev = data.rev || {};
+      parts.push(
+        "rev M" + Number(rev.meta || 0)
+          + "/R" + Number(rev.stories || 0)
+          + "/B" + Number(rev.reopen || 0)
+      );
       const sc = Object.keys(data.stories || {}).length;
       if (sc) parts.push("Ready 覆盖 " + sc + " 行");
       if (reopenManual) parts.push("Reopen 人工 " + (data.reopenRows || []).length + " 行");
@@ -588,14 +1027,27 @@
 
     function collectReopenRows() {
       const rows = [];
+      const bugPool =
+        (lastReport && lastReport.feishu && Array.isArray(lastReport.feishu.bugsList))
+          ? lastReport.feishu.bugsList
+          : [];
       document.querySelectorAll("#reopenBody tr").forEach((tr) => {
         const summary = tr.querySelector(".rp-summary").value.trim();
         if (!summary) return;
+        let url = (tr.getAttribute("data-url") || "").trim();
+        if (!url && bugPool.length) {
+          const needle = summary.toLowerCase().replace(/\s+/g, " ").trim();
+          const hit = bugPool.find((b) => {
+            const t = String(b.summary || b.name || "").toLowerCase().replace(/\s+/g, " ").trim();
+            return t && t === needle;
+          });
+          if (hit && hit.url) url = hit.url;
+        }
         rows.push({
           priority: tr.querySelector(".rp-pri").value.trim(),
           status: tr.querySelector(".rp-status").value.trim(),
           summary,
-          url: "",
+          url,
           reopenTimes: Number(tr.querySelector(".rp-times").value || 0),
         });
       });
@@ -632,8 +1084,9 @@
     }
 
     function reopenRowHtml(r) {
-      r = r || { priority: "P1", status: "To Do", summary: "", reopenTimes: 1 };
-      return `<tr>
+      r = r || { priority: "P1", status: "To Do", summary: "", url: "", reopenTimes: 1 };
+      const url = String(r.url || "").replace(/"/g, "&quot;");
+      return `<tr data-url="${url}">
         <td><input class="rp-pri" value="${String(r.priority || "").replace(/"/g, "&quot;")}" /></td>
         <td><select class="rp-status">${reopenStatusOptions(r.status)}</select></td>
         <td><input class="rp-summary" value="${String(r.summary || r.name || "").replace(/"/g, "&quot;")}" /></td>
@@ -649,10 +1102,10 @@
       let rows = [];
       if (reopenManual && Array.isArray(fromOverride)) {
         rows = fromOverride;
-        $("reopenHint").textContent = "当前为人工维护 Reopen（点「保存 Reopen」后生效）。";
+        $("reopenHint").textContent = "当前为人工维护 Reopen（点「保存 Reopen」后生效）。Summary 会按标题自动匹配飞书快照 Bug 链接。";
       } else {
         rows = Array.isArray(fromReport) ? fromReport : [];
-        $("reopenHint").textContent = "当前使用飞书快照 Reopen。编辑后点「保存 Reopen」切换为人工维护。";
+        $("reopenHint").textContent = "当前使用飞书快照 Reopen。编辑后点「保存 Reopen」切换为人工维护。Summary 会按标题自动匹配飞书快照 Bug 链接。";
       }
       $("reopenBody").innerHTML = rows.map(reopenRowHtml).join("") || reopenRowHtml();
     }
@@ -660,23 +1113,29 @@
     async function saveMeta() {
       const m = selectedModule($("moduleSelect"));
       if (!m) return;
-      setMsg($("overrideMsg"), "保存中…", true);
+      setMsg($("metaMsg"), "正在保存 ENV/Risk…", true);
+      setMsg($("overrideMsg"), "", true);
       try {
-        const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            testEnv: $("testEnv").value,
-            riskBlock: $("riskBlock").value,
-          }),
+        syncTestEnvHidden();
+        const rev = currentRev();
+        const result = await putOverride(m.name, {
+          testEnv: formatTestEnv(selectedTestEnvTags()),
+          riskBlock: $("riskBlock").value,
+          expectedRev: { meta: rev.meta },
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        lastOverride = data;
-        $("overrideMeta").textContent = "上次保存 " + (data.updatedAt || "");
+        if (result.conflict) {
+          await applyConflictReload("meta", result.detail, $("metaMsg"));
+          return;
+        }
+        lastOverride = result.data;
+        fillMetaFields(result.data);
+        await loadOverrideForSprint(m.name);
+        setMsg($("metaMsg"), "ENV / Risk 已保存，正在刷新预览…", true);
+        await preview();
+        setMsg($("metaMsg"), "ENV / Risk 已保存并刷新预览", true);
         setMsg($("overrideMsg"), "ENV / Risk 已保存", true);
       } catch (e) {
-        setMsg($("overrideMsg"), String(e.message || e), false);
+        setMsg($("metaMsg"), String(e.message || e), false);
       }
     }
 
@@ -686,14 +1145,16 @@
       setMsg($("readyMsg"), "正在保存 Ready…", true);
       setMsg($("reopenMsg"), "", true);
       try {
-        const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ stories: collectReadyStories() }),
+        const rev = currentRev();
+        const result = await putOverride(m.name, {
+          stories: collectReadyStories(),
+          expectedRev: { stories: rev.stories },
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        lastOverride = data;
+        if (result.conflict) {
+          await applyConflictReload("stories", result.detail, $("readyMsg"));
+          return;
+        }
+        lastOverride = result.data;
         await loadOverrideForSprint(m.name);
         setMsg($("readyMsg"), "Ready 已保存，正在刷新预览…", true);
         await preview();
@@ -710,15 +1171,17 @@
       setMsg($("readyMsg"), "", true);
       try {
         reopenManual = true;
-        const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reopenRows: collectReopenRows() }),
+        const rev = currentRev();
+        const result = await putOverride(m.name, {
+          reopenRows: collectReopenRows(),
+          expectedRev: { reopen: rev.reopen },
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        lastOverride = data;
-        reopenManual = data.reopenRows !== null && data.reopenRows !== undefined;
+        if (result.conflict) {
+          await applyConflictReload("reopen", result.detail, $("reopenMsg"));
+          return;
+        }
+        lastOverride = result.data;
+        reopenManual = result.data.reopenRows !== null && result.data.reopenRows !== undefined;
         await loadOverrideForSprint(m.name);
         renderReopenEditor();
         setMsg($("reopenMsg"), "Reopen 已保存，正在刷新预览…", true);
@@ -735,22 +1198,25 @@
       if (!confirm("恢复使用飞书快照的 Bug Reopen（清除人工 Reopen）？")) return;
       setMsg($("reopenMsg"), "处理中…", true);
       setMsg($("readyMsg"), "", true);
-      const res = await fetch("/api/overrides/" + encodeURIComponent(m.name), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clearReopenManual: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg($("reopenMsg"), data.detail || JSON.stringify(data), false);
-        return;
+      try {
+        const rev = currentRev();
+        const result = await putOverride(m.name, {
+          clearReopenManual: true,
+          expectedRev: { reopen: rev.reopen },
+        });
+        if (result.conflict) {
+          await applyConflictReload("reopen", result.detail, $("reopenMsg"));
+          return;
+        }
+        lastOverride = result.data;
+        reopenManual = false;
+        renderReopenEditor();
+        setMsg($("reopenMsg"), "已恢复飞书 Reopen，正在刷新预览…", true);
+        await preview();
+        setMsg($("reopenMsg"), "已恢复飞书 Reopen 并刷新预览", true);
+      } catch (e) {
+        setMsg($("reopenMsg"), String(e.message || e), false);
       }
-      lastOverride = data;
-      reopenManual = false;
-      renderReopenEditor();
-      setMsg($("reopenMsg"), "已恢复飞书 Reopen，正在刷新预览…", true);
-      await preview();
-      setMsg($("reopenMsg"), "已恢复飞书 Reopen 并刷新预览", true);
     }
 
     async function loadModules() {
@@ -774,14 +1240,15 @@
       $("btnPreview").disabled = true;
       try {
         try { await loadOverrideForSprint(m.name); } catch (_) {}
+        const meta = currentMetaValues();
         const res = await fetch("/api/reports/preview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             module_id: m.id,
             module_name: m.name,
-            test_env: $("testEnv").value,
-            risk_block: $("riskBlock").value,
+            test_env: meta.testEnv,
+            risk_block: meta.riskBlock,
             mode: "manual",
           }),
         });
@@ -816,14 +1283,16 @@
       setMsg($("manualMsg"), "发送中...", true);
       $("btnSend").disabled = true;
       try {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+        const meta = currentMetaValues();
         const res = await fetch("/api/reports/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             module_id: m.id,
             module_name: m.name,
-            test_env: $("testEnv").value,
-            risk_block: $("riskBlock").value,
+            test_env: meta.testEnv,
+            risk_block: meta.riskBlock,
             to,
             cc,
             subject: $("subject").value || null,
@@ -922,6 +1391,14 @@
     $("btnCreateSch").onclick = createSchedule;
     $("btnReloadSch").onclick = loadSchedules;
     $("btnSaveMeta").onclick = saveMeta;
+    $("testEnvPicker").onclick = (e) => {
+      const btn = e.target.closest(".env-chip");
+      if (!btn || !$("testEnvPicker").contains(btn)) return;
+      btn.classList.toggle("selected");
+      btn.setAttribute("aria-pressed", btn.classList.contains("selected") ? "true" : "false");
+      syncTestEnvHidden();
+    };
+    renderTestEnvPicker("");
     $("btnSaveReady").onclick = saveReadyStories;
     $("btnSaveReopen").onclick = saveReopenRows;
     $("btnClearReopen").onclick = clearReopenManual;
@@ -930,6 +1407,25 @@
       $("reopenBody").insertAdjacentHTML("beforeend", reopenRowHtml());
       $("reopenHint").textContent = "当前为人工维护 Reopen（点「保存 Reopen」后生效）。";
     };
+
+    async function openMetaModal() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) {
+        setMsg($("overrideMsg"), "请先选择 Module", false);
+        return;
+      }
+      setMsg($("overrideMsg"), "正在加载最新 ENV/Risk…", true);
+      try {
+        await loadOverrideForSprint(m.name);
+      } catch (e) {
+        setMsg($("overrideMsg"), String(e.message || e), false);
+        return;
+      }
+      setMsg($("overrideMsg"), "", true);
+      setMsg($("metaMsg"), "", true);
+      openModal("metaModal");
+      await acquireSectionLock("meta");
+    }
 
     async function openReadyModal() {
       if (!lastReport) {
@@ -943,6 +1439,7 @@
       renderReadyEditor();
       setMsg($("readyMsg"), "", true);
       openModal("readyModal");
+      await acquireSectionLock("stories");
     }
 
     async function openReopenModal() {
@@ -957,6 +1454,7 @@
       renderReopenEditor();
       setMsg($("reopenMsg"), "", true);
       openModal("reopenModal");
+      await acquireSectionLock("reopen");
     }
 
     $("btnOpenSend").onclick = () => {
@@ -964,8 +1462,114 @@
       setMsg($("manualMsg"), "", true);
       openModal("sendModal");
     };
+    $("btnOpenMeta").onclick = openMetaModal;
     $("btnOpenReady").onclick = openReadyModal;
     $("btnOpenReopen").onclick = openReopenModal;
+
+    async function refreshOverrideAndPreview() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) {
+        setMsg($("overrideMsg"), "请先选择 Module", false);
+        return;
+      }
+      const btn = $("btnRefreshOverride");
+      btn.disabled = true;
+      setMsg($("overrideMsg"), "正在拉取最新维护数据…", true);
+      try {
+        await loadOverrideForSprint(m.name);
+        setMsg($("overrideMsg"), "维护数据已更新，正在刷新预览…", true);
+        await preview();
+        setMsg($("overrideMsg"), "已刷新维护数据与预览", true);
+      } catch (e) {
+        setMsg($("overrideMsg"), String(e.message || e), false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+    $("btnRefreshOverride").onclick = refreshOverrideAndPreview;
+
+    async function loadFeishuStatus() {
+      const el = $("feishuStatus");
+      try {
+        const res = await fetch("/api/feishu/snapshot/status");
+        const data = await res.json();
+        const parts = [];
+        if (data.ok === true) {
+          parts.push(
+            `上次成功：${data.finishedAt || "-"} · ${data.sprint || "-"} · Stories ${data.stories ?? "-"} / Bugs ${data.bugs ?? "-"} · ${data.trigger || ""}`
+          );
+        } else if (data.ok === false) {
+          parts.push(`上次失败：${data.finishedAt || "-"} · ${data.message || "unknown"}`);
+        } else {
+          parts.push(data.message || "尚无刷新记录");
+        }
+        if (data.nextRunTime) {
+          parts.push(`下次定时：${data.nextRunTime}`);
+        } else {
+          parts.push("下次定时：未注册（检查服务端配置）");
+        }
+        el.textContent = parts.join("\n");
+        el.style.whiteSpace = "pre-line";
+      } catch (err) {
+        el.textContent = `状态加载失败：${err.message || err}`;
+      }
+    }
+
+    async function openFeishuModal() {
+      const m = selectedModule($("moduleSelect"));
+      $("feishuSprint").value = m ? m.name : "";
+      setMsg($("feishuMsg"), "", true);
+      openModal("feishuRefreshModal");
+      await loadFeishuStatus();
+    }
+
+    $("btnFeishuSnapshot").onclick = () => { openFeishuModal(); };
+
+    $("btnFeishuRefresh").onclick = async () => {
+      const sprint = ($("feishuSprint").value || "").trim();
+      if (!sprint) {
+        setMsg($("feishuMsg"), "请先选择 Module（Sprint）", false);
+        return;
+      }
+      const btn = $("btnFeishuRefresh");
+      btn.disabled = true;
+      $("btnFeishuSnapshot").disabled = true;
+      setMsg($("feishuMsg"), "正在刷新飞书快照（可能需要一两分钟）…", true);
+      try {
+        const res = await fetch("/api/feishu/snapshot/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          let detail = data.detail;
+          if (detail && typeof detail === "object") {
+            const errs = (detail.errors || []).slice(0, 5).join("；");
+            detail = `${detail.message || "失败"}${errs ? "：" + errs : ""}`;
+          }
+          throw new Error(detail || res.statusText || "刷新失败");
+        }
+        setMsg(
+          $("feishuMsg"),
+          `已更新：Stories ${data.stories} / Bugs ${data.bugs}（Ready Yes ${data.readyYes}，Delay ${data.delay}）`
+            + (data.feishuSprint && data.feishuSprint !== sprint
+              ? `；飞书 Sprint：${data.feishuSprint}`
+              : "")
+            + (data.sprintResolveNote ? `。${data.sprintResolveNote}` : ""),
+          true
+        );
+        await loadFeishuStatus();
+        await preview();
+      } catch (err) {
+        setMsg($("feishuMsg"), err.message || String(err), false);
+        await loadFeishuStatus();
+      } finally {
+        btn.disabled = false;
+        $("btnFeishuSnapshot").disabled = false;
+      }
+    };
+
     $("btnOpenSchedule").onclick = async () => {
       applyRecipientsToForms();
       const m = selectedModule($("moduleSelect"));
