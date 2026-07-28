@@ -25,6 +25,10 @@ class MeterSphereClient:
         self.project = settings.metersphere_project
         if not self.ak or not self.sk:
             raise MeterSphereError("缺少 METERSPHERE_ACCESS_KEY / METERSPHERE_SECRET_KEY")
+        # Ignore HTTP(S)_PROXY / ALL_PROXY from the process env (e.g. socks5://127.0.0.1:1080).
+        # Internal MeterSphere should be reached directly; a dead local proxy breaks preview.
+        self._session = requests.Session()
+        self._session.trust_env = False
 
     def _headers(self) -> dict[str, str]:
         plain = f"{self.ak}|{uuid.uuid4()}|{int(time.time() * 1000)}".encode()
@@ -41,13 +45,18 @@ class MeterSphereClient:
         }
 
     def api(self, method: str, path: str, body: Any = None) -> Any:
-        resp = requests.request(
-            method,
-            f"{self.base}{path}",
-            headers=self._headers(),
-            json=body,
-            timeout=60,
-        )
+        try:
+            resp = self._session.request(
+                method,
+                f"{self.base}{path}",
+                headers=self._headers(),
+                json=body,
+                timeout=60,
+            )
+        except requests.RequestException as exc:
+            raise MeterSphereError(
+                f"无法连接 MeterSphere ({self.base}): {exc}"
+            ) from exc
         if "application/json" not in resp.headers.get("Content-Type", ""):
             raise MeterSphereError(f"{method} {path} non-json HTTP {resp.status_code}")
         data = resp.json()

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QA Tools</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #1E5A96;
+      --accent-soft: #E8F0F8;
+      --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 240px);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 16px 64px;
+    }
+    .brand {
+      margin-bottom: 28px;
+    }
+    .brand h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      color: #1E4A7A;
+      letter-spacing: 0.02em;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .tools { grid-template-columns: 1fr; }
+    }
+    a.tool {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 22px 20px 20px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      transition: border-color .15s, box-shadow .15s, transform .15s;
+      min-height: 168px;
+    }
+    a.tool:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 12px 28px rgba(30, 90, 150, 0.12);
+      transform: translateY(-2px);
+    }
+    a.tool:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .tool.disabled {
+      cursor: not-allowed;
+      opacity: 0.85;
+      background: #fafbfc;
+    }
+    .tool.disabled:hover {
+      border-color: var(--line);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      transform: none;
+    }
+    .tool-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .tool.disabled .tool-kicker { color: var(--muted); }
+    .tool h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #1E4A7A;
+    }
+    .tool p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .tool-foot {
+      margin-top: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .tool.disabled .tool-foot { color: var(--muted); font-weight: 500; }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .badge.ready {
+      background: #ecfdf5;
+      color: var(--ok);
+      border-color: #a7f3d0;
+    }
+    .hint {
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .hint a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .hint a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <h1>OBIS QA Tools</h1>
+      <p>测试日常工具入口。选择下方工具开始使用。</p>
+    </header>
+
+    <div class="tools">
+      <a class="tool" href="/bug">
+        <div class="tool-kicker">飞书项目 <span class="badge ready">可用</span></div>
+        <h2>快速建 Bug</h2>
+        <p>按预设模板快速填写默认字段，编辑标题与描述后一键在飞书项目创建 Bug。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/report">
+        <div class="tool-kicker">日报 <span class="badge ready">可用</span></div>
+        <h2>QA 测试执行日报</h2>
+        <p>拉取 MeterSphere 执行数据与飞书 Story/Bug 快照，预览、维护并发送 Sprint 日报。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+    </div>
+
+    <p class="hint">日报使用说明见 <a href="/help">使用教程</a>。</p>
+  </div>
+</body>
+</html>

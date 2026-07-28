@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # APScheduler uses mon=0..sun=6 by default in cron; we store mon=1..sun=7
 _WEEKDAY_MAP = {1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat", 7: "sun"}
+FEISHU_JOB_ID = "feishu_snapshot_refresh"
 
 
 class ScheduleManager:
@@ -45,6 +45,7 @@ class ScheduleManager:
         for item in self.repo.list_all():
             if item.enabled:
                 self._add_job(item)
+        self._add_feishu_snapshot_job()
 
     def upsert_job(self, item: Schedule) -> None:
         job_id = f"schedule:{item.id}"
@@ -57,6 +58,80 @@ class ScheduleManager:
         job_id = f"schedule:{schedule_id}"
         if self.scheduler.get_job(job_id):
             self.scheduler.remove_job(job_id)
+
+    def _parse_weekdays(self, raw: str) -> list[str]:
+        days: list[str] = []
+        for part in (raw or "").split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                n = int(part)
+            except ValueError:
+                continue
+            if n in _WEEKDAY_MAP:
+                days.append(_WEEKDAY_MAP[n])
+        return days
+
+    def _add_feishu_snapshot_job(self) -> None:
+        days = self._parse_weekdays(settings.feishu_snapshot_weekdays)
+        time_str = (settings.feishu_snapshot_time or "20:20").strip()
+        if not days or ":" not in time_str:
+            logger.warning("feishu snapshot cron skipped: invalid weekdays/time")
+            return
+        hour_s, minute_s = time_str.split(":", 1)
+        try:
+            hour, minute = int(hour_s), int(minute_s)
+        except ValueError:
+            logger.warning("feishu snapshot cron skipped: bad time %r", time_str)
+            return
+        trigger = CronTrigger(
+            day_of_week=",".join(days),
+            hour=hour,
+            minute=minute,
+            timezone=ZoneInfo(settings.timezone),
+        )
+        self.scheduler.add_job(
+            self.run_feishu_snapshot_refresh,
+            trigger=trigger,
+            id=FEISHU_JOB_ID,
+            replace_existing=True,
+            coalesce=True,
+            max_instances=1,
+        )
+        logger.info(
+            "feishu snapshot cron registered: %s @ %s (%s)",
+            ",".join(days),
+            time_str,
+            settings.timezone,
+        )
+
+    def feishu_next_run_time(self) -> str | None:
+        job = self.scheduler.get_job(FEISHU_JOB_ID)
+        if not job or not job.next_run_time:
+            return None
+        return job.next_run_time.isoformat()
+
+    def run_feishu_snapshot_refresh(self) -> dict:
+        from .feishu_refresh import (
+            FeishuRefreshBusy,
+            FeishuRefreshConfigError,
+            resolve_scheduled_sprint,
+            refresh_sprint,
+        )
+
+        try:
+            sprint = resolve_scheduled_sprint()
+            return refresh_sprint(sprint, trigger="scheduled")
+        except FeishuRefreshBusy as exc:
+            logger.warning("feishu scheduled refresh busy: %s", exc)
+            return {"ok": False, "message": str(exc)}
+        except FeishuRefreshConfigError as exc:
+            logger.error("feishu scheduled refresh config: %s", exc)
+            return {"ok": False, "message": str(exc)}
+        except Exception:  # noqa: BLE001
+            logger.exception("feishu scheduled refresh failed")
+            raise
 
     def _add_job(self, item: Schedule) -> None:
         hour, minute = item.time.split(":")

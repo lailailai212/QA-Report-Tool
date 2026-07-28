@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>快速建 Bug · QA Tools</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #1E5A96;
+      --accent-soft: #E8F0F8;
+      --danger: #dc2626;
+      --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 6px; font-size: 24px; color: #1E4A7A; }
+    .sub { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .nav-link:hover { background: #eff6ff; border-color: #93c5fd; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #1E4A7A;
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .card-head h2 { margin: 0; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    label .req { color: var(--danger); }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 120px; resize: vertical; font-family: Consolas, "Microsoft YaHei", monospace; font-size: 13px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .row3 { grid-template-columns: 1fr; } }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font: inherit;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    button.secondary { background: #e5e7eb; color: #111; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .summary-box {
+      background: var(--accent-soft);
+      border: 1px solid #c5d6ea;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1E4A7A;
+      margin-top: 8px;
+    }
+    .summary-box.empty { color: var(--muted); background: #f8fafc; border-color: var(--line); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      font-size: 12px;
+    }
+    .chip button {
+      padding: 0 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1;
+    }
+    .search-row { display: flex; gap: 8px; align-items: flex-end; }
+    .search-row .field { flex: 1; }
+    .search-row button { flex-shrink: 0; margin-top: 22px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    table.tpl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.tpl th, table.tpl td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    table.tpl th { background: var(--accent-soft); color: #1E4A7A; }
+    table.tpl .ops { white-space: nowrap; }
+    table.tpl .ops button { padding: 5px 10px; font-size: 12px; margin-right: 4px; }
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 40;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 12px;
+      overflow: auto;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(820px, 100%);
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 18px 20px 20px;
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+    }
+    .modal h3 { margin: 0 0 12px; font-size: 18px; color: #1E4A7A; }
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px 10px;
+      margin-top: 4px;
+    }
+    @media (max-width: 640px) { .check-grid { grid-template-columns: 1fr 1fr; } }
+    .check-grid label {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .check-grid input { width: auto; }
+    .multi-select { min-height: 96px; }
+    .img-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .img-preview:empty { display: none; }
+    .img-card {
+      position: relative;
+      width: 120px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+    .img-card img {
+      display: block;
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      background: #fff;
+    }
+    .img-card .meta {
+      padding: 4px 6px;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .img-card .rm {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      padding: 0;
+      background: rgba(15, 23, 42, 0.72);
+      color: #fff;
+      font-size: 14px;
+      line-height: 22px;
+    }
+    .desc-editor {
+      min-height: 220px;
+      max-height: 480px;
+      overflow: auto;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.55;
+      background: #fff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .desc-editor:focus {
+      outline: 2px solid #93c5fd;
+      outline-offset: 1px;
+    }
+    .desc-editor:empty:before {
+      content: attr(data-placeholder);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .desc-editor img.desc-inline-img {
+      display: block;
+      max-width: min(100%, 520px);
+      max-height: 280px;
+      width: auto;
+      height: auto;
+      margin: 8px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: default;
+      background: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>快速建 Bug</h1>
+        <p class="sub">选择预设模板后填写标题与描述，即可在飞书项目创建 Bug。</p>
+      </div>
+      <a class="nav-link" href="/">← Home</a>
+    </div>
+
+    <section class="card">
+      <h2>创建 Bug</h2>
+      <label for="createTemplate">模板 <span class="req">*</span></label>
+      <select id="createTemplate"></select>
+      <div id="createSummary" class="summary-box empty">请先选择模板</div>
+
+      <label for="summary">Summary（标题） <span class="req">*</span></label>
+      <input id="summary" type="text" placeholder="简洁描述问题" />
+
+      <div class="row">
+        <div>
+          <label for="severity">Severity <span class="req">*</span></label>
+          <select id="severity"></select>
+        </div>
+        <div>
+          <label for="priority">Priority <span class="req">*</span></label>
+          <select id="priority"></select>
+        </div>
+      </div>
+
+      <label for="descriptionEditor">Description</label>
+      <div
+        id="descriptionEditor"
+        class="desc-editor"
+        contenteditable="true"
+        role="textbox"
+        aria-multiline="true"
+        data-placeholder="复现步骤、期望结果、实际结果…（可在光标处 Ctrl+V 粘贴截图，图文混排）"
+      ></div>
+      <div class="hint">截图粘贴在当前光标位置；创建时按文档中的图文顺序自动上传</div>
+
+      <label for="componentVersions">Component Versions <span class="req">*</span></label>
+      <textarea id="componentVersions" style="min-height:88px" placeholder="问题被发现时的各模块版本"></textarea>
+
+      <div class="actions">
+        <button id="btnCreate" type="button">创建 Bug</button>
+      </div>
+      <div id="createMsg" class="msg"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>模板管理</h2>
+        <button id="btnNewTpl" type="button">新建模板</button>
+      </div>
+      <table class="tpl">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>Sprint</th>
+            <th>环境</th>
+            <th>更新时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tplBody">
+          <tr><td colspan="5" style="color:var(--muted)">加载中…</td></tr>
+        </tbody>
+      </table>
+      <div id="tplMsg" class="msg"></div>
+    </section>
+  </div>
+
+  <div id="tplModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="tplModalTitle">新建模板</h3>
+      <input type="hidden" id="tplId" />
+
+      <label for="tplName">模板名称 <span class="req">*</span></label>
+      <input id="tplName" type="text" placeholder="如 OBIS-SIT-当前Sprint" />
+
+      <label for="tplSummary">预置 Summary（标题）</label>
+      <input id="tplSummary" type="text" placeholder="选中模板后自动填入创建表单" />
+
+      <label for="tplDescription">预置 Description</label>
+      <textarea id="tplDescription" style="min-height:100px" placeholder="复现步骤模板等，选中后自动填入"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="tplFeishuTemplate">飞书 Bug Template</label>
+          <select id="tplFeishuTemplate"></select>
+        </div>
+        <div>
+          <label for="tplEnv">Bug Environment <span class="req">*</span></label>
+          <select id="tplEnv"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="tplStage">Issue Stage <span class="req">*</span></label>
+          <select id="tplStage"></select>
+        </div>
+        <div>
+          <label for="tplExec">Execution Method <span class="req">*</span></label>
+          <select id="tplExec"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="tplSeverity">默认 Severity</label>
+          <select id="tplSeverity"></select>
+        </div>
+        <div>
+          <label for="tplPriority">默认 Priority</label>
+          <select id="tplPriority"></select>
+        </div>
+      </div>
+
+      <label>Issue Type <span class="req">*</span></label>
+      <div id="tplIssueTypes" class="check-grid"></div>
+
+      <label>Labels</label>
+      <div id="tplLabels" class="check-grid"></div>
+
+      <label for="tplSprint">Sprint</label>
+      <div class="search-row">
+        <div class="field">
+          <select id="tplSprint"></select>
+          <div class="hint">从飞书拉取；创建时写入关联 Sprint</div>
+        </div>
+        <button id="btnLoadSprints" type="button" class="secondary">刷新 Sprint</button>
+      </div>
+
+      <label>Version Found <span class="req">*</span></label>
+      <div class="search-row">
+        <div class="field">
+          <input id="versionQuery" type="text" placeholder="按名称搜索 Version" />
+        </div>
+        <button id="btnSearchVersions" type="button" class="secondary">搜索</button>
+      </div>
+      <select id="versionPick" class="multi-select" multiple size="5" style="margin-top:6px"></select>
+      <div id="versionChips" class="chips"></div>
+      <div class="hint">可多选；下方已选会随模板保存</div>
+
+      <label for="tplComponentVersions">默认 Component Versions</label>
+      <textarea id="tplComponentVersions" style="min-height:72px"></textarea>
+
+      <div class="row3">
+        <div>
+          <label>Dev Owner</label>
+          <div class="search-row">
+            <div class="field"><input id="devQuery" type="text" placeholder="姓名/邮箱" /></div>
+            <button id="btnSearchDev" type="button" class="secondary">搜</button>
+          </div>
+          <div id="devChips" class="chips"></div>
+        </div>
+        <div>
+          <label>QC Owner</label>
+          <div class="search-row">
+            <div class="field"><input id="qcQuery" type="text" placeholder="姓名/邮箱" /></div>
+            <button id="btnSearchQc" type="button" class="secondary">搜</button>
+          </div>
+          <div id="qcChips" class="chips"></div>
+        </div>
+        <div>
+          <label>Reporter</label>
+          <div class="search-row">
+            <div class="field"><input id="reporterQuery" type="text" placeholder="姓名/邮箱" /></div>
+            <button id="btnSearchReporter" type="button" class="secondary">搜</button>
+          </div>
+          <div id="reporterChips" class="chips"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnSaveTpl" type="button">保存模板</button>
+        <button id="btnCancelTpl" type="button" class="secondary">取消</button>
+      </div>
+      <div id="modalMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      meta: null,
+      templates: [],
+      selectedVersions: [],
+      roles: { devOwner: [], qcOwner: [], reporter: [] },
+      editingId: null,
+      inlineImageMap: {},
+      inlineImageSeq: 0,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function setMsg(el, text, ok) {
+      el.className = "msg " + (ok ? "ok" : "err");
+      el.innerHTML = text || "";
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+        ...opts,
+      });
+      let data = null;
+      try { data = await res.json(); } catch (_) { data = null; }
+      if (!res.ok) {
+        throw new Error(formatApiError(data, res.statusText));
+      }
+      return data;
+    }
+
+    async function apiForm(path, formData) {
+      const res = await fetch(path, { method: "POST", body: formData });
+      let data = null;
+      try { data = await res.json(); } catch (_) { data = null; }
+      if (!res.ok) {
+        throw new Error(formatApiError(data, res.statusText));
+      }
+      return data;
+    }
+
+    function formatApiError(data, statusText) {
+      const detail = data && data.detail;
+      if (typeof detail === "string") return detail;
+      if (detail && typeof detail === "object" && detail.message) return detail.message;
+      if (Array.isArray(detail)) {
+        return detail
+          .map((e) => {
+            const loc = Array.isArray(e.loc) ? e.loc.join(".") : "";
+            return (loc ? loc + ": " : "") + (e.msg || JSON.stringify(e));
+          })
+          .join("; ");
+      }
+      return statusText || "请求失败";
+    }
+
+    function fillSelect(sel, options, { emptyLabel = "", valueKey = "id", labelKey = "name" } = {}) {
+      sel.innerHTML = "";
+      if (emptyLabel) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = emptyLabel;
+        sel.appendChild(opt);
+      }
+      for (const item of options || []) {
+        const opt = document.createElement("option");
+        opt.value = item[valueKey];
+        opt.textContent = item[labelKey];
+        sel.appendChild(opt);
+      }
+    }
+
+    function optionName(list, id) {
+      const hit = (list || []).find((x) => String(x.id) === String(id));
+      return hit ? hit.name : (id || "—");
+    }
+
+    function renderCheckGrid(container, options, name) {
+      container.innerHTML = "";
+      for (const item of options || []) {
+        const lab = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.name = name;
+        input.value = item.id;
+        lab.appendChild(input);
+        lab.appendChild(document.createTextNode(item.name));
+        container.appendChild(lab);
+      }
+    }
+
+    function checkedValues(container) {
+      return [...container.querySelectorAll("input:checked")].map((x) => x.value);
+    }
+
+    function setCheckedValues(container, ids) {
+      const set = new Set((ids || []).map(String));
+      container.querySelectorAll("input").forEach((input) => {
+        input.checked = set.has(input.value);
+      });
+    }
+
+    function renderPeopleChips(roleKey) {
+      const box = $(roleKey === "devOwner" ? "devChips" : roleKey === "qcOwner" ? "qcChips" : "reporterChips");
+      box.innerHTML = "";
+      for (const p of state.roles[roleKey]) {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = p.name || p.userKey;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.onclick = () => {
+          state.roles[roleKey] = state.roles[roleKey].filter((x) => x.userKey !== p.userKey);
+          renderPeopleChips(roleKey);
+        };
+        chip.appendChild(btn);
+        box.appendChild(chip);
+      }
+    }
+
+    function renderVersionChips() {
+      const box = $("versionChips");
+      box.innerHTML = "";
+      for (const v of state.selectedVersions) {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = v.name || v.id;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.onclick = () => {
+          state.selectedVersions = state.selectedVersions.filter((x) => String(x.id) !== String(v.id));
+          renderVersionChips();
+        };
+        chip.appendChild(btn);
+        box.appendChild(chip);
+      }
+    }
+
+    function currentTemplate() {
+      const id = $("createTemplate").value;
+      return state.templates.find((t) => t.id === id) || null;
+    }
+
+    function renderCreateSummary() {
+      const tpl = currentTemplate();
+      const box = $("createSummary");
+      if (!tpl) {
+        box.className = "summary-box empty";
+        box.textContent = "请先选择模板";
+        return;
+      }
+      const f = tpl.fields || {};
+      const r = tpl.roles || {};
+      const names = (arr) => (arr || []).map((p) => p.name || p.userKey).join("、") || "—";
+      box.className = "summary-box";
+      box.innerHTML = [
+        `<div><strong>${escapeHtml(tpl.name)}</strong> · 空间 ${escapeHtml(tpl.simpleName || "obis")}</div>`,
+        `<div>Sprint：${escapeHtml((tpl.labels && tpl.labels.sprint) || "—")}</div>`,
+        `<div>Env：${escapeHtml(optionName(state.meta.bugEnvironment, f.bugEnvironmentId))} · Stage：${escapeHtml(optionName(state.meta.issueStage, f.issueStageId))} · Exec：${escapeHtml(optionName(state.meta.executionMethod, f.executionMethodId))}</div>`,
+        `<div>Issue Type：${escapeHtml((f.issueTypeIds || []).map((id) => optionName(state.meta.issueType, id)).join("、") || "—")}</div>`,
+        `<div>Version Found：${escapeHtml(((tpl.labels && tpl.labels.versionFound) || []).join("、") || "—")}</div>`,
+        `<div>Dev：${escapeHtml(names(r.devOwner))} · QC：${escapeHtml(names(r.qcOwner))} · Reporter：${escapeHtml(names(r.reporter))}</div>`,
+      ].join("");
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function countInlineImages() {
+      return $("descriptionEditor").querySelectorAll("img.desc-inline-img").length;
+    }
+
+    function setDescriptionText(text) {
+      const ed = $("descriptionEditor");
+      // Revoke old blob urls still in map that are no longer needed after reset
+      clearDescriptionEditor();
+      const raw = String(text || "");
+      if (!raw) return;
+      const lines = raw.split("\n");
+      for (const line of lines) {
+        const div = document.createElement("div");
+        div.textContent = line.length ? line : "\u200b";
+        ed.appendChild(div);
+      }
+    }
+
+    function clearDescriptionEditor() {
+      const ed = $("descriptionEditor");
+      for (const img of ed.querySelectorAll("img.desc-inline-img")) {
+        const id = img.dataset.imgId;
+        const meta = id && state.inlineImageMap[id];
+        if (meta && meta.previewUrl) URL.revokeObjectURL(meta.previewUrl);
+        if (id) delete state.inlineImageMap[id];
+      }
+      ed.innerHTML = "";
+    }
+
+    function serializeDescriptionEditor() {
+      const root = $("descriptionEditor");
+      const images = [];
+      const parts = [];
+
+      function pushText(s) {
+        if (s) parts.push(s);
+      }
+
+      function walk(node, isRoot) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          pushText((node.nodeValue || "").replace(/\u200b/g, ""));
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const tag = node.tagName;
+        if (tag === "IMG" && node.classList.contains("desc-inline-img")) {
+          const id = node.dataset.imgId;
+          const meta = id && state.inlineImageMap[id];
+          if (meta && meta.blob) {
+            const idx = images.length;
+            images.push({
+              fileName: meta.fileName,
+              mimeType: meta.mimeType,
+              blob: meta.blob,
+            });
+            parts.push(`{{IMG:${idx}}}`);
+          }
+          return;
+        }
+        if (tag === "BR") {
+          parts.push("\n");
+          return;
+        }
+        const isBlock = tag === "DIV" || tag === "P" || tag === "LI";
+        if (isBlock && !isRoot && parts.length) {
+          const last = parts[parts.length - 1];
+          if (last && !last.endsWith("\n")) parts.push("\n");
+        }
+        for (const child of node.childNodes) walk(child, false);
+        if (isBlock && !isRoot) {
+          const last = parts[parts.length - 1];
+          if (last === undefined || !last.endsWith("\n")) parts.push("\n");
+        }
+      }
+
+      walk(root, true);
+      let description = parts.join("");
+      description = description.replace(/\n+$/g, "");
+      return { description, images };
+    }
+
+    function insertNodeAtCaret(node) {
+      const ed = $("descriptionEditor");
+      ed.focus();
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) {
+        ed.appendChild(node);
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      // ensure caret is inside editor
+      if (!ed.contains(range.commonAncestorContainer)) {
+        ed.appendChild(node);
+        return;
+      }
+      range.deleteContents();
+      range.insertNode(node);
+      // move caret after image
+      range.setStartAfter(node);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    async function addDescImageFile(file) {
+      if (!file || !String(file.type || "").startsWith("image/")) return;
+      if (countInlineImages() >= 12) {
+        setMsg($("createMsg"), "最多粘贴 12 张图片", false);
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        setMsg($("createMsg"), `图片过大（>8MB）：${file.name || "paste"}`, false);
+        return;
+      }
+      const ext = (file.type.split("/")[1] || "png").replace("jpeg", "jpg");
+      const fileName = file.name || `paste-${Date.now()}.${ext}`;
+      const imgId = "img_" + (++state.inlineImageSeq);
+      const previewUrl = URL.createObjectURL(file);
+      state.inlineImageMap[imgId] = {
+        fileName,
+        mimeType: file.type || "image/png",
+        blob: file,
+        previewUrl,
+      };
+      const img = document.createElement("img");
+      img.className = "desc-inline-img";
+      img.src = previewUrl;
+      img.alt = fileName;
+      img.dataset.imgId = imgId;
+      img.contentEditable = "false";
+      insertNodeAtCaret(img);
+      const br = document.createElement("div");
+      br.innerHTML = "<br>";
+      insertNodeAtCaret(br);
+      setMsg($("createMsg"), "已在光标处插入截图，创建时按顺序上传", true);
+    }
+
+    async function onDescriptionPaste(e) {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      const imageItems = [...items].filter((it) => it.type && it.type.startsWith("image/"));
+      if (!imageItems.length) return;
+      e.preventDefault();
+      for (const it of imageItems) {
+        const file = it.getAsFile();
+        if (file) await addDescImageFile(file);
+      }
+    }
+
+    function applyTemplateDefaults() {
+      const tpl = currentTemplate();
+      renderCreateSummary();
+      if (!tpl) return;
+      const f = tpl.fields || {};
+      $("summary").value = f.summary || "";
+      setDescriptionText(f.description || "");
+      if (f.severityId) $("severity").value = f.severityId;
+      if (f.priorityId) $("priority").value = f.priorityId;
+      $("componentVersions").value = f.componentVersions || "";
+    }
+
+    function refreshTemplateSelect() {
+      const sel = $("createTemplate");
+      const prev = sel.value;
+      fillSelect(sel, state.templates, { emptyLabel: state.templates.length ? "请选择模板" : "暂无模板，请先新建", valueKey: "id", labelKey: "name" });
+      if (prev && state.templates.some((t) => t.id === prev)) sel.value = prev;
+      else if (state.templates[0]) sel.value = state.templates[0].id;
+      applyTemplateDefaults();
+    }
+
+    function envLabel(id) {
+      return optionName(state.meta && state.meta.bugEnvironment, id);
+    }
+
+    function renderTplTable() {
+      const body = $("tplBody");
+      if (!state.templates.length) {
+        body.innerHTML = `<tr><td colspan="5" style="color:var(--muted)">暂无模板，点击「新建模板」开始配置</td></tr>`;
+        return;
+      }
+      body.innerHTML = state.templates.map((t) => {
+        const sprint = (t.labels && t.labels.sprint) || "—";
+        const env = envLabel((t.fields || {}).bugEnvironmentId);
+        return `<tr>
+          <td>${escapeHtml(t.name)}</td>
+          <td>${escapeHtml(sprint)}</td>
+          <td>${escapeHtml(env)}</td>
+          <td>${escapeHtml(t.updatedAt || "—")}</td>
+          <td class="ops">
+            <button type="button" class="secondary" data-edit="${escapeHtml(t.id)}">编辑</button>
+            <button type="button" class="secondary" data-copy="${escapeHtml(t.id)}">复制</button>
+            <button type="button" class="danger" data-del="${escapeHtml(t.id)}">删除</button>
+          </td>
+        </tr>`;
+      }).join("");
+      body.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.onclick = () => openTplModal(btn.getAttribute("data-edit"));
+      });
+      body.querySelectorAll("[data-copy]").forEach((btn) => {
+        btn.onclick = () => copyTpl(btn.getAttribute("data-copy"));
+      });
+      body.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.onclick = () => deleteTpl(btn.getAttribute("data-del"));
+      });
+    }
+
+    async function loadTemplates() {
+      const data = await api("/api/bug-templates");
+      state.templates = data.templates || [];
+      refreshTemplateSelect();
+      renderTplTable();
+    }
+
+    async function loadSprints() {
+      $("btnLoadSprints").disabled = true;
+      try {
+        const data = await api("/api/bug/sprints");
+        const sprints = data.sprints || [];
+        const prev = $("tplSprint").value;
+        fillSelect($("tplSprint"), sprints, { emptyLabel: "（不关联 Sprint）", valueKey: "id", labelKey: "name" });
+        if (prev) $("tplSprint").value = prev;
+        setMsg($("modalMsg"), `已加载 ${sprints.length} 个 Sprint`, true);
+      } catch (err) {
+        setMsg($("modalMsg"), err.message, false);
+      } finally {
+        $("btnLoadSprints").disabled = false;
+      }
+    }
+
+    async function searchVersions() {
+      const q = $("versionQuery").value.trim();
+      $("btnSearchVersions").disabled = true;
+      try {
+        const data = await api("/api/bug/versions?q=" + encodeURIComponent(q));
+        const versions = data.versions || [];
+        fillSelect($("versionPick"), versions, { valueKey: "id", labelKey: "name" });
+        setMsg($("modalMsg"), versions.length ? `找到 ${versions.length} 个 Version` : "无匹配 Version", true);
+      } catch (err) {
+        setMsg($("modalMsg"), err.message, false);
+      } finally {
+        $("btnSearchVersions").disabled = false;
+      }
+    }
+
+    function addSelectedVersionsFromPick() {
+      const sel = $("versionPick");
+      const map = new Map(state.selectedVersions.map((v) => [String(v.id), v]));
+      [...sel.selectedOptions].forEach((opt) => {
+        map.set(opt.value, { id: Number(opt.value) || opt.value, name: opt.textContent });
+      });
+      state.selectedVersions = [...map.values()];
+      renderVersionChips();
+    }
+
+    async function searchUser(roleKey, inputId) {
+      const q = $(inputId).value.trim();
+      if (!q) {
+        setMsg($("modalMsg"), "请输入姓名或邮箱", false);
+        return;
+      }
+      try {
+        const data = await api("/api/bug/users?q=" + encodeURIComponent(q));
+        const users = data.users || [];
+        if (!users.length) {
+          setMsg($("modalMsg"), "未找到用户：" + q, false);
+          return;
+        }
+        const u = users[0];
+        const list = state.roles[roleKey];
+        if (!list.some((x) => x.userKey === u.userKey)) {
+          list.push({ userKey: u.userKey, name: u.name || u.email || u.userKey });
+        }
+        renderPeopleChips(roleKey);
+        setMsg($("modalMsg"), `已添加 ${u.name || u.userKey}` + (users.length > 1 ? `（共 ${users.length} 命中，取第一条）` : ""), true);
+      } catch (err) {
+        setMsg($("modalMsg"), err.message, false);
+      }
+    }
+
+    function openTplModal(id) {
+      state.editingId = id || null;
+      $("tplModalTitle").textContent = id ? "编辑模板" : "新建模板";
+      $("tplId").value = id || "";
+      setMsg($("modalMsg"), "", true);
+
+      const tpl = id ? state.templates.find((t) => t.id === id) : null;
+      $("tplName").value = tpl ? tpl.name : "";
+      $("tplSummary").value = (tpl && tpl.fields && tpl.fields.summary) || "";
+      $("tplDescription").value = (tpl && tpl.fields && tpl.fields.description) || "";
+      $("tplFeishuTemplate").value = (tpl && tpl.feishuTemplateId) || "4362903";
+      const f = (tpl && tpl.fields) || {};
+      $("tplEnv").value = f.bugEnvironmentId || "hkrnplf2t";
+      $("tplStage").value = f.issueStageId || "stage_first";
+      $("tplExec").value = f.executionMethodId || "wlht_94nl";
+      $("tplSeverity").value = f.severityId || "3";
+      $("tplPriority").value = f.priorityId || "uh67jkok0";
+      setCheckedValues($("tplIssueTypes"), f.issueTypeIds || ["1pxlw0t2u"]);
+      setCheckedValues($("tplLabels"), f.labelIds || []);
+      $("tplComponentVersions").value = f.componentVersions || "";
+
+      const sprintIds = f.sprintIds || [];
+      const sprintLabel = (tpl && tpl.labels && tpl.labels.sprint) || "";
+      if (sprintIds.length) {
+        fillSelect($("tplSprint"), [{ id: String(sprintIds[0]), name: sprintLabel || String(sprintIds[0]) }], {
+          emptyLabel: "（不关联 Sprint）",
+          valueKey: "id",
+          labelKey: "name",
+        });
+        $("tplSprint").value = String(sprintIds[0]);
+      } else {
+        fillSelect($("tplSprint"), [], { emptyLabel: "（不关联 Sprint）点击刷新加载", valueKey: "id", labelKey: "name" });
+      }
+
+      const vIds = f.versionFoundIds || [];
+      const vNames = (tpl && tpl.labels && tpl.labels.versionFound) || [];
+      state.selectedVersions = vIds.map((vid, i) => ({
+        id: vid,
+        name: vNames[i] || String(vid),
+      }));
+      renderVersionChips();
+      fillSelect($("versionPick"), [], { valueKey: "id", labelKey: "name" });
+
+      const r = (tpl && tpl.roles) || {};
+      state.roles = {
+        devOwner: [...(r.devOwner || [])],
+        qcOwner: [...(r.qcOwner || [])],
+        reporter: [...(r.reporter || [])],
+      };
+      renderPeopleChips("devOwner");
+      renderPeopleChips("qcOwner");
+      renderPeopleChips("reporter");
+
+      $("tplModal").classList.add("show");
+    }
+
+    function closeTplModal() {
+      $("tplModal").classList.remove("show");
+      state.editingId = null;
+    }
+
+    function collectTplPayload() {
+      const sprintSel = $("tplSprint");
+      const sprintId = sprintSel.value ? Number(sprintSel.value) : null;
+      const sprintName = sprintId
+        ? (sprintSel.selectedOptions[0] && sprintSel.selectedOptions[0].textContent) || ""
+        : "";
+      const issueTypeIds = checkedValues($("tplIssueTypes"));
+      if (!$("tplName").value.trim()) throw new Error("模板名称不能为空");
+      if (!issueTypeIds.length) throw new Error("请至少选择一个 Issue Type");
+      if (!state.selectedVersions.length) throw new Error("请至少选择一个 Version Found");
+      if (!$("tplEnv").value) throw new Error("请选择 Bug Environment");
+      if (!$("tplStage").value) throw new Error("请选择 Issue Stage");
+      if (!$("tplExec").value) throw new Error("请选择 Execution Method");
+
+      return {
+        name: $("tplName").value.trim(),
+        feishuTemplateId: $("tplFeishuTemplate").value,
+        fields: {
+          summary: $("tplSummary").value,
+          description: $("tplDescription").value,
+          sprintIds: sprintId ? [sprintId] : [],
+          issueTypeIds,
+          executionMethodId: $("tplExec").value,
+          labelIds: checkedValues($("tplLabels")),
+          issueStageId: $("tplStage").value,
+          bugEnvironmentId: $("tplEnv").value,
+          componentVersions: $("tplComponentVersions").value,
+          versionFoundIds: state.selectedVersions.map((v) => Number(v.id)),
+          severityId: $("tplSeverity").value,
+          priorityId: $("tplPriority").value,
+        },
+        roles: {
+          devOwner: state.roles.devOwner,
+          qcOwner: state.roles.qcOwner,
+          reporter: state.roles.reporter,
+        },
+        labels: {
+          sprint: sprintName,
+          versionFound: state.selectedVersions.map((v) => v.name),
+        },
+      };
+    }
+
+    async function saveTpl() {
+      $("btnSaveTpl").disabled = true;
+      try {
+        const payload = collectTplPayload();
+        if (state.editingId) {
+          await api("/api/bug-templates/" + encodeURIComponent(state.editingId), {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await api("/api/bug-templates", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+        }
+        closeTplModal();
+        await loadTemplates();
+        setMsg($("tplMsg"), "模板已保存", true);
+      } catch (err) {
+        setMsg($("modalMsg"), err.message, false);
+      } finally {
+        $("btnSaveTpl").disabled = false;
+      }
+    }
+
+    async function copyTpl(id) {
+      try {
+        const copied = await api(
+          "/api/bug-templates/" + encodeURIComponent(id) + "/copy",
+          { method: "POST", body: "{}" }
+        );
+        await loadTemplates();
+        setMsg($("tplMsg"), `已复制为「${copied.name || "新模板"}」`, true);
+        if (copied && copied.id) {
+          $("createTemplate").value = copied.id;
+          applyTemplateDefaults();
+        }
+      } catch (err) {
+        setMsg($("tplMsg"), err.message, false);
+      }
+    }
+
+    async function deleteTpl(id) {
+      const tpl = state.templates.find((t) => t.id === id);
+      if (!confirm(`确认删除模板「${tpl ? tpl.name : id}」？`)) return;
+      try {
+        await api("/api/bug-templates/" + encodeURIComponent(id), { method: "DELETE" });
+        await loadTemplates();
+        setMsg($("tplMsg"), "已删除", true);
+      } catch (err) {
+        setMsg($("tplMsg"), err.message, false);
+      }
+    }
+
+    async function createBug() {
+      const tpl = currentTemplate();
+      if (!tpl) {
+        setMsg($("createMsg"), "请先选择模板", false);
+        return;
+      }
+      const summary = $("summary").value.trim();
+      if (!summary) {
+        setMsg($("createMsg"), "请填写 Summary", false);
+        return;
+      }
+      const componentVersions = $("componentVersions").value;
+      if (!String(componentVersions || "").trim()) {
+        setMsg($("createMsg"), "请填写 Component Versions", false);
+        return;
+      }
+      $("btnCreate").disabled = true;
+      const packed = serializeDescriptionEditor();
+      setMsg(
+        $("createMsg"),
+        packed.images.length
+          ? `上传图片并创建中（${packed.images.length} 张）…`
+          : "创建中…",
+        true
+      );
+      try {
+        let data;
+        const meta = {
+          templateId: tpl.id,
+          summary,
+          description: packed.description,
+          severityId: $("severity").value,
+          priorityId: $("priority").value,
+          componentVersions,
+        };
+        if (packed.images.length) {
+          const fd = new FormData();
+          fd.append("meta", JSON.stringify(meta));
+          for (const img of packed.images) {
+            fd.append(
+              "images",
+              img.blob,
+              img.fileName || "paste.png"
+            );
+          }
+          data = await apiForm("/api/bugs", fd);
+        } else {
+          data = await api("/api/bugs", {
+            method: "POST",
+            body: JSON.stringify(meta),
+          });
+        }
+        const imgNote = data.uploadedImages
+          ? `，已上传 ${data.uploadedImages} 张图`
+          : "";
+        setMsg(
+          $("createMsg"),
+          `创建成功${imgNote}：<a href="${escapeHtml(data.url)}" target="_blank" rel="noopener">${escapeHtml(data.id)}</a>`,
+          true
+        );
+        // 重新套用当前模板预置，方便连续创建
+        applyTemplateDefaults();
+      } catch (err) {
+        setMsg($("createMsg"), err.message, false);
+      } finally {
+        $("btnCreate").disabled = false;
+      }
+    }
+
+    async function init() {
+      state.meta = await api("/api/bug/meta");
+      fillSelect($("severity"), state.meta.severity);
+      fillSelect($("priority"), state.meta.priority);
+      fillSelect($("tplFeishuTemplate"), state.meta.feishuTemplates);
+      fillSelect($("tplEnv"), state.meta.bugEnvironment);
+      fillSelect($("tplStage"), state.meta.issueStage);
+      fillSelect($("tplExec"), state.meta.executionMethod);
+      fillSelect($("tplSeverity"), state.meta.severity);
+      fillSelect($("tplPriority"), state.meta.priority);
+      renderCheckGrid($("tplIssueTypes"), state.meta.issueType, "issueType");
+      renderCheckGrid($("tplLabels"), state.meta.labels, "labels");
+
+      $("createTemplate").onchange = applyTemplateDefaults;
+      $("btnCreate").onclick = createBug;
+      $("descriptionEditor").addEventListener("paste", (e) => {
+        onDescriptionPaste(e).catch((err) => setMsg($("createMsg"), err.message, false));
+      });
+      // Clean orphaned blob urls when user deletes inline images via Backspace
+      $("descriptionEditor").addEventListener("input", () => {
+        const alive = new Set(
+          [...$("descriptionEditor").querySelectorAll("img.desc-inline-img")].map(
+            (img) => img.dataset.imgId
+          )
+        );
+        for (const [id, meta] of Object.entries(state.inlineImageMap)) {
+          if (!alive.has(id)) {
+            if (meta.previewUrl) URL.revokeObjectURL(meta.previewUrl);
+            delete state.inlineImageMap[id];
+          }
+        }
+      });
+      $("btnNewTpl").onclick = () => openTplModal(null);
+      $("btnCancelTpl").onclick = closeTplModal;
+      $("btnSaveTpl").onclick = saveTpl;
+      $("btnLoadSprints").onclick = loadSprints;
+      $("btnSearchVersions").onclick = searchVersions;
+      $("versionPick").onchange = addSelectedVersionsFromPick;
+      $("btnSearchDev").onclick = () => searchUser("devOwner", "devQuery");
+      $("btnSearchQc").onclick = () => searchUser("qcOwner", "qcQuery");
+      $("btnSearchReporter").onclick = () => searchUser("reporter", "reporterQuery");
+      $("tplModal").addEventListener("click", (e) => {
+        if (e.target === $("tplModal")) closeTplModal();
+      });
+
+      await loadTemplates();
+    }
+
+    init().catch((err) => {
+      setMsg($("createMsg"), "初始化失败：" + err.message, false);
+    });
+  </script>
+</body>
+</html>

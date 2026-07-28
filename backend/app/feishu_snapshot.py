@@ -13,6 +13,27 @@ from .config import ROOT
 SNAPSHOT_DIR = ROOT / "exports" / "feishu"
 
 READY_YES_STATUSES = frozenset({"待测试", "测试中", "待验收"})
+
+# Story Status 文字色（邮件内联 style；未命中用默认灰）
+STORY_STATUS_COLOR_DEFAULT = "#64748B"
+STORY_STATUS_COLORS: dict[str, str] = {
+    "待排期": "#94A3B8",
+    "待产品设计评审": "#64748B",
+    "产品设计中": "#0F766E",
+    "开发中": "#1E5A96",
+    "联调中": "#0284C7",
+    "待提测": "#EA580C",
+    "待测试": "#D97706",
+    "测试中": "#1E4A7A",
+    "待验收": "#059669",
+    "已完成": "#6B7280",
+    "已关闭": "#6B7280",
+}
+
+
+def story_status_color(status: str) -> str:
+    key = (status or "").strip()
+    return STORY_STATUS_COLORS.get(key, STORY_STATUS_COLOR_DEFAULT)
 BUG_STATUS_COLS = (
     "To Do",
     "Fixing",
@@ -179,6 +200,106 @@ def _norm_priority(priority: str) -> str:
 
 def _bug_title(bug: dict[str, Any]) -> str:
     return (bug.get("summary") or bug.get("name") or "").strip()
+
+
+def match_feishu_bug(
+    summary: str,
+    bugs: list[dict[str, Any]],
+    *,
+    min_ratio: float = STORY_MATCH_MIN_RATIO,
+) -> dict[str, Any] | None:
+    """
+    Resolve Feishu bug by summary/title.
+    1) normalize + exact
+    2) else best SequenceMatcher ratio ≥ min_ratio
+    Ambiguous top-2 → None.
+    """
+    needle = normalize_story_title(summary)
+    if not needle:
+        return None
+
+    exact: list[dict[str, Any]] = []
+    scored: list[tuple[float, dict[str, Any]]] = []
+    for b in bugs:
+        name = _bug_title(b)
+        if not name:
+            continue
+        hay = normalize_story_title(name)
+        if not hay:
+            continue
+        if hay == needle:
+            exact.append(b)
+            continue
+        ratio = SequenceMatcher(None, needle, hay).ratio()
+        if ratio >= min_ratio:
+            scored.append((ratio, b))
+
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        return exact[0]
+    if not scored:
+        return None
+    scored.sort(key=lambda x: (-x[0], _bug_title(x[1])))
+    best_ratio, best = scored[0]
+    if len(scored) > 1 and best_ratio - scored[1][0] < STORY_MATCH_AMBIGUITY_DELTA:
+        return None
+    return best
+
+
+def load_all_snapshot_bugs(*, prefer_sprint: str | None = None) -> list[dict[str, Any]]:
+    """
+    Collect bugs from all exports/feishu/*_latest.json.
+    Prefer current sprint first so same-title collisions resolve to active Sprint.
+    Deduplicate by bug id.
+    """
+    if not SNAPSHOT_DIR.exists():
+        return []
+    paths = sorted(SNAPSHOT_DIR.glob("*_latest.json"))
+    if prefer_sprint:
+        prefer = snapshot_path(prefer_sprint)
+        paths = [p for p in paths if p.resolve() == prefer.resolve()] + [
+            p for p in paths if p.resolve() != prefer.resolve()
+        ]
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for path in paths:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        for raw in data.get("bugs") or []:
+            if not isinstance(raw, dict):
+                continue
+            bid = str(raw.get("id") or "").strip()
+            if bid and bid in seen:
+                continue
+            if bid:
+                seen.add(bid)
+            out.append(raw)
+    return out
+
+
+def enrich_reopen_rows_with_urls(
+    rows: list[dict[str, Any]],
+    bugs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Fill missing reopen row url from Feishu snapshot bugs by summary match."""
+    if not rows:
+        return []
+    out: list[dict[str, Any]] = []
+    for raw in rows:
+        row = dict(raw)
+        if str(row.get("url") or "").strip():
+            out.append(row)
+            continue
+        matched = match_feishu_bug(str(row.get("summary") or row.get("name") or ""), bugs)
+        if matched and matched.get("url"):
+            row["url"] = str(matched["url"])
+        out.append(row)
+    return out
 
 
 def aggregate_bugs(bugs: list[dict[str, Any]]) -> dict[str, Any]:
