@@ -45,8 +45,11 @@
     }
     .tools {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 640px) {
       .tools { grid-template-columns: 1fr; }
@@ -157,6 +160,13 @@
         <div class="tool-kicker">日报 <span class="badge ready">可用</span></div>
         <h2>QA 测试执行日报</h2>
         <p>拉取 MeterSphere 执行数据与飞书 Story/Bug 快照，预览、维护并发送 Sprint 日报。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/completion">
+        <div class="tool-kicker">结项 <span class="badge ready">可用</span></div>
+        <h2>Sprint QA 结项总汇报</h2>
+        <p>汇总整 Sprint 用例、Story、Bug 与遗留风险，维护结项结论后预览并手动发送（无定时）。</p>
         <div class="tool-foot">进入工具 →</div>
       </a>
     </div>

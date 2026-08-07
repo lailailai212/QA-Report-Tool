@@ -43,8 +43,18 @@ from .override_locks import (
     heartbeat_lock,
     release_lock,
 )
-from .override_store import OverrideConflictError, load_override, save_override
-from .report_service import build_report, render_html
+from .override_store import (
+    OVERALL_RESULT_OPTIONS,
+    OverrideConflictError,
+    load_override,
+    save_override,
+)
+from .report_service import (
+    build_completion_report,
+    build_report,
+    render_completion_html,
+    render_html,
+)
 from .schedule_repo import ScheduleRepo
 from .scheduler import schedule_manager
 from .timeutil import now_beijing_mmdd
@@ -75,6 +85,23 @@ class PreviewRequest(BaseModel):
 
 
 class SendRequest(BaseModel):
+    module_id: str | None = None
+    module_name: str | None = None
+    test_env: str = ""
+    risk_block: str = ""
+    to: list[str] = Field(default_factory=list)
+    cc: list[str] = Field(default_factory=list)
+    subject: str | None = None
+
+
+class CompletionPreviewRequest(BaseModel):
+    module_id: str | None = None
+    module_name: str | None = None
+    test_env: str = ""
+    risk_block: str = ""
+
+
+class CompletionSendRequest(BaseModel):
     module_id: str | None = None
     module_name: str | None = None
     test_env: str = ""
@@ -126,6 +153,34 @@ class OverrideRev(BaseModel):
     meta: int | None = None
     stories: int | None = None
     reopen: int | None = None
+    completion: int | None = None
+
+
+class CompletionExitCriteria(BaseModel):
+    execPassMin: int = 95
+    p0p1OpenMax: int = 0
+
+
+class CompletionSignOffRow(BaseModel):
+    role: str
+    name: str = ""
+    result: str = ""
+    date: str = ""
+
+
+class CompletionOverride(BaseModel):
+    overallResult: str = ""
+    testOwner: str = ""
+    testWindowStart: str = ""
+    testWindowEnd: str = ""
+    exitCriteria: CompletionExitCriteria = Field(
+        default_factory=CompletionExitCriteria
+    )
+    summaryOneLiner: str = ""
+    deferredItems: str = ""
+    recommendations: str = ""
+    signOff: list[CompletionSignOffRow] = Field(default_factory=list)
+    openBugNotes: dict[str, str] = Field(default_factory=dict)
 
 
 class OverridePayload(BaseModel):
@@ -135,6 +190,7 @@ class OverridePayload(BaseModel):
     # omit = leave unchanged; null = revert to feishu; list = manual replace
     reopenRows: list[OverrideReopenRow] | None = None
     clearReopenManual: bool = False
+    completion: CompletionOverride | None = None
     expectedRev: OverrideRev | None = None
 
 
@@ -240,6 +296,11 @@ def home() -> str:
 @app.get("/report", response_class=HTMLResponse)
 def report() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/completion", response_class=HTMLResponse)
+def completion_page() -> str:
+    return (STATIC_DIR / "completion.html").read_text(encoding="utf-8")
 
 
 @app.get("/help", response_class=HTMLResponse)
@@ -490,6 +551,15 @@ def put_override(sprint: str, body: OverridePayload) -> dict[str, Any]:
         payload["reopenRows"] = None
     elif body.reopenRows is not None:
         payload["reopenRows"] = [r.model_dump() for r in body.reopenRows]
+    if body.completion is not None:
+        completion = body.completion.model_dump()
+        overall = str(completion.get("overallResult") or "").strip()
+        if overall and overall not in OVERALL_RESULT_OPTIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"overallResult 无效，可选：{', '.join(OVERALL_RESULT_OPTIONS)}",
+            )
+        payload["completion"] = completion
     expected = body.expectedRev.model_dump(exclude_none=True) if body.expectedRev else None
     try:
         saved = save_override(sprint, payload, expected_rev=expected)
@@ -565,6 +635,44 @@ def send_report(body: SendRequest) -> dict[str, Any]:
         html = render_html(report)
         subject = body.subject or (
             f"Sprint_Daily_Report_{now_beijing_mmdd()} 【{report['moduleName']}】"
+        )
+        mailer.send_html(subject=subject, html=html, to_emails=body.to, cc_emails=body.cc)
+        return {"ok": True, "subject": subject, "rows": len(report["rows"])}
+    except MeterSphereError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"发送失败: {exc}") from exc
+
+
+@app.post("/api/reports/completion/preview")
+def preview_completion_report(body: CompletionPreviewRequest) -> dict[str, Any]:
+    try:
+        report = build_completion_report(
+            module_id=body.module_id,
+            module_name=body.module_name,
+            test_env=body.test_env,
+            risk_block=body.risk_block,
+        )
+        html = render_completion_html(report)
+        return {"report": report, "html": html}
+    except MeterSphereError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.post("/api/reports/completion/send")
+def send_completion_report(body: CompletionSendRequest) -> dict[str, Any]:
+    try:
+        report = build_completion_report(
+            module_id=body.module_id,
+            module_name=body.module_name,
+            test_env=body.test_env,
+            risk_block=body.risk_block,
+        )
+        html = render_completion_html(report)
+        subject = body.subject or (
+            f"Sprint_QA_Completion_Report_{now_beijing_mmdd()} 【{report['moduleName']}】"
         )
         mailer.send_html(subject=subject, html=html, to_emails=body.to, cc_emails=body.cc)
         return {"ok": True, "subject": subject, "rows": len(report["rows"])}

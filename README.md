@@ -1,6 +1,6 @@
 # QA Report Tool
 
-Web 工具集：首页（`/`）提供工具入口；**快速建 Bug**（`/bug`）按 JSON 模板预填飞书字段并一键创建；**QA 测试执行日报**（`/report`）打开即自动拉取并预览当前模块日报（MeterSphere 执行数据 + 本地飞书 Story/Bug 快照）。手动发信、定时任务、收件人配置作为工具按钮按需使用。
+Web 工具集：首页（`/`）提供工具入口；**快速建 Bug**（`/bug`）按 JSON 模板预填飞书字段并一键创建；**QA 测试执行日报**（`/report`）打开即自动拉取并预览当前模块日报（MeterSphere 执行数据 + 本地飞书 Story/Bug 快照）；**Sprint QA 结项总汇报**（`/completion`）汇总整 Sprint 测试完成情况，支持预览与手动发信（无定时）。
 
 **组员上手（含注意事项）：** 日报页右上角 **「使用教程」**（`/help`），或看 [docs/组员使用教程.md](docs/组员使用教程.md)。
 
@@ -11,7 +11,7 @@ pip install -r requirements.txt
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
-浏览器打开：http://127.0.0.1:8000/（Home）· 建 Bug：http://127.0.0.1:8000/bug · 日报：http://127.0.0.1:8000/report
+浏览器打开：http://127.0.0.1:8000/（Home）· 建 Bug：http://127.0.0.1:8000/bug · 日报：http://127.0.0.1:8000/report · 结项：http://127.0.0.1:8000/completion
 
 **开机自启动（Windows）：** 见 [docs/开机自启动.md](docs/开机自启动.md)。快速注册：
 

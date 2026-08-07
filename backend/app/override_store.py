@@ -14,7 +14,20 @@ OVERRIDE_DIR = settings.db_path.parent / "overrides"
 # Canonical Test ENV options (order preserved when saving / displaying)
 TEST_ENV_OPTIONS = ("SIT", "UAT1", "UAT2", "PRE1", "PRE2", "PROD")
 
-SECTIONS = ("meta", "stories", "reopen")
+SECTIONS = ("meta", "stories", "reopen", "completion")
+
+OVERALL_RESULT_OPTIONS = ("Pass", "Pass with Risk", "Fail")
+
+DEFAULT_EXIT_CRITERIA = {
+    "execPassMin": 95,
+    "p0p1OpenMax": 0,
+}
+
+DEFAULT_SIGN_OFF = (
+    {"role": "QA Owner", "name": "", "result": "", "date": ""},
+    {"role": "Dev Owner", "name": "", "result": "", "date": ""},
+    {"role": "PM", "name": "", "result": "", "date": ""},
+)
 
 _sprint_locks: dict[str, threading.Lock] = {}
 _sprint_locks_guard = threading.Lock()
@@ -78,7 +91,85 @@ def override_path(sprint: str) -> Path:
 
 
 def empty_rev() -> dict[str, int]:
-    return {"meta": 0, "stories": 0, "reopen": 0}
+    return {"meta": 0, "stories": 0, "reopen": 0, "completion": 0}
+
+
+def empty_completion() -> dict[str, Any]:
+    return {
+        "overallResult": "",
+        "testOwner": "",
+        "testWindowStart": "",
+        "testWindowEnd": "",
+        "exitCriteria": dict(DEFAULT_EXIT_CRITERIA),
+        "summaryOneLiner": "",
+        "deferredItems": "",
+        "recommendations": "",
+        "signOff": [dict(row) for row in DEFAULT_SIGN_OFF],
+        "openBugNotes": {},
+    }
+
+
+def normalize_completion(raw: Any) -> dict[str, Any]:
+    base = empty_completion()
+    if not isinstance(raw, dict):
+        return base
+
+    overall = str(raw.get("overallResult") or "").strip()
+    if overall in OVERALL_RESULT_OPTIONS:
+        base["overallResult"] = overall
+    base["testOwner"] = str(raw.get("testOwner") or "").strip()
+    base["testWindowStart"] = str(raw.get("testWindowStart") or "").strip()
+    base["testWindowEnd"] = str(raw.get("testWindowEnd") or "").strip()
+    base["summaryOneLiner"] = str(raw.get("summaryOneLiner") or "").strip()
+    base["deferredItems"] = str(raw.get("deferredItems") or "")
+    base["recommendations"] = str(raw.get("recommendations") or "")
+
+    criteria_raw = raw.get("exitCriteria")
+    if isinstance(criteria_raw, dict):
+        try:
+            exec_min = int(criteria_raw.get("execPassMin"))
+        except (TypeError, ValueError):
+            exec_min = DEFAULT_EXIT_CRITERIA["execPassMin"]
+        try:
+            p0p1_max = int(criteria_raw.get("p0p1OpenMax"))
+        except (TypeError, ValueError):
+            p0p1_max = DEFAULT_EXIT_CRITERIA["p0p1OpenMax"]
+        base["exitCriteria"] = {
+            "execPassMin": max(0, min(100, exec_min)),
+            "p0p1OpenMax": max(0, p0p1_max),
+        }
+
+    sign_raw = raw.get("signOff")
+    if isinstance(sign_raw, list) and sign_raw:
+        cleaned_sign: list[dict[str, str]] = []
+        for row in sign_raw:
+            if not isinstance(row, dict):
+                continue
+            role = str(row.get("role") or "").strip()
+            if not role:
+                continue
+            cleaned_sign.append(
+                {
+                    "role": role,
+                    "name": str(row.get("name") or "").strip(),
+                    "result": str(row.get("result") or "").strip(),
+                    "date": str(row.get("date") or "").strip(),
+                }
+            )
+        if cleaned_sign:
+            base["signOff"] = cleaned_sign
+
+    notes_raw = raw.get("openBugNotes")
+    if isinstance(notes_raw, dict):
+        notes: dict[str, str] = {}
+        for key, value in notes_raw.items():
+            k = str(key or "").strip()
+            if not k:
+                continue
+            notes[k] = str(value or "").strip()
+        base["openBugNotes"] = notes
+
+    return base
 
 
 def normalize_rev(raw: Any) -> dict[str, int]:
@@ -102,6 +193,7 @@ def empty_override(sprint: str = "") -> dict[str, Any]:
         "riskBlock": "",
         "stories": {},
         "reopenRows": None,
+        "completion": empty_completion(),
     }
 
 
@@ -152,6 +244,7 @@ def load_override(sprint: str) -> dict[str, Any]:
             base["reopenRows"] = []
     else:
         base["reopenRows"] = None
+    base["completion"] = normalize_completion(data.get("completion"))
     return base
 
 
@@ -163,6 +256,8 @@ def _touched_sections(payload: dict[str, Any]) -> list[str]:
         out.append("stories")
     if "reopenRows" in payload:
         out.append("reopen")
+    if "completion" in payload:
+        out.append("completion")
     return out
 
 
@@ -264,6 +359,9 @@ def save_override(
                 except Exception:  # noqa: BLE001
                     pass
                 current["reopenRows"] = cleaned_rows
+
+        if "completion" in payload:
+            current["completion"] = normalize_completion(payload.get("completion"))
 
         for section in touching:
             rev[section] = int(rev[section]) + 1
