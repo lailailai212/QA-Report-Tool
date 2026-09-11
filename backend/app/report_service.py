@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
@@ -15,6 +16,7 @@ from .feishu_snapshot import (
     story_status_color,
 )
 from .ms_client import MeterSphereClient
+from .plan_line import evaluate_plan, is_submitted_status, row_is_ready, story_vs_plan, _status_rank
 from .override_store import (
     DEFAULT_EXIT_CRITERIA,
     OVERALL_RESULT_OPTIONS,
@@ -22,8 +24,12 @@ from .override_store import (
     load_override,
     normalize_completion,
     parse_test_env_tags,
+    split_risk_fields,
+    compose_risk_block,
+    normalize_risk_rows,
+    compose_risk_texts_from_rows,
 )
-from .timeutil import now_beijing_iso, now_beijing_mmdd
+from .timeutil import now_beijing, now_beijing_iso, now_beijing_mmdd
 
 TEMPLATES = Path(__file__).resolve().parent / "templates"
 env = Environment(
@@ -34,10 +40,139 @@ env = Environment(
 )
 
 
+def _plan_exec_counts(plan: dict[str, Any] | None) -> dict[str, int]:
+    p = plan or {}
+    design = int(p.get("design") or 0)
+    passed = int(p.get("passed") or 0)
+    failed = int(p.get("failed") or 0)
+    blocked = int(p.get("blocked") or 0)
+    if "noRun" in p and p.get("noRun") is not None:
+        no_run = int(p.get("noRun") or 0)
+    else:
+        no_run = max(0, design - passed - failed - blocked)
+    return {
+        "design": design,
+        "passed": passed,
+        "failed": failed,
+        "blocked": blocked,
+        "noRun": no_run,
+    }
+
+
+def _take_matching_plan(
+    story_name: str,
+    remaining: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Match one MS plan by summary; consume it so each plan maps to at most one Story."""
+    hit = match_feishu_story(story_name, remaining)
+    if not hit:
+        return None
+    hid = str(hit.get("id") or "")
+    for i, plan in enumerate(remaining):
+        if hid and str(plan.get("id") or "") == hid:
+            return remaining.pop(i)
+        if plan is hit:
+            return remaining.pop(i)
+    return hit
+
+
 def _pct(numer: int, denom: int) -> str:
     if denom <= 0:
         return "-"
     return f"{round(numer * 100.0 / denom)}%"
+
+
+def _story_detail_row(
+    *,
+    name: str,
+    fs: dict[str, Any],
+    plan: dict[str, Any] | None,
+    stories_ov: dict[str, Any],
+) -> dict[str, Any]:
+    exe = _plan_exec_counts(plan)
+    design = exe["design"]
+    passed = exe["passed"]
+    failed = exe["failed"]
+    blocked = exe["blocked"]
+    no_run = exe["noRun"]
+    so = match_override_story(name, stories_ov)
+    story_status = fs.get("status") or ""
+    ready = so["ready"] if "ready" in so else (fs.get("ready") or "")
+    if is_submitted_status(story_status):
+        ready = "Yes"
+    ov_ready_date = str(so.get("readyDate") or "").strip() if "readyDate" in so else ""
+    ready_date = ov_ready_date or (fs.get("readyDate") or "")
+    ov_comment = str(so.get("comment") or "").strip() if "comment" in so else ""
+    comment = ov_comment or (fs.get("comment") or "")
+    return {
+        "story": name,
+        "parentGroupName": (plan or {}).get("parentGroupName"),
+        "design": design,
+        "caseNum": design,
+        "review": None,
+        "reviewRate": None,
+        "passed": passed,
+        "failed": failed,
+        "blocked": blocked,
+        "noRun": no_run,
+        "passRate": _pct(passed, design),
+        "executablePassRate": _pct(passed, passed + failed + no_run),
+        "storyStatus": story_status,
+        "storyStatusColor": story_status_color(story_status),
+        "readyForTesting": ready,
+        "readyDate": ready_date,
+        "readyComment": comment,
+        "storyUrl": fs.get("url") or "",
+        "readyOverridden": bool(so),
+        "expectedReadyDate": fs.get("expectedReadyDate") or "",
+        "msMatched": bool(plan),
+    }
+
+
+def _story_status_sort_key(row: dict[str, Any]) -> tuple[int, int, str]:
+    rank = _status_rank(str(row.get("storyStatus") or ""))
+    name = str(row.get("story") or "")
+    if rank < 0:
+        return (1, 0, name)
+    return (0, -rank, name)
+
+
+def _build_story_rows(
+    *,
+    stories: list[dict[str, Any]],
+    plans: list[dict[str, Any]],
+    stories_ov: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Feishu Sprint stories are the row source; MS execution is matched by summary."""
+    remaining = list(plans)
+    if stories:
+        rows: list[dict[str, Any]] = []
+        for fs in stories:
+            name = str(fs.get("name") or "").strip()
+            if not name:
+                continue
+            plan = _take_matching_plan(name, remaining)
+            rows.append(
+                _story_detail_row(
+                    name=name,
+                    fs=fs,
+                    plan=plan,
+                    stories_ov=stories_ov,
+                )
+            )
+    else:
+        rows = [
+            _story_detail_row(
+                name=str(p.get("name") or "").strip(),
+                fs={},
+                plan=p,
+                stories_ov=stories_ov,
+            )
+            for p in plans
+            if str(p.get("name") or "").strip()
+        ]
+    rows.sort(key=_story_status_sort_key)
+    return rows
 
 
 def build_report(
@@ -47,6 +182,7 @@ def build_report(
     module_name: str | None = None,
     test_env: str = "",
     risk_block: str = "",
+    risk_action: str = "",
     client: MeterSphereClient | None = None,
 ) -> dict[str, Any]:
     ms = client or MeterSphereClient()
@@ -73,55 +209,38 @@ def build_report(
 
     # ENV / Risk: scheduled always from override; manual prefers request,
     # falls back to saved override so preview still works if form is empty.
+    ov_risk, ov_action = split_risk_fields(ov.get("riskBlock") or "", ov.get("riskAction"))
+    ov_rows = normalize_risk_rows(
+        ov.get("riskRows"),
+        fallback_risk=ov_risk,
+        fallback_action=ov_action,
+    )
     if mode == "scheduled":
         env_text = ov.get("testEnv") or ""
-        risk_text = ov.get("riskBlock") or ""
+        risk_rows = ov_rows
+        risk_text, action_text = (
+            compose_risk_texts_from_rows(risk_rows) if risk_rows else (ov_risk, ov_action)
+        )
     else:
         env_text = (test_env or "").strip() or (ov.get("testEnv") or "")
-        risk_text = (risk_block or "").strip() or (ov.get("riskBlock") or "")
-
-    rows = []
-    for p in raw["plans"]:
-        design = int(p["design"] or 0)
-        passed = int(p["passed"] or 0)
-        failed = int(p["failed"] or 0)
-        blocked = int(p["blocked"] or 0)
-        # Prefer MS pendingCount (未执行); fall back to residual only if missing
-        if "noRun" in p and p["noRun"] is not None:
-            no_run = int(p["noRun"] or 0)
+        if ov_rows:
+            risk_rows = ov_rows
+            risk_text, action_text = compose_risk_texts_from_rows(risk_rows)
         else:
-            no_run = max(0, design - passed - failed - blocked)
-        name = p["name"]
-        fs = match_feishu_story(name, stories) or {}
-        so = match_override_story(name, stories_ov)
-        ready = so["ready"] if "ready" in so else (fs.get("ready") or "")
-        ready_date = so["readyDate"] if "readyDate" in so else (fs.get("readyDate") or "")
-        comment = so["comment"] if "comment" in so else (fs.get("comment") or "")
+            req_risk, req_action = split_risk_fields(risk_block or "", risk_action)
+            risk_text = req_risk or ov_risk
+            action_text = req_action or ov_action
+            risk_rows = normalize_risk_rows(
+                None,
+                fallback_risk=risk_text,
+                fallback_action=action_text,
+            )
 
-        story_status = fs.get("status") or ""
-        rows.append(
-            {
-                "story": name,
-                "parentGroupName": p.get("parentGroupName"),
-                "design": design,
-                "caseNum": design,
-                "review": None,
-                "reviewRate": None,
-                "passed": passed,
-                "failed": failed,
-                "blocked": blocked,
-                "noRun": no_run,
-                "passRate": _pct(passed, design),
-                "executablePassRate": _pct(passed, passed + failed + no_run),
-                "storyStatus": story_status,
-                "storyStatusColor": story_status_color(story_status),
-                "readyForTesting": ready,
-                "readyDate": ready_date,
-                "readyComment": comment,
-                "storyUrl": fs.get("url") or "",
-                "readyOverridden": bool(so),
-            }
-        )
+    rows = _build_story_rows(
+        stories=stories,
+        plans=list(raw.get("plans") or []),
+        stories_ov=stories_ov,
+    )
 
     total_case = sum(int(r["caseNum"] or 0) for r in rows)
     total_passed = sum(int(r["passed"] or 0) for r in rows)
@@ -170,6 +289,86 @@ def build_report(
 
     report_date = now_beijing_mmdd()
     title = f"Sprint_Daily_Report_{report_date}"
+    today = now_beijing().date()
+    p0p1_open = 0
+    if bugs_agg is not None:
+        p0p1_open = len(bugs_agg.get("p0p1Rows") or [])
+    plan_eval = evaluate_plan(
+        ov.get("plan"),
+        sprint=sprint_name,
+        rows=rows,
+        p0p1_open=p0p1_open,
+        today=today,
+    )
+    reviews = plan_eval.get("reviews") or {}
+    for row in rows:
+        vs = story_vs_plan(row, today=today, reviews=reviews)
+        row["vsPlan"] = vs.get("label") or ""
+        row["vsPlanTone"] = vs.get("tone") or ""
+        row["vsPlanVerdict"] = vs.get("verdict") or ""
+        row["vsNote"] = vs.get("note") or ""
+        rv = reviews.get(str(row.get("story") or "")) or {}
+        row["reviewResult"] = rv.get("reviewResult") or ""
+        row["reviewDate"] = rv.get("reviewDate") or ""
+
+    highlight_rows = [r for r in rows if r.get("vsPlanVerdict") == "behind"]
+    highlight_rows.extend(
+        r for r in rows if r.get("vsPlanVerdict") != "behind" and int(r.get("failed") or 0) > 0
+    )
+    seen: set[str] = set()
+    slim_rows: list[dict[str, Any]] = []
+    for r in highlight_rows:
+        key = str(r.get("story") or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        slim_rows.append(r)
+        if len(slim_rows) >= 5:
+            break
+    if len(slim_rows) < 5:
+        for r in rows:
+            key = str(r.get("story") or "")
+            if key in seen:
+                continue
+            slim_rows.append(r)
+            if len(slim_rows) >= 5:
+                break
+
+    ready_yes = sum(1 for r in rows if row_is_ready(r))
+    story_total = len(rows)
+    exec_ran = row_totals["passed"] + row_totals["failed"] + row_totals["blocked"]
+    exec_pct = (
+        round(100.0 * exec_ran / row_totals["caseNum"]) if row_totals["caseNum"] else 0
+    )
+    risk_override = str(ov.get("riskLevel") or "").strip()
+    risk_key = risk_override if risk_override in {"ok", "low", "warn", "danger"} else plan_eval["risk"]
+    risk_label = {"ok": "正常", "low": "低风险", "warn": "中风险", "danger": "高风险"}.get(
+        risk_key, plan_eval.get("riskLabel") or ""
+    )
+    conclusion = str(ov.get("dailyConclusion") or "").strip() or plan_eval.get("autoConclusion") or ""
+    attention = str(ov.get("attention") or "").strip()
+    bugs_hint = ""
+    if bugs_agg:
+        p0p1 = list(bugs_agg.get("p0p1Rows") or [])
+        reopen_n = len(bugs_agg.get("reopenRows") or [])
+        if p0p1:
+            first = p0p1[0]
+            bugs_hint = (
+                f"未关 P0/P1：{first.get('priority') or ''} · {first.get('status') or ''} · "
+                f"{first.get('summary') or first.get('name') or ''}"
+            )
+        if reopen_n:
+            bugs_hint = (bugs_hint + f"。Reopen {reopen_n}。" if bugs_hint else f"Reopen {reopen_n}。")
+
+    workday = plan_eval.get("workday") or {}
+    subtitle = sprint_name
+    if workday.get("label"):
+        subtitle = f"{sprint_name} · {workday['label']}"
+
+    details_path = f"/report/details?module_name={quote(sprint_name)}"
+    if module.get("id"):
+        details_path = f"{details_path}&module_id={quote(str(module.get('id')))}"
+
     return {
         "mode": mode,
         "title": title,
@@ -178,10 +377,33 @@ def build_report(
         "testEnv": env_text,
         "testEnvTags": parse_test_env_tags(env_text),
         "riskBlock": risk_text,
+        "riskAction": action_text,
+        "riskRows": risk_rows,
+        "dailyConclusion": conclusion,
+        "attention": attention,
+        "riskLevel": risk_key,
+        "riskLabel": risk_label,
         "testingProgress": progress,
         "summary": summary,
         "rows": rows,
         "rowTotals": row_totals,
+        "slimRows": slim_rows,
+        "slimHidden": max(0, len(rows) - len(slim_rows)),
+        "kpis": {
+            "readyYes": ready_yes,
+            "storyTotal": story_total,
+            "execPct": exec_pct,
+            "execRan": exec_ran,
+            "passRate": row_totals.get("executablePassRate") or row_totals.get("passRate") or "-",
+            "bugTotal": (bugs_agg or {}).get("total") or 0,
+            "bugOpen": len((bugs_agg or {}).get("openRows") or []),
+            "bugFixedRate": ((bugs_agg or {}).get("matrixTotals") or {}).get("fixedRate") or "",
+            "p0p1Open": p0p1_open,
+        },
+        "bugsHint": bugs_hint,
+        "plan": plan_eval,
+        "subtitle": subtitle,
+        "detailsPath": details_path,
         "override": {
             "loaded": bool(ov.get("updatedAt")),
             "updatedAt": ov.get("updatedAt"),
@@ -192,6 +414,12 @@ def build_report(
             else None,
             "testEnv": ov.get("testEnv") or "",
             "riskBlock": ov.get("riskBlock") or "",
+            "riskAction": ov.get("riskAction") or "",
+            "riskRows": ov.get("riskRows") or [],
+            "dailyConclusion": ov.get("dailyConclusion") or "",
+            "attention": ov.get("attention") or "",
+            "riskLevel": ov.get("riskLevel") or "",
+            "plan": ov.get("plan") or {},
         },
         "feishu": {
             "loaded": snapshot is not None,
@@ -225,7 +453,22 @@ def render_html(report: dict[str, Any]) -> str:
     tags = payload.get("testEnvTags")
     if not tags:
         payload["testEnvTags"] = parse_test_env_tags(payload.get("testEnv"))
+    risk, action = split_risk_fields(payload.get("riskBlock"), payload.get("riskAction"))
+    payload["riskBlock"] = risk
+    payload["riskAction"] = action
     template = env.get_template("daily_report_email.html")
+    return template.render(report=payload)
+
+
+def render_details_html(report: dict[str, Any]) -> str:
+    payload = dict(report)
+    tags = payload.get("testEnvTags")
+    if not tags:
+        payload["testEnvTags"] = parse_test_env_tags(payload.get("testEnv"))
+    risk, action = split_risk_fields(payload.get("riskBlock"), payload.get("riskAction"))
+    payload["riskBlock"] = risk
+    payload["riskAction"] = action
+    template = env.get_template("daily_report_details.html")
     return template.render(report=payload)
 
 
@@ -404,7 +647,10 @@ def build_completion_report(
         open_p0=open_p0,
         open_p1=open_p1,
         open_bugs=len(open_rows),
-        risk_text=str(base.get("riskBlock") or ""),
+        risk_text=compose_risk_block(
+            base.get("riskBlock") or "",
+            base.get("riskAction") or "",
+        ),
         criteria=criteria,
     )
     manual_result = str(completion.get("overallResult") or "").strip()
@@ -460,7 +706,10 @@ def build_completion_report(
         "moduleId": base.get("moduleId"),
         "testEnv": base.get("testEnv"),
         "testEnvTags": base.get("testEnvTags") or [],
-        "riskBlock": base.get("riskBlock") or "",
+        "riskBlock": compose_risk_block(
+            base.get("riskBlock") or "",
+            base.get("riskAction") or "",
+        ),
         "testOwner": completion.get("testOwner") or "",
         "testWindow": test_window,
         "testWindowStart": window_start,

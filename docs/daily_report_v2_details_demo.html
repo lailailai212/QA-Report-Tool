@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>日报详情 Demo · OBIS-20260824-20260904</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #fff;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --accent: #171717;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --teal: #0d9488;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --fill: #f4f4f5;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    h2 {
+      margin: 28px 0 12px;
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+      scroll-margin-top: 16px;
+    }
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    a { color: var(--text); }
+    a:hover { color: var(--info); }
+
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+    .back {
+      display: inline-block;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .back:hover { color: var(--info); }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+      margin: 8px 0 12px;
+      padding: 4px 0 8px;
+    }
+    .kpi { background: none; border: none; padding: 0; }
+    .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--text); }
+    .kpi .label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .kpi.ok .value { color: var(--ok); }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.danger .value { color: var(--danger); }
+    .kpi.teal .value { color: var(--teal); }
+
+    table.data {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      font-size: 13px;
+      margin: 0 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data th {
+      background: var(--fill);
+      color: var(--text);
+      font-weight: 650;
+    }
+    table.data td.num, table.data th.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data tr.row-warn td { background: #fffbeb; }
+    table.data td.muted, .muted { color: var(--muted); font-size: 12px; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .status i {
+      width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+    }
+    .status.ok i { background: var(--dot-ok); }
+    .status.warn i { background: var(--dot-warn); }
+    .status.danger i { background: var(--dot-danger); }
+
+    @media (max-width: 900px) {
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/demo/daily-report">← 返回日报样本</a>
+  <h1>日报详情（Demo）</h1>
+  <p class="sub">对应邮件里的「查看详情」。Sprint OBIS-20260824-20260904 · 数据截止 2026-08-27 17:00 · 虚构样本。</p>
+
+  <div class="banner">本页展示邮件里收掉的全量数据：测试计划排期、Story 执行、Bug 矩阵。正式版将挂到工具页，不塞进邮件。</div>
+
+  <h2 id="plan">1. 测试计划明细</h2>
+  <p class="hint">Sprint 级窗口见日报测试计划。下表为各 Story 计划提测 vs 实际提测与执行排期。</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th style="width:36px;">#</th>
+        <th>Story</th>
+        <th>计划提测</th>
+        <th>实际提测</th>
+        <th>测试执行排期</th>
+        <th>排期状态</th>
+        <th>Dev Owner</th>
+        <th>QC</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-warn">
+        <td>1</td>
+        <td>PKI-Cert-S40 Validation Services</td>
+        <td>08-25</td>
+        <td>08-27（晚 2 天）</td>
+        <td>08-26 ~ 08-29</td>
+        <td><span class="status warn"><i></i>执行中·偏慢</span></td>
+        <td>王辉</td>
+        <td>张蒙</td>
+      </tr>
+      <tr class="row-warn">
+        <td>2</td>
+        <td>【体验优化P2】Product（Batch）</td>
+        <td>08-26</td>
+        <td>未提测（计划今日）</td>
+        <td>08-27 ~ 08-29</td>
+        <td><span class="status warn"><i></i>提测延迟</span></td>
+        <td>王辉</td>
+        <td>李向丹</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>[SEMS] E1-S06 使用情况 Tab</td>
+        <td>08-25</td>
+        <td>08-25</td>
+        <td>08-25 ~ 08-28</td>
+        <td><span class="status ok"><i></i>按排期</span></td>
+        <td>陈凯</td>
+        <td>魏来</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>【自注册】002-01 Demo 数据预设</td>
+        <td>08-24</td>
+        <td>08-24</td>
+        <td>08-24 ~ 08-26</td>
+        <td><span class="status ok"><i></i>已完成</span></td>
+        <td>孙伟</td>
+        <td>张瑞瑞</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>GPCA 证书列表筛选</td>
+        <td>08-27</td>
+        <td>08-26（早 1 天）</td>
+        <td>08-27 ~ 08-29</td>
+        <td><span class="status ok"><i></i>Ahead</span></td>
+        <td>邱建益</td>
+        <td>张蒙</td>
+      </tr>
+      <tr>
+        <td colspan="8" class="muted">其余 13 条按排期推进，不在邮件展示。正式版支持筛选 Behind / Delay。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="exec">2. Story 执行明细</h2>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="value">480</div>
+      <div class="label">用例总数</div>
+    </div>
+    <div class="kpi warn">
+      <div class="value">38%</div>
+      <div class="label">已执行 182</div>
+    </div>
+    <div class="kpi">
+      <div class="value">168 / 6 / 3</div>
+      <div class="label">Pass / Fail / Block</div>
+    </div>
+    <div class="kpi ok">
+      <div class="value">96.6%</div>
+      <div class="label">Exec Pass</div>
+    </div>
+  </div>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Story</th>
+        <th>Status</th>
+        <th>Pass / Fail / Block / NoRun</th>
+        <th class="num">Exec Pass</th>
+        <th>vs 计划</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-warn">
+        <td>1</td>
+        <td><a href="#">PKI-Cert-S40 Validation Services</a></td>
+        <td>测试中</td>
+        <td>32 / 5 / 0 / 8</td>
+        <td class="num">86.5%</td>
+        <td><span class="status warn"><i></i>Ready Delay</span></td>
+        <td>提测晚 2 天，失败用例收敛中</td>
+      </tr>
+      <tr class="row-warn">
+        <td>2</td>
+        <td><a href="#">【体验优化P2】Product（Batch）</a></td>
+        <td>待测试</td>
+        <td>0 / 0 / 0 / 40</td>
+        <td class="num">—</td>
+        <td><span class="status warn"><i></i>Behind</span></td>
+        <td>计划今日 Ready，尚未提测</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><a href="#">[SEMS] E1-S06 使用情况 Tab</a></td>
+        <td>测试中</td>
+        <td>50 / 1 / 1 / 1</td>
+        <td class="num">98.0%</td>
+        <td><span class="status ok"><i></i>On track</span></td>
+        <td>Block×1 = 环境账号，非交付阻塞</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><a href="#">【自注册】002-01 Demo 数据预设</a></td>
+        <td>待验收</td>
+        <td>28 / 0 / 0 / 0</td>
+        <td class="num" style="color:var(--ok);font-weight:700;">100%</td>
+        <td><span class="status ok"><i></i>Ahead</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><a href="#">GPCA 证书列表筛选</a></td>
+        <td>测试中</td>
+        <td>18 / 0 / 0 / 12</td>
+        <td class="num">100%</td>
+        <td><span class="status ok"><i></i>Ahead</span></td>
+        <td>提前 1 天 Ready</td>
+      </tr>
+      <tr>
+        <td colspan="7" class="muted">Total（示例 5 行）：128 / 6 / 1 / 61　·　其余健康 Story 见工具筛选。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="bugs">3. Bug 明细</h2>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="value">96</div>
+      <div class="label">Bug 总计</div>
+    </div>
+    <div class="kpi">
+      <div class="value">19</div>
+      <div class="label">未关闭</div>
+    </div>
+    <div class="kpi ok">
+      <div class="value">80%</div>
+      <div class="label">Fixed Rate</div>
+    </div>
+    <div class="kpi danger">
+      <div class="value">0 / 1</div>
+      <div class="label">未关 P0 / P1</div>
+    </div>
+  </div>
+  <p class="hint">Priority × Status 矩阵（邮件默认不展开）</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th class="num">Open</th>
+        <th class="num">Fixing</th>
+        <th class="num">Fixed</th>
+        <th class="num">Closed</th>
+        <th class="num">Won't Fix</th>
+        <th class="num">Total</th>
+        <th class="num">Fixed Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>P0</b></td>
+        <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td class="num">100%</td>
+      </tr>
+      <tr>
+        <td style="color:var(--danger);font-weight:650;">P1</td>
+        <td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">8</td><td class="num">0</td><td class="num">11</td><td class="num">91%</td>
+      </tr>
+      <tr>
+        <td>P2</td>
+        <td class="num">4</td><td class="num">6</td><td class="num">10</td><td class="num">28</td><td class="num">1</td><td class="num">49</td><td class="num">78%</td>
+      </tr>
+      <tr>
+        <td>P3</td>
+        <td class="num">5</td><td class="num">3</td><td class="num">6</td><td class="num">19</td><td class="num">1</td><td class="num">34</td><td class="num">74%</td>
+      </tr>
+      <tr>
+        <td><b>Total</b></td>
+        <td class="num"><b>9</b></td><td class="num"><b>10</b></td><td class="num"><b>18</b></td><td class="num"><b>57</b></td><td class="num"><b>2</b></td><td class="num"><b>96</b></td><td class="num"><b>80%</b></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>未关闭 P0/P1</h3>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Summary</th>
+        <th>Owner</th>
+        <th>停留</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:var(--danger);font-weight:650;">P1</td>
+        <td>Fixing</td>
+        <td><a href="#">【GPCA】证书重名时提示信息位置错误</a></td>
+        <td>邱建益</td>
+        <td>2 天</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Reopen</h3>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th>Summary</th>
+        <th class="num">Times</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>P2</td>
+        <td>sems 页面 join time 显示有误</td>
+        <td class="num">1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="risks">4. 风险与应对（全量）</h2>
+  <p class="hint">与日报同一份清单。邮件只报仍 Open / 待确认；本页可含已关闭供追溯。</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>类别</th>
+        <th>类型</th>
+        <th>描述</th>
+        <th>对测试计划收口的影响</th>
+        <th>负责人</th>
+        <th>需要动作</th>
+        <th>状态</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><span class="status danger"><i></i>问题</span></td>
+        <td>提测延迟</td>
+        <td>PKI S40、Product Batch 晚于计划 Ready</td>
+        <td>后半程堆叠，回归窗口可能不足</td>
+        <td><b>王辉</b></td>
+        <td>明日 12:00 前补提测；QC 冒烟优先</td>
+        <td><span class="status warn"><i></i>处理中</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><span class="status danger"><i></i>问题</span></td>
+        <td>缺陷阻塞</td>
+        <td>P1 证书重名提示未关</td>
+        <td>对应 Story 无法验收</td>
+        <td><b>邱建益</b></td>
+        <td>今日修复并提验</td>
+        <td><span class="status danger"><i></i>Open</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><span class="status warn"><i></i>风险</span></td>
+        <td>进度偏差</td>
+        <td>剩余 6 个工作日 vs 未跑 298 条 + 晚提测回流</td>
+        <td>可能无法按 09-02 完成执行、09-04 结项</td>
+        <td><b>张蒙</b></td>
+        <td>周五复查执行曲线；不行则提请裁剪范围</td>
+        <td><span class="status warn"><i></i>Open</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><span class="status warn"><i></i>风险</span></td>
+        <td>范围变更</td>
+        <td>协作烧录客户端性能测试</td>
+        <td>挤占 1 人日回归</td>
+        <td><b>海洋</b></td>
+        <td>确认是否纳入本 Sprint</td>
+        <td><span class="status warn"><i></i>待确认</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>问题</td>
+        <td>环境依赖</td>
+        <td>UAT1 烧录账号偶发失效（已恢复）</td>
+        <td>曾阻塞 3 条用例，不计入交付阻塞</td>
+        <td><b>魏来</b></td>
+        <td>—</td>
+        <td><span class="status ok"><i></i>已关闭</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

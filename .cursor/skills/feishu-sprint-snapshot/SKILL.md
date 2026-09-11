@@ -13,10 +13,11 @@ description: >-
 
 ## 硬约束（违反即失败，禁止覆盖 latest）
 
-1. **口径唯一**：仅 `WHERE Sprint = '{sprint}'` 的工作项类型  
+1. **口径唯一**：仅 `WHERE array_contains(\`Sprint\`, '{sprint}')` 的工作项类型  
    - Story：`User Story`  
    - Bug：`Bug`（禁止用已弃用 `Bug（即将弃用）` / `issue`）  
-   - **禁止**用「关联 Story 的 Sprint」替代 Bug 自身 Sprint 字段
+   - **禁止**用「关联 Story 的 Sprint」替代 Bug 自身 Sprint 字段  
+   - Sprint 为多选：必须用 `array_contains`，禁止 `Sprint =`（会漏掉同时挂多个 Sprint 的项）
 2. **全量分页**：以首次响应 `list[0].count` 为期望总数；翻页直到 `collected == count`
 3. **无丢条**：`len(stories) == storyCount` 且 `unique(id) == len`；Bug 同理
 4. **先校验再覆盖**：先写归档 / 临时文件 → 跑校验脚本 → 通过后才覆盖 `_latest.json`
@@ -43,7 +44,7 @@ description: >-
 ```sql
 SELECT `Item Id`, `Summary`, `Status`, status_time('待测试'), get_node_attribute('开发','__排期_结束时间')
 FROM `OBIS`.`User Story`
-WHERE `Sprint` = '{sprint}'
+WHERE array_contains(`Sprint`, '{sprint}')
 ```
 
 **Bugs**
@@ -51,9 +52,10 @@ WHERE `Sprint` = '{sprint}'
 ```sql
 SELECT `Item Id`, `Summary`, `Status`, `Priority`
 FROM `OBIS`.`Bug`
-WHERE `Sprint` = '{sprint}'
+WHERE array_contains(`Sprint`, '{sprint}')
 ```
 
+> Sprint 是多选字段。`Sprint = 'x'` 只匹配「恰好等于单值 x」的项，会漏掉同时挂「上一 Sprint + 当前 Sprint」的跨 Sprint Bug。必须用 `array_contains`。
 ## 分页规程（无丢失关键）
 
 ```
@@ -88,7 +90,7 @@ WHERE `Sprint` = '{sprint}'
 | `id` | `Item Id` → string |
 | `name` | Summary 标题 |
 | `status` | Status **label**（勿用 key） |
-| `ready` | status ∈ {待测试, 测试中, 待验收} → `"Yes"`，否则 `"No"` |
+| `ready` | status ∈ {待测试, 测试中, 待验收, 已验收, 待闭环, 已完成, 已关闭} → `"Yes"`，否则 `"No"` |
 | `readyDate` | `status_time('待测试')` 取 `YYYY-MM-DD`；无则 `""` |
 | `expectedReadyDate` | 开发节点 `__排期_结束时间` 列表日期的 **max**；无则 `""` |
 | `comment` | 两者非空且 `readyDate > expectedReadyDate` → `"提测Delay"`，否则 `""` |
@@ -133,7 +135,7 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
   "projectKey": "67f5e379dd7f8a00d58f4b0e",
   "simpleName": "obis",
   "rules": {
-    "readyYesStatuses": ["待测试", "测试中", "待验收"],
+    "readyYesStatuses": ["待测试", "测试中", "待验收", "已验收", "待闭环", "已完成", "已关闭"],
     "readyDateFrom": "status_enter_待测试",
     "expectedReadyDateFrom": "开发节点排期结束日_max",
     "delayComment": "提测Delay",

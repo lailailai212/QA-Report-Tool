@@ -811,7 +811,13 @@
       lastOverride = data;
       fillCompletionForm(data.completion || emptyCompletion());
       renderTestEnvPicker(parseTestEnvTags(data.testEnv || ""));
-      $("riskBlock").value = data.riskBlock || "";
+      $("riskBlock").value = (() => {
+        const risk = (data.riskBlock || "").trim();
+        const action = (data.riskAction || "").trim();
+        if (risk && action) return `风险：${risk}\n应对措施：${action}`;
+        if (action) return `应对措施：${action}`;
+        return risk;
+      })();
       $("overrideMeta").textContent = data.updatedAt
         ? `维护更新于 ${data.updatedAt}`
         : "尚无维护数据";

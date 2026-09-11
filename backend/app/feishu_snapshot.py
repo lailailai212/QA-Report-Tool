@@ -12,13 +12,16 @@ from .config import ROOT
 
 SNAPSHOT_DIR = ROOT / "exports" / "feishu"
 
-READY_YES_STATUSES = frozenset({"待测试", "测试中", "待验收"})
+READY_YES_STATUSES = frozenset(
+    {"待测试", "测试中", "待验收", "已验收", "待闭环", "已完成", "已关闭"}
+)
 
 # Story Status 文字色（邮件内联 style；未命中用默认灰）
 STORY_STATUS_COLOR_DEFAULT = "#64748B"
 STORY_STATUS_COLORS: dict[str, str] = {
     "待排期": "#94A3B8",
     "待产品设计评审": "#64748B",
+    "待技术评审": "#64748B",
     "产品设计中": "#0F766E",
     "开发中": "#1E5A96",
     "联调中": "#0284C7",
@@ -26,6 +29,8 @@ STORY_STATUS_COLORS: dict[str, str] = {
     "待测试": "#D97706",
     "测试中": "#1E4A7A",
     "待验收": "#059669",
+    "已验收": "#059669",
+    "待闭环": "#0F766E",
     "已完成": "#6B7280",
     "已关闭": "#6B7280",
 }

@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 管理层报告方案 · OBIS-20260810—20260821</title>
+  <!--
+    Sprint 管理层报告 HTML 模板（浏览器预览；本期数字已按 sprint数据导出-OBIS (31) 校验）
+    用法：复制本文件，替换标注「人工」的叙事与「自动」的数字；可折叠节打开时展开。
+    口径：验收闭环 = 仅已验收；类型完成 = 已验收+待验收；故事点 = 子任务 Estimated（DEV/QC），父项已验收或待验收计完成。
+  -->
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #fff;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --line-soft: #ececec;
+      --accent: #171717;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --teal: #0d9488;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --fill: #f4f4f5;
+      --callout-warn-bg: #fffbeb;
+      --callout-warn-bd: #fde68a;
+      --callout-info-bg: #f8fafc;
+      --callout-info-bd: #e5e7eb;
+      --callout-danger-bg: #fef2f2;
+      --callout-danger-bd: #fecaca;
+      --callout-ok-bg: #ecfdf5;
+      --callout-ok-bd: #a7f3d0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .footnote { color: var(--muted); font-size: 12px; margin-top: 24px; }
+    h2, .h2 {
+      margin: 28px 0 12px;
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    .section-lead {
+      margin: -2px 0 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #404040;
+      background: var(--fill);
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      outline: none;
+      cursor: text;
+    }
+    .section-lead:focus {
+      border-color: var(--info);
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+    }
+    .section-lead:empty::before {
+      content: attr(data-placeholder);
+      color: var(--muted);
+      font-style: italic;
+    }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .tab {
+      font: inherit;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+      background: var(--fill);
+      color: #404040;
+      cursor: pointer;
+    }
+    .tab.active { background: #262626; color: #fff; font-weight: 600; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr) 112px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+      font-size: 13px;
+    }
+    .meta > div { padding: 9px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .meta > div:nth-child(4n) { border-right: none; }
+    .meta > div:nth-last-child(-n+4) { border-bottom: none; }
+    .meta .k { background: var(--fill); font-weight: 650; color: var(--text); }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--callout-warn-bd);
+      background: var(--callout-warn-bg);
+      border-radius: 10px;
+    }
+    .callout.info { background: var(--callout-info-bg); border-color: var(--callout-info-bd); }
+    .callout.danger { background: var(--callout-danger-bg); border-color: var(--callout-danger-bd); }
+    .callout.ok { background: var(--callout-ok-bg); border-color: var(--callout-ok-bd); }
+    .callout .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .callout .title .ico {
+      width: 18px; height: 18px; flex: 0 0 auto; color: var(--warn);
+    }
+    .callout p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--text); }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+      margin: 8px 0 8px;
+      padding: 4px 0 8px;
+    }
+    .kpi { background: none; border: none; padding: 0; }
+    .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--text); }
+    .kpi .label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .kpi.ok .value { color: var(--ok); }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.danger .value { color: var(--danger); }
+    .kpi.teal .value { color: var(--teal); }
+
+    table.data {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      font-size: 13px;
+      margin: 0 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data th {
+      background: var(--fill);
+      color: var(--text);
+      font-weight: 650;
+    }
+    table.data th.num,
+    table.data td.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data td.manual {
+      color: var(--muted);
+      font-style: italic;
+      min-width: 9em;
+    }
+    table.data tr.row-danger td:first-child { color: var(--danger); font-weight: 650; }
+    table.data tr.row-warn td:first-child { color: var(--warn); font-weight: 650; }
+    table.data.kv td:first-child {
+      background: var(--fill);
+      font-weight: 650;
+      width: 7.5em;
+      white-space: nowrap;
+    }
+    table.data.plain { border: none; border-radius: 0; }
+    table.data.plain th { background: var(--fill); }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .status.lg { font-size: 20px; gap: 8px; }
+    .status i {
+      width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+    }
+    .status.lg i { width: 18px; height: 18px; }
+    .status.ok i { background: var(--dot-ok); }
+    .status.warn i { background: var(--dot-warn); }
+    .status.danger i { background: var(--dot-danger); }
+
+    .delta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .delta svg { flex: 0 0 auto; }
+    .delta.good { color: var(--text); }
+    .delta.good svg { fill: var(--info); }
+    .delta.bad { color: var(--danger); }
+    .delta.bad svg { fill: var(--danger); }
+    .delta.flat { color: var(--ok); }
+    .delta.flat svg { fill: var(--ok); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .grid-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .card h3 { margin: 0 0 8px; }
+    .card .trailing { float: right; font-size: 12px; color: var(--muted); font-weight: 500; }
+
+    details.fold {
+      border: none;
+      background: transparent;
+      margin: 8px 0;
+    }
+    details.fold > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      background: none;
+    }
+    details.fold[open] > summary { border-bottom: none; }
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.fold > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 1.1em;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    details.fold[open] > summary::before { content: "▾"; }
+    .fold-body { padding: 4px 0 12px; }
+
+    .chart-caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .legend { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+    .legend .dev { background: var(--info); }
+    .legend .qc { background: var(--ok); }
+    .legend .found { background: var(--info); }
+    .legend .fixed { background: var(--ok); }
+    .legend .acc { background: var(--warn); }
+    .legend .pt { background: var(--ok); }
+
+    svg.line, svg.col { width: 100%; height: 220px; display: block; }
+    hr { border: none; border-top: 1px solid var(--line); margin: 28px 0 12px; }
+
+    @media (max-width: 900px) {
+      .kpis, .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-split, .meta { grid-template-columns: 1fr; }
+      .meta > div { border-right: none; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .banner, .tabs { display: none; }
+      .panel { display: none !important; }
+      .panel.active { display: block !important; }
+      details.fold { border: none; }
+      details.fold > summary { background: none; padding-left: 0; }
+      details.fold > summary::before { content: none; }
+      .section-lead { border-style: solid; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <b>【数据已按导出校验】</b> Item / Bug / 故事点（任务估分）来自
+      <code>sprint数据导出-OBIS (31)</code>。范围移入/移出见第 6 节明细表。各节标题下灰框为<strong>可编辑一句话总结</strong>（点击直接改，保存 HTML 即可）。环比、近 4 期、Reopen、生产缺陷等导出中无，标「无导出」。叙事仍需 PM 确认。
+    </div>
+
+    <h1>Sprint 管理层报告方案</h1>
+    <p class="sub">OBIS-20260810—20260821 · 数据源：飞书导出 xlsx（US/TI/Task/Bug/任务）· 故事点口径：子任务 Estimated（DEV/QC）× 父项已验收或待验收</p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="report">最终报告</button>
+      <button type="button" class="tab" data-tab="diff">取舍说明</button>
+      <button type="button" class="tab" data-tab="source">数据来源</button>
+    </div>
+
+    <!-- ===================== 最终报告 ===================== -->
+    <div id="panel-report" class="panel active">
+      <div class="meta">
+        <div class="k">报告周期</div>
+        <div>Sprint OBIS-20260810—20260821｜2026-08-10—2026-08-21</div>
+        <div class="k">对比周期</div>
+        <div>无导出（本包仅含本期）</div>
+        <div class="k">团队</div>
+        <div>OBIS</div>
+        <div class="k">负责人</div>
+        <div>待确认</div><!-- 人工 -->
+      </div>
+
+      <div class="callout">
+        <div class="title">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3.8 L22 20.2 H2 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M12 10 v5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="12" cy="17.6" r="0.9" fill="currentColor"/>
+          </svg>
+          <span>总体状态</span>
+          <span class="status danger lg"><i></i>未达预期</span><!-- 人工：正常 / 有风险 / 未达预期 -->
+        </div>
+        <p><b>一句话总结</b>　验收闭环 51/73（69.9%），故事点完成 65.3/95.1（68.7%）；技改仅 4/13（30.8%）。缺陷 141、修复率 66.0%（Critical 4/7），归一化 DQS 8.29。点与项均未收口，质量与技改是主要风险。</p>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi warn">
+          <div class="value">69.9%</div>
+          <div class="label">验收闭环（51/73）</div>
+        </div>
+        <div class="kpi danger">
+          <div class="value">68.7%</div>
+          <div class="label">故事点完成（65.3/95.1）</div>
+        </div>
+        <div class="kpi danger">
+          <div class="value">66.0%</div>
+          <div class="label">缺陷修复率（93/141）</div>
+        </div>
+        <div class="kpi danger">
+          <div class="value">8.29</div>
+          <div class="label">归一化 DQS（越低越好）</div>
+        </div>
+      </div>
+
+      <h2>1. 摘要</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">交付与质量均未达预期；技改完成率低、范围变更大，管理层需关注组件化口径与线上问题优先级。</p>
+      <table class="data kv">
+        <thead><tr><th>维度</th><th>结论</th></tr></thead>
+        <tbody>
+          <tr><td>Sprint 目标</td><td>生产 Cloud 升级（叙事待 PM 确认）；技改完成仅 4/13；范围移入/移出本包无对照</td></tr>
+          <tr><td>业务成果</td><td>生产环境 Cloud 已升级至 V3.3.2；Edge 大文件能力放到下一 Sprint</td></tr>
+          <tr><td>交付表现</td><td>开发完成 38.8/58.4 点（66.4%），测试完成 26.5/36.7 点（72.2%）。合计 65.3/95.1（68.7%）；未闭环 22 个 Item 仍挂 29.8 点，点和项都没烧完</td></tr>
+          <tr><td>质量表现</td><td>缺陷 141、修复 93（66.0%）；Critical 4/7（57.1%）；根因 TBD 78/141（55.3%）；基础 DQS 321.5，归一化 8.29</td></tr>
+          <tr><td>管理层关注</td><td>1）组件化是否正式降级为本期目标　2）线上问题是否插队 Hotfix　3）关闭缺陷前强制填根因</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. Sprint 目标与成果</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">Cloud V3.3.2 已上线但出现数据转换问题；权限收敛与组件化完成度不足，部分目标仍待 PM 书面确认。</p>
+      <div class="callout info">
+        <div class="title">目标来源说明</div>
+        <p style="font-size:13px;">原报告没有冻结的 Sprint Goal。下表由「亮点 / 关注 / 范围变更」反推，需 PM 在计划会补冻结，下期起改为自动对照。</p>
+      </div>
+      <table class="data">
+        <thead><tr><th>目标</th><th>预期结果</th><th>实际结果</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>生产 Cloud 升级</td><td>V3.3.2 上线且稳定</td>
+            <td>已升级；发布后出现多例数据转换问题</td>
+            <td><span class="status warn"><i></i>部分完成</span></td>
+          </tr>
+          <tr>
+            <td>权限与模块入口收敛</td><td>相关 Story 验收</td>
+            <td>本期导出无范围对照；需 PM 确认是否仍为本期目标</td>
+            <td><span class="status warn"><i></i>待确认</span></td>
+          </tr>
+          <tr>
+            <td>组件化 P1/P2</td><td>技改按计划推进</td>
+            <td>技改完成 4/13（30.8%），点 4.0/12.0；范围移出本包无对照</td>
+            <td><span class="status danger"><i></i>未完成</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. 核心指标看板</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">验收闭环、故事点、缺陷修复率、DQS 均未达建议目标；生产缺陷等 4 项指标仍待补充。</p>
+      <p class="hint">本期数字已按导出校验。上期 / 环比本包导出中无，标「无导出」。故事点 = 子任务 Estimated（DEV/QC），父项已验收或待验收计入完成。生产缺陷等 4 项仍待填。</p>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>指标</th>
+            <th class="num">本期</th>
+            <th class="num">上期</th>
+            <th class="num">环比</th>
+            <th class="num">建议目标</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>验收闭环率</td>
+            <td class="num">69.9%（51/73）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">80%</td>
+            <td><span class="status warn"><i></i>有风险</span></td>
+          </tr>
+          <tr>
+            <td>故事点完成率</td>
+            <td class="num">68.7%（65.3/95.1）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">95%</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+          </tr>
+          <tr>
+            <td>User Story 完成率</td>
+            <td class="num">81.4%（35/43）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">85%</td>
+            <td><span class="status warn"><i></i>有风险</span></td>
+          </tr>
+          <tr>
+            <td>技改完成率</td>
+            <td class="num">30.8%（4/13）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">60%</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+          </tr>
+          <tr>
+            <td>归一化 DQS</td>
+            <td class="num">8.29</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">&lt; 5.0</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+          </tr>
+          <tr>
+            <td>缺陷修复率</td>
+            <td class="num">66.0%（93/141）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">85%</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+          </tr>
+          <tr>
+            <td>Critical 修复率</td>
+            <td class="num">57.1%（4/7）</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">100%</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+          </tr>
+          <tr>
+            <td>Reopen 率</td>
+            <td class="num">无导出</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">&lt; 5%</td>
+            <td>无导出</td>
+          </tr>
+          <tr>
+            <td>生产缺陷数</td>
+            <td class="num">无导出</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">环比下降</td>
+            <td>待填</td>
+          </tr>
+          <tr>
+            <td>严重生产事故数</td>
+            <td class="num">无导出</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">0</td>
+            <td>待填</td>
+          </tr>
+          <tr>
+            <td>缺陷逃逸率</td>
+            <td class="num">无导出</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">待冻结</td>
+            <td>待填</td>
+          </tr>
+          <tr>
+            <td>自动化测试覆盖率</td>
+            <td class="num">无导出</td><td class="num">无导出</td>
+            <td class="num">—</td>
+            <td class="num">待冻结</td>
+            <td>待填</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>4. 风险与管理层支持</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">生产数据转换、组件化目标口径、根因强制填报三项需管理层尽快拍板。</p>
+      <table class="data">
+        <thead>
+          <tr><th>风险/问题</th><th>影响</th><th>概率</th><th>等级</th><th>应对</th><th>负责人</th><th>截止</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>生产数据转换问题</td>
+            <td>影响已升级 Cloud 环境的数据正确性</td>
+            <td>高</td>
+            <td><span class="status danger"><i></i>未达预期</span></td>
+            <td>单独立项，与 Edge Hotfix 排优先级</td>
+            <td>PM + DEV Lead</td>
+            <td>下一 Sprint 第 2 天</td>
+          </tr>
+          <tr>
+            <td>组件化目标未改口</td>
+            <td>管理层按旧目标看会判定技改失败</td>
+            <td>中</td>
+            <td><span class="status warn"><i></i>有风险</span></td>
+            <td>书面确认目标是否降级</td>
+            <td>PM</td>
+            <td>本周五</td>
+          </tr>
+          <tr>
+            <td>根因 TBD 43.6%</td>
+            <td>质量改进无法对症</td>
+            <td>高</td>
+            <td><span class="status warn"><i></i>有风险</span></td>
+            <td>关闭缺陷前必填 Root Cause</td>
+            <td>QC Lead</td>
+            <td>立即生效</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="data">
+        <thead>
+          <tr><th>请求事项</th><th>不处理的影响</th><th>建议方案</th><th>最晚决策</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>确认组件化是否移出本迭代目标</td>
+            <td>故事点完成率会掩盖范围收缩</td>
+            <td>若已降级，下期报告改目标；若未降级，资源从新插入需求回调</td>
+            <td>计划会前</td>
+          </tr>
+          <tr>
+            <td>线上数据转换 vs Edge 大文件 Hotfix 的优先级</td>
+            <td>两件都做会再次膨胀范围</td>
+            <td>二选一作为下 Sprint 第一目标，另一件明确顺延</td>
+            <td>下 Sprint 启动当天</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <details class="fold" open>
+        <summary>5. 重点指标解读</summary>
+        <div class="fold-body">
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">点与项双低、技改滞后、Critical 未清零是本期三大异常，需分别跟进关闭计划。</p>
+          <table class="data">
+            <thead><tr><th>指标</th><th>本期 / 上期</th><th>变化原因</th><th>业务影响</th><th>后续动作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>验收闭环 69.9% vs 故事点 68.7%</td>
+                <td>51/73 · 65.3/95.1</td>
+                <td>未闭环 22 个 Item 仍挂 29.8 点（DEV 19.6 + QC 10.2）。技改 9 条未完成且估分未烧完。</td>
+                <td>点完成率与验收闭环都未达标，不能再用「点烧完了」对外表述。</td>
+                <td>TL 列出 22 条未闭环关闭日期与剩余点归属；下期同时盯验收与点完成。</td>
+              </tr>
+              <tr>
+                <td>技改完成率 30.8%</td>
+                <td>4/13 · 点 4.0/12.0</td>
+                <td>导出可见 VA 系列与组件化 P1/P2 多为开发中/测试中；范围移入移出本包无对照快照。</td>
+                <td>技改完成率远低于建议目标 60%，若组件化仍是目标则未达成。</td>
+                <td>PM 书面确认组件化是否仍为本期目标；未确认前按未达预期披露。</td>
+              </tr>
+              <tr>
+                <td>缺陷修复率 66.0%，Critical 57.1%</td>
+                <td>93/141 · Critical 4/7</td>
+                <td>Severity 分布与修复数已按 Bug 导出核对。根因 TBD 78/141（55.3%）。上期对比本包无导出。</td>
+                <td>3 个 Critical 未修；归一化 DQS 8.29（目标 &lt;5）。</td>
+                <td>QC Lead：关闭或降级剩余 Critical；关闭前必填根因。</td>
+              </tr>
+              <tr>
+                <td>DEV 点完成 66.4% vs QC 72.2%</td>
+                <td>DEV 38.8/58.4 · QC 26.5/36.7</td>
+                <td>按任务估分：US DEV 21.8/26.9、QC 26.5/36.7；Task DEV 13.0/19.5；技改 DEV 4.0/12.0。上期环比无导出。</td>
+                <td>两侧都未完成计划点；QC 点全部在 User Story。</td>
+                <td>PM 下期按 DEV/QC 分别控范围，避免只看合计完成率。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="fold" open>
+        <summary>6. 交付与范围</summary>
+        <div class="fold-body">
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">Item 与故事点均未收口；范围变更集中在 US/TI，未完成项仍挂约 43.7 点。</p>
+          <h3>按类型：Item 交付</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">US 完成率最高，技改完成率仅 30.8%，是拖累整体交付的主因。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th><th class="num">计划</th><th class="num">完成</th><th class="num">未完成</th>
+                <th class="num">完成率</th><th class="num">环比</th><th>范围变更</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>User Story</td><td class="num">43</td><td class="num">35</td><td class="num">8</td>
+                <td class="num">81.4%</td>
+                <td class="num">无导出</td>
+                <td>移入 12 / 移出 6（变更率 48.6%）</td>
+              </tr>
+              <tr>
+                <td>Task</td><td class="num">17</td><td class="num">14</td><td class="num">3</td>
+                <td class="num">82.4%</td>
+                <td class="num">无导出</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Tech Improvement</td><td class="num">13</td><td class="num">4</td><td class="num">9</td>
+                <td class="num">30.8%</td>
+                <td class="num">无导出</td>
+                <td>移入 6 / 移出 27（变更率 97.1%）</td>
+              </tr>
+              <tr>
+                <td>合计 Item</td><td class="num">73</td><td class="num">51 已验收</td><td class="num">22</td>
+                <td class="num">69.9%</td>
+                <td class="num">无导出</td>
+                <td>US+TI 见下表</td>
+              </tr>
+            </tbody>
+          </table>
+
+
+
+          <h3>范围变更汇总（Plan 冻结 vs 期末）</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">US 变更率 48.6%，TI 变更率 97.1%，组件化相关技改大量移出。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th><th class="num">Plan 冻结</th><th class="num">移入</th>
+                <th class="num">移出</th><th class="num">变更率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>User Story</td>
+                <td class="num">37</td>
+                <td class="num">12</td>
+                <td class="num">6</td>
+                <td class="num">48.6%</td>
+              </tr>
+              <tr>
+                <td>Tech Improvement</td>
+                <td class="num">34</td>
+                <td class="num">6</td>
+                <td class="num">27</td>
+                <td class="num">97.1%</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="hint">计划冻结 US 37 / TI 34（Sprint Plan Meeting）；期末 US 43 / TI 13。清单来自 Sprint Plan Meeting 冻结口径与期末快照 diff。</p>
+
+          <h3>移入清单（18）</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">以权限收敛、GPCA/SEMS 功能补全和 VA 系列技改移入为主。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th><th>Item ID</th><th>Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067827604" target="_blank" rel="noopener">7067827604</a></td><td>[1]E1-S01: 创建版本 Tab 固件表 SBOM 列按权限收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067942240" target="_blank" rel="noopener">7067942240</a></td><td>[2]E1-S02: 成员 Tab 添加弹窗角色下拉按权限收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067952077" target="_blank" rel="noopener">7067952077</a></td><td>[3]E2-S01: 模块入口与导航收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067866360" target="_blank" rel="noopener">7067866360</a></td><td>[4]E2-S02: 列表模块列收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067998066" target="_blank" rel="noopener">7067998066</a></td><td>[5]E2-S03: 表单与日志收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067845734" target="_blank" rel="noopener">7067845734</a></td><td>[6]E2-S04: 设备档案收敛</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7061996715" target="_blank" rel="noopener">7061996715</a></td><td>[GPCA] E1-S25：根 CA 状态操作入口可见性补充</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069266606" target="_blank" rel="noopener">7069266606</a></td><td>[GPCA] E1-S29：5F20 应用提供方标识自动带入</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069219625" target="_blank" rel="noopener">7069219625</a></td><td>[SEMS] E4-S12：SD 安装参数 5F20 自动写入</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069485685" target="_blank" rel="noopener">7069485685</a></td><td>[SEMS] E5-S1：Factory Reset API（IF-09）</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7070612278" target="_blank" rel="noopener">7070612278</a></td><td>【体验优化P3】Batch增加Secure Debug Key</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7070702881" target="_blank" rel="noopener">7070702881</a></td><td>PS-S-F01-09: Secure Debug Reopen 上位机工具</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068975006" target="_blank" rel="noopener">7068975006</a></td><td>【VA-003】调研各类 HSM 是否支持密钥不出安全区的生成、封装、重包裹、派生及面向 U-Safe 的密文交付</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071704245" target="_blank" rel="noopener">7071704245</a></td><td>【VA-006】去除 Factory TK，U-Safe RSA 初始化</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071896300" target="_blank" rel="noopener">7071896300</a></td><td>【VA-007】去除 Factory TK，同步 Node Identity/Communication 双凭据</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071995724" target="_blank" rel="noopener">7071995724</a></td><td>【VA-008】去除 Factory TK， Node、CryptoBoundary 与逐卡 RSA 公钥可信登记</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071700233" target="_blank" rel="noopener">7071700233</a></td><td>【VA-009】去除 Factory TK，HSM 生成安全区交付密文</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7081897780" target="_blank" rel="noopener">7081897780</a></td><td>【VA-010】去除 Factory TK，Node ECDH shareData泄漏修复</td></tr>
+            </tbody>
+          </table>
+
+          <h3>移出清单（33）</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">组件化 P1/P2 占多数；供应链相关 US 与 SI-W 合并项亦移出。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th><th>Item ID</th><th>Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6999830977" target="_blank" rel="noopener">6999830977</a></td><td>【供应链管理】OTA模块的改动</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6999697755" target="_blank" rel="noopener">6999697755</a></td><td>【供应链管理】漏洞模块改动</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7013392035" target="_blank" rel="noopener">7013392035</a></td><td>【卡片编辑】设备详情基于卡片内容改动</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7025856235" target="_blank" rel="noopener">7025856235</a></td><td>PKI-Cert-S35：移除证书创建中的 Matter PAI / VID 硬编码逻辑</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7004609041" target="_blank" rel="noopener">7004609041</a></td><td>PKI-证书状态查询服务（CRL/OCSP）</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7022688610" target="_blank" rel="noopener">7022688610</a></td><td>PM-S-F09-01：SE Profile 引用同步到 SEMS</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W31] GP Profile 边端烧入能力完善</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 gpca</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 hsm-gateway</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 kms</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 pki</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 sems</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069049997" target="_blank" rel="noopener">7069049997</a></td><td>【OBIS组件化P1】D-11/D-12：独立部署构建与组件独立 Git 仓库管理调研</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068769451" target="_blank" rel="noopener">7068769451</a></td><td>【OBIS组件化P1】iot-client-gateway服务业务功能迁入业务组件（pki,kms的迁入放在P2）</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068643439" target="_blank" rel="noopener">7068643439</a></td><td>【OBIS组件化P1】iot-logtail-service服务迁入iot-module-logtail组件</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068681142" target="_blank" rel="noopener">7068681142</a></td><td>【OBIS组件化P1】P0-5：Workspace 与 Factory Cloud Local/Remote 等价链路替换样板实现</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-A：iot-admin-service 最新增量迁入 Workspace-基于release/3.3.4-sems</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-B：iot-factory-cloud-service 最新增量迁入 Factory Cloud-基于release/3.3.4-sems</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-C：iot-factory-edge-service 最新增量迁入 Factory Edge-基于release/3.3.4-sems</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068641601" target="_blank" rel="noopener">7068641601</a></td><td>【OBIS组件化P1】P1-0.5：组件化数据库拆分与数据边界基线</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069083043" target="_blank" rel="noopener">7069083043</a></td><td>【OBIS组件化P1】P1-1.1 Auth 登录、登出及会话授权管理接入（Workspace、Factory Edge）</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068678097" target="_blank" rel="noopener">7068678097</a></td><td>【OBIS组件化P1】P1-1.1 Auth 域数据迁移与唯一写入方切换</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068937571" target="_blank" rel="noopener">7068937571</a></td><td>【OBIS组件化P1】P1-1.2：ARBAC 服务能力迁入 Auth</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068912541" target="_blank" rel="noopener">7068912541</a></td><td>【OBIS组件化P1】P1-1-A：Client Gateway Netty/WebFlux 运行时与远程路由迁入</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068986023" target="_blank" rel="noopener">7068986023</a></td><td>【OBIS组件化P1】P1-1-B：Authorization S1 会话认证 Core/Reactive/Servlet 双适配器落地</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068689985" target="_blank" rel="noopener">7068689985</a></td><td>【OBIS组件化P1】定时任务处理与xxl-job的关系</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】D-13：Genbu 双部署模式适配调研</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068938546" target="_blank" rel="noopener">7068938546</a></td><td>【OBIS组件化P2】P2-1 基础设施兼容扩展与基础工具组件抽取</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068902873" target="_blank" rel="noopener">7068902873</a></td><td>【OBIS组件化P2】P2-3-A：Workspace 适配 PKI/KMS/SEMS 并清理遗留重复代码</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069042878" target="_blank" rel="noopener">7069042878</a></td><td>【OBIS组件化P2】P2-3-B：Factory Cloud 适配 PKI/KMS/SEMS 并清理重复代码</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068672390" target="_blank" rel="noopener">7068672390</a></td><td>【OBIS组件化P2】P2-3-C：Factory Edge 适配 PKI/KMS/SEMS 并清理重复代码</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】P2-4：Factory Edge 边界盘点和必要拆分</td></tr>
+<tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】P2-5 OTA、云边与 U-safe 初始化迁入 Factory Cloud 并完成切流</td></tr>
+            </tbody>
+          </table>
+
+          <h3>未完成 Item（状态 ≠ 已验收，17）</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">17 条未验收 Item 仍挂点，需逐条填写延迟原因与未提前上报风险的原因。</p>
+          <p class="hint">数据源：Retro 快照 <code>OBIS-20260810-20260821_latest.json</code>（2026-08-26 拉取）。口径：Status 除「已验收」外均计入（含待验收、测试中、开发中等）。合计仍挂故事点约 43.7。<strong>延迟原因</strong>、<strong>未提前上报风险的原因</strong> 需 TL / Owner 复盘后填写。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>Item ID</th>
+                <th>Summary</th>
+                <th>状态</th>
+                <th>Owner</th>
+                <th class="num">DEV 点</th>
+                <th class="num">QC 点</th>
+                <th>延迟原因</th>
+                <th>未提前上报风险的原因</th>
+              </tr>
+            </thead>
+            <tbody>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6841083490" target="_blank" rel="noopener">6841083490</a></td><td>4.KMS-密钥管理-密钥删除</td><td>测试中</td><td>雷玮祺</td><td class="num">1</td><td class="num">1.5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6936458761" target="_blank" rel="noopener">6936458761</a></td><td>42.PKI-【功能】-锁定证书/模版</td><td>测试中</td><td>祝文君</td><td class="num">0.5</td><td class="num">1.5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6936673971" target="_blank" rel="noopener">6936673971</a></td><td>43.PKI-【功能】-解锁证书/模版</td><td>测试中</td><td>祝文君</td><td class="num">0.5</td><td class="num">1.5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7013476926" target="_blank" rel="noopener">7013476926</a></td><td>[GPCA] E1-S20：GP-F09 Mode A SD 证书回传接口</td><td>测试中</td><td>祝文君</td><td class="num">0.5</td><td class="num">1</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7061996715" target="_blank" rel="noopener">7061996715</a></td><td>[GPCA] E1-S25：根 CA 状态操作入口可见性补充</td><td>测试中</td><td>夏正刚</td><td class="num">0.5</td><td class="num">0.7</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7021649994" target="_blank" rel="noopener">7021649994</a></td><td>[PKI] PKI-Cert-S34：证书对象 ID 规范</td><td>待验收</td><td>雷玮祺</td><td class="num">—</td><td class="num">1</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069219625" target="_blank" rel="noopener">7069219625</a></td><td>[SEMS] E4-S12：SD 安装参数 5F20 自动写入</td><td>测试中</td><td>夏正刚</td><td class="num">0.5</td><td class="num">1.5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069485685" target="_blank" rel="noopener">7069485685</a></td><td>[SEMS] E5-S1：Factory Reset API（IF-09）</td><td>待提测</td><td>祝文君</td><td class="num">2</td><td class="num">1.5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7065501706" target="_blank" rel="noopener">7065501706</a></td><td>【体验优化P3】Member功能统一（GPCA&amp;SEMS）</td><td>测试中</td><td>夏正刚</td><td class="num">1</td><td class="num">1</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Task</td><td><a href="https://project.feishu.cn/obis/workitem/7070338261" target="_blank" rel="noopener">7070338261</a></td><td>Matter OTA 升级及免扫码配网 App Demo 框架搭建与功能开发</td><td>待验收</td><td>胡伟</td><td class="num">7</td><td class="num">—</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Task</td><td><a href="https://project.feishu.cn/obis/workitem/7068643526" target="_blank" rel="noopener">7068643526</a></td><td>[SI-W33] 技改合并 hsm-gateway</td><td>待排期</td><td>夏正刚</td><td class="num">—</td><td class="num">—</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071670577" target="_blank" rel="noopener">7071670577</a></td><td>【VA-001】 VeriAuth-Applet密钥导入功能优化</td><td>开发中</td><td>刘梦豪</td><td class="num">5</td><td class="num">5</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071704245" target="_blank" rel="noopener">7071704245</a></td><td>【VA-006】去除 Factory TK，U-Safe RSA 初始化</td><td>测试中</td><td>—</td><td class="num">1</td><td class="num">2</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071896300" target="_blank" rel="noopener">7071896300</a></td><td>【VA-007】去除 Factory TK，同步 Node Identity/Communication 双凭据</td><td>测试中</td><td>—</td><td class="num">1</td><td class="num">1</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071995724" target="_blank" rel="noopener">7071995724</a></td><td>【VA-008】去除 Factory TK， Node、CryptoBoundary 与逐卡 RSA 公钥可信登记</td><td>测试中</td><td>—</td><td class="num">1</td><td class="num">1</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071700233" target="_blank" rel="noopener">7071700233</a></td><td>【VA-009】去除 Factory TK，HSM 生成安全区交付密文</td><td>开发中</td><td>—</td><td class="num">1</td><td class="num">—</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+<tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7081897780" target="_blank" rel="noopener">7081897780</a></td><td>【VA-010】去除 Factory TK，Node ECDH shareData泄漏修复</td><td>开发中</td><td>—</td><td class="num">1</td><td class="num">—</td><td class="manual">待填写</td><td class="manual">待填写</td></tr>
+            </tbody>
+          </table>
+          <h3>按角色：开发 / 测试产出</h3>
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">DEV 完成 66.4%，QC 完成 72.2%；测试点全部落在 User Story。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th class="num">开发计划</th><th class="num">开发完成</th><th class="num">开发完成率</th>
+                <th class="num">测试计划</th><th class="num">测试完成</th><th class="num">测试完成率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>User Story</td>
+                <td class="num">26.9</td><td class="num">21.8</td><td class="num">81.0%</td>
+                <td class="num">36.7</td><td class="num">26.5</td><td class="num">72.2%</td>
+              </tr>
+              <tr>
+                <td>Task</td>
+                <td class="num">19.5</td><td class="num">13.0</td><td class="num">66.7%</td>
+                <td class="num">0</td><td class="num">0</td><td class="num">—</td>
+              </tr>
+              <tr>
+                <td>Tech Improvement</td>
+                <td class="num">12.0</td><td class="num">4.0</td><td class="num">33.3%</td>
+                <td class="num">0</td><td class="num">0</td><td class="num">—</td>
+              </tr>
+              <tr>
+                <td>合计</td>
+                <td class="num">58.4</td><td class="num">38.8</td><td class="num">66.4%</td>
+                <td class="num">36.7</td><td class="num">26.5</td><td class="num">72.2%</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="hint">Item 完成 = 已验收 + 待验收；验收闭环 = 仅已验收 51/73。角色产出 = 子任务 Estimated（角色 DEV/QC），父项已验收或待验收则计入全部计划点。测试点数全部落在 User Story；Task / 技改无 QC 估分。范围移入/移出明细见本节清单表；部分早期移出项或已归档技改在飞书中无法反查 Item ID，表中记为 —。</p>
+        </div>
+      </details>
+
+      <details class="fold" open>
+        <summary>7. 质量（团队级）</summary>
+        <div class="fold-body">
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">缺陷修复率 66.0%，Critical 仅修 4/7；根因 TBD 超半数，DQS 8.29 未达标。</p>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>严重等级</th>
+                <th class="num">本期发现</th><th class="num">已修复</th><th class="num">修复率</th>
+                <th class="num">上期发现</th><th class="num">上期修复率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-danger">
+                <td>Critical</td><td class="num">7</td><td class="num">4</td><td class="num">57.1%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+              <tr class="row-warn">
+                <td>Major</td><td class="num">17</td><td class="num">12</td><td class="num">70.6%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>Medium</td><td class="num">52</td><td class="num">40</td><td class="num">76.9%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>Minor</td><td class="num">60</td><td class="num">34</td><td class="num">56.7%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>Trivial</td><td class="num">5</td><td class="num">3</td><td class="num">60.0%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>合计</td><td class="num">141</td><td class="num">93</td><td class="num">66.0%</td><td class="num">无导出</td><td class="num">无导出</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid-3">
+            <div class="card">
+              <h3>根因（Sprint Bug 141）</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">55.3% Bug 根因仍为 TBD，关闭前必填根因是本期质量治理首要动作。</p>
+              <table class="data plain">
+                <thead><tr><th>根因</th><th class="num">计数</th><th class="num">占比</th></tr></thead>
+                <tbody>
+                  <tr><td>TBD（未填）</td><td class="num">78</td><td class="num">55.3%</td></tr>
+                  <tr><td>开发</td><td class="num">51</td><td class="num">36.2%</td></tr>
+                  <tr><td>需求与设计</td><td class="num">11</td><td class="num">7.8%</td></tr>
+                  <tr><td>流程与沟通</td><td class="num">1</td><td class="num">0.7%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <span class="trailing">越低越好</span>
+              <h3>质量评分</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">归一化 DQS 8.29，高于建议值 5.0，与 Critical 未清零直接相关。</p>
+              <p style="margin:0 0 8px;">基础 DQS 321.5 → 归一化 8.29（上期无导出）</p>
+              <p class="hint">基础 DQS = Critical×10 + Major×5 + Medium×2 + Minor×1 + Trivial×0.5。归一化 = 基础 DQS ÷ DEV 已完成故事点 38.8。</p>
+            </div>
+            <div class="card">
+              <h3>Reopen</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">本包导出无 Reopen 字段，需 QC 人工维护或另拉操作记录。</p>
+              <p style="margin:0 0 8px;">本包 Bug 导出无 Reopen 字段</p>
+              <p class="hint">Reopen 需人工维护或另拉操作记录，不能从本期导出计算。</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold" open>
+        <summary>8. 团队与产能</summary>
+        <div class="fold-body">
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">21 人完成 65.3/95.1 点（68.7%）；DEV、QC 两侧均未烧完计划点。</p>
+          <p class="hint">用故事点和人数看同一团队趋势，不等于人天。会议成本、请假日历、健康度问卷当前没有数据源，不编造。</p>
+          <div class="kpis">
+            <div class="kpi"><div class="value">21</div><div class="label">参与人数（DEV 12 / QC 9；任务 Assignee）</div></div>
+            <div class="kpi"><div class="value">—</div><div class="label">工作日（无导出）</div></div>
+            <div class="kpi danger"><div class="value">65.3</div><div class="label">完成故事点（计划 95.1）</div></div>
+            <div class="kpi"><div class="value">—</div><div class="label">计划外插入（无导出）</div></div>
+          </div>
+          <table class="data">
+            <thead>
+              <tr>
+                <th>角色</th><th class="num">人数</th><th class="num">计划点</th><th class="num">完成点</th>
+                <th class="num">未完成</th><th class="num">完成率</th><th class="num">完成点环比</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>DEV</td><td class="num">12</td><td class="num">58.4</td><td class="num">38.8</td>
+                <td class="num">19.6</td><td class="num">66.4%</td>
+                <td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>QC</td><td class="num">9</td><td class="num">36.7</td><td class="num">26.5</td>
+                <td class="num">10.2</td><td class="num">72.2%</td>
+                <td class="num">无导出</td>
+              </tr>
+              <tr>
+                <td>PM</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+              </tr>
+              <tr>
+                <td>合计</td><td class="num">21</td><td class="num">95.1</td><td class="num">65.3</td>
+                <td class="num">29.8</td><td class="num">68.7%</td>
+                <td class="num">无导出</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid-split">
+            <div>
+              <h3>近 4 期完成故事点（DEV / QC）</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">本期 DEV/QC 完成点均低于近几期示意水平，产能呈下行趋势。</p>
+              <div class="legend"><b class="dev"></b>DEV 完成点　<b class="qc"></b>QC 完成点</div>
+              <!-- 刻度上限 100；柱高 = 值/100 × 绘图区高度 -->
+              <svg class="col" viewBox="0 0 480 240" role="img" aria-label="近 4 期 DEV/QC 完成故事点">
+                <line x1="44" y1="204" x2="464" y2="204" stroke="#e5e5e5" />
+                <line x1="44" y1="16" x2="44" y2="204" stroke="#e5e5e5" />
+                <text x="36" y="208" font-size="10" fill="#737373" text-anchor="end">0</text>
+                <text x="36" y="116" font-size="10" fill="#737373" text-anchor="end">50</text>
+                <text x="36" y="20" font-size="10" fill="#737373" text-anchor="end">100</text>
+                <!-- −3: DEV 76.5 QC 47.4 -->
+                <rect x="66" y="60.2" width="28" height="143.8" rx="3" fill="#3b82f6" />
+                <rect x="98" y="114.9" width="28" height="89.1" rx="3" fill="#059669" />
+                <text x="80" y="54" font-size="10" fill="#737373" text-anchor="middle">76.5</text>
+                <text x="112" y="108" font-size="10" fill="#737373" text-anchor="middle">47.4</text>
+                <text x="96" y="222" font-size="11" fill="#737373" text-anchor="middle">−3</text>
+                <!-- −2: DEV 93.9 QC 45.3 -->
+                <rect x="176" y="27.5" width="28" height="176.5" rx="3" fill="#3b82f6" />
+                <rect x="208" y="118.8" width="28" height="85.2" rx="3" fill="#059669" />
+                <text x="190" y="22" font-size="10" fill="#737373" text-anchor="middle">93.9</text>
+                <text x="222" y="112" font-size="10" fill="#737373" text-anchor="middle">45.3</text>
+                <text x="206" y="222" font-size="11" fill="#737373" text-anchor="middle">−2</text>
+                <!-- −1: DEV 60.4 QC 25.4 -->
+                <rect x="286" y="90.4" width="28" height="113.6" rx="3" fill="#3b82f6" />
+                <rect x="318" y="156.2" width="28" height="47.8" rx="3" fill="#059669" />
+                <text x="300" y="84" font-size="10" fill="#737373" text-anchor="middle">60.4</text>
+                <text x="332" y="150" font-size="10" fill="#737373" text-anchor="middle">25.4</text>
+                <text x="316" y="222" font-size="11" fill="#737373" text-anchor="middle">−1</text>
+                <!-- 本期: DEV 38.8 QC 26.5（导出校验） -->
+                <rect x="396" y="131.1" width="28" height="72.9" rx="3" fill="#3b82f6" />
+                <rect x="428" y="154.2" width="28" height="49.8" rx="3" fill="#059669" />
+                <text x="410" y="125" font-size="10" fill="#737373" text-anchor="middle">38.8</text>
+                <text x="442" y="148" font-size="10" fill="#737373" text-anchor="middle">26.5</text>
+                <text x="426" y="222" font-size="11" fill="#737373" text-anchor="middle">本期</text>
+              </svg>
+              <p class="chart-caption">近 4 期对比本包导出中无；下图为历史示意，请勿当作本期校验结果。本期 DEV 完成 38.8 / QC 完成 26.5。</p>
+            </div>
+            <div>
+              <h3>主要产能影响因素</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">未闭环 Item 挂点、技改 DEV 偏低、大估分 Task 进行中是主要拖累。</p>
+              <table class="data kv">
+                <thead><tr><th>因素</th><th>影响</th></tr></thead>
+                <tbody>
+                  <tr><td>未闭环 Item 仍挂 29.8 点</td><td>22 条未验收/未类型完成，点和验收都未收口</td></tr>
+                  <tr><td>技改 DEV 仅 4.0/12.0</td><td>VA / 组件化多条仍在开发中或测试中</td></tr>
+                  <tr><td>Task DEV 13.0/19.5</td><td>含进行中的 Matter OTA 等大估分任务</td></tr>
+                  <tr><td>参与 DEV 12 / QC 9</td><td>按本期任务 Assignee 去重；PM 未在任务角色出现</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold" open>
+        <summary>9. 趋势（近 4 个 Sprint）</summary>
+        <div class="fold-body">
+          <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">验收闭环与故事点完成率本期均未达 80% 目标线；缺陷修复缺口 48 个。</p>
+          <div class="grid-2">
+            <div>
+              <h3>完成率：Item 验收 vs 故事点</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">本期验收闭环 69.9%、故事点 68.7%，均低于 80% 参考线。</p>
+              <div class="legend"><b class="acc"></b>验收闭环率　<b class="pt"></b>故事点完成率　灰线 = Item 目标 80%</div>
+              <svg class="line" viewBox="0 0 480 240" role="img" aria-label="近 4 期验收闭环率与故事点完成率">
+                <line x1="44" y1="204" x2="464" y2="204" stroke="#dce6f0" />
+                <line x1="44" y1="16" x2="44" y2="204" stroke="#dce6f0" />
+                <line x1="44" y1="53.6" x2="464" y2="53.6" stroke="#94a3b8" stroke-dasharray="4 4" />
+                <text x="468" y="57" font-size="10" fill="#64748b">80%</text>
+                <text x="36" y="208" font-size="10" fill="#64748b" text-anchor="end">0</text>
+                <text x="36" y="20" font-size="10" fill="#64748b" text-anchor="end">100</text>
+                <text x="44" y="222" font-size="11" fill="#64748b" text-anchor="middle">−3</text>
+                <text x="184" y="222" font-size="11" fill="#64748b" text-anchor="middle">−2</text>
+                <text x="324" y="222" font-size="11" fill="#64748b" text-anchor="middle">−1</text>
+                <text x="464" y="222" font-size="11" fill="#64748b" text-anchor="middle">本期</text>
+                <polyline fill="none" stroke="#d97706" stroke-width="2"
+                  points="44,176.4 184,196.9 324,151.9 464,72.6" />
+                <circle cx="44" cy="176.4" r="3.5" fill="#d97706" />
+                <circle cx="184" cy="196.9" r="3.5" fill="#d97706" />
+                <circle cx="324" cy="151.9" r="3.5" fill="#d97706" />
+                <circle cx="464" cy="72.6" r="3.5" fill="#d97706" />
+                <polyline fill="none" stroke="#059669" stroke-width="2"
+                  points="44,19.6 184,44.2 324,28.6 464,74.8" />
+                <circle cx="44" cy="19.6" r="3.5" fill="#059669" />
+                <circle cx="184" cy="44.2" r="3.5" fill="#059669" />
+                <circle cx="324" cy="28.6" r="3.5" fill="#059669" />
+                <circle cx="464" cy="74.8" r="3.5" fill="#059669" />
+              </svg>
+              <p class="chart-caption">近 4 期对比本包导出中无。本期验收闭环 69.9%，故事点完成 68.7%。</p>
+            </div>
+            <div>
+              <h3>缺陷：发现 vs 修复</h3>
+              <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">本期发现 141、修复 93，修复率 66.0%，缺口 48 个 Bug 未关闭。</p>
+              <div class="legend"><b class="found"></b>发现数　<b class="fixed"></b>已修复　纵轴上限 250</div>
+              <!-- 刻度上限 250；柱高 = 值/250 × 188 -->
+              <svg class="col" viewBox="0 0 480 240" role="img" aria-label="近 4 期缺陷发现与修复">
+                <line x1="44" y1="204" x2="464" y2="204" stroke="#e5e5e5" />
+                <line x1="44" y1="16" x2="44" y2="204" stroke="#e5e5e5" />
+                <text x="36" y="208" font-size="10" fill="#737373" text-anchor="end">0</text>
+                <text x="36" y="116" font-size="10" fill="#737373" text-anchor="end">125</text>
+                <text x="36" y="20" font-size="10" fill="#737373" text-anchor="end">250</text>
+                <!-- −3: 发现 155 修复 119 -->
+                <rect x="66" y="87.4" width="28" height="116.6" rx="3" fill="#3b82f6" />
+                <rect x="98" y="114.5" width="28" height="89.5" rx="3" fill="#059669" />
+                <text x="80" y="81" font-size="10" fill="#737373" text-anchor="middle">155</text>
+                <text x="112" y="108" font-size="10" fill="#737373" text-anchor="middle">119</text>
+                <text x="96" y="222" font-size="11" fill="#737373" text-anchor="middle">−3</text>
+                <!-- −2: 发现 139 修复 104 -->
+                <rect x="176" y="99.5" width="28" height="104.5" rx="3" fill="#3b82f6" />
+                <rect x="208" y="125.8" width="28" height="78.2" rx="3" fill="#059669" />
+                <text x="190" y="93" font-size="10" fill="#737373" text-anchor="middle">139</text>
+                <text x="222" y="119" font-size="10" fill="#737373" text-anchor="middle">104</text>
+                <text x="206" y="222" font-size="11" fill="#737373" text-anchor="middle">−2</text>
+                <!-- −1: 发现 236 修复 216 -->
+                <rect x="286" y="26.5" width="28" height="177.5" rx="3" fill="#3b82f6" />
+                <rect x="318" y="41.6" width="28" height="162.4" rx="3" fill="#059669" />
+                <text x="300" y="20" font-size="10" fill="#737373" text-anchor="middle">236</text>
+                <text x="332" y="35" font-size="10" fill="#737373" text-anchor="middle">216</text>
+                <text x="316" y="222" font-size="11" fill="#737373" text-anchor="middle">−1</text>
+                <!-- 本期: 发现 141 修复 93 -->
+                <rect x="396" y="98.0" width="28" height="106.0" rx="3" fill="#3b82f6" />
+                <rect x="428" y="134.1" width="28" height="69.9" rx="3" fill="#059669" />
+                <text x="410" y="92" font-size="10" fill="#737373" text-anchor="middle">141</text>
+                <text x="442" y="128" font-size="10" fill="#737373" text-anchor="middle">93</text>
+                <text x="426" y="222" font-size="11" fill="#737373" text-anchor="middle">本期</text>
+              </svg>
+              <p class="chart-caption">近 4 期对比本包导出中无。本期 Bug 141、已修复 93，缺口 48。</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <h2>10. 下一 Sprint</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">下 Sprint 优先 Edge Hotfix 与生产数据问题闭环；质量治理与范围控制需避免组件化再次挤占资源。</p>
+      <table class="data kv">
+        <thead><tr><th>项</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>核心目标</td><td>V3.2.2 Edge 端 Hotfix：支持大文件；生产数据转换问题闭环</td></tr>
+          <tr><td>计划交付</td><td>Edge Hotfix 发布；剩余 Critical 清零；TBD 根因压到 10% 以下</td></tr>
+          <tr><td>重点改善</td><td>故事点完成 68.7% → 95%；验收闭环 69.9% → 80%；缺陷修复率 66% → 85%；Critical 57% → 100%</td></tr>
+          <tr><td>质量治理</td><td>关闭必填根因；生产问题与测试缺陷分列</td></tr>
+          <tr><td>已知风险</td><td>若组件化再次插回，Edge Hotfix 与质量治理都会被挤占</td></tr>
+          <tr><td>资源缺口</td><td>需 PM 确认，不在飞书自动可算</td></tr>
+        </tbody>
+      </table>
+
+      <hr />
+      <h2>附录 · 不进管理层正文</h2>
+      <p class="section-lead" contenteditable="true" spellcheck="false" data-placeholder="点击编辑本节一句话总结…">TL / QA 专用明细与复盘表，不进入管理层一页纸正文。</p>
+      <p class="hint">个人故事点、个人 DQS、范围移入/移出清单、未完成 Item 复盘表，给 TL / QA 用，不放老板页。个人 DQS 在估分为 0（只修 Bug）时会出现除零，不能当绩效。</p>
+    </div>
+
+    <!-- ===================== 取舍说明 ===================== -->
+    <div id="panel-diff" class="panel">
+      <h2>两份原稿各自解决什么问题</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>当前报告 · 研发复盘底稿</h3>
+          <p>信息全：完成数、状态分布、范围稳定性、故事点、人力、Severity、DQS、根因、Reopen。</p>
+          <p>不适合老板：开篇就是 US/Task/TI 大表，变更清单顶在第一屏；「全部验收完成」作计划列没有信息量；Item 69.9% 和点 68.7% 并排却不解释；个人表和 #DIV/0! 会误读成绩效。</p>
+        </div>
+        <div class="card">
+          <h3>目标模板 · 管理层一页纸</h3>
+          <p>结构对：状态灯、一句话、核心结果、环比看板、异常解读、目标对照、风险与决策请求。</p>
+          <p>不能照搬：收入/业务价值、发布成功率、MTTR、回滚、自动化覆盖率、人天产能、会议成本、团队健康度——OBIS 当前没有可信数据源，硬填会降低报告可信度。</p>
+        </div>
+      </div>
+
+      <h2>最终版做了什么取舍</h2>
+      <table class="data">
+        <thead><tr><th>原内容 / 目标模板字段</th><th>最终版处理</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>开篇 US/Task/TI 超宽表 + 变更清单</td><td>压缩成 5 条摘要 + 8 格看板</td><td>老板先看结论，再按需下钻</td></tr>
+          <tr><td>亮点 / 关注 / 下阶段</td><td>保留，上移到摘要</td><td>这是唯一的判断句，原稿埋在表后</td></tr>
+          <tr><td>Item 完成率 + Point 完成率</td><td>都保留，并强制解读背离</td><td>点高、项低是本期最关键信号</td></tr>
+          <tr><td>范围稳定性</td><td>只保留率和移入/移出计数</td><td>清单进附录；原稿脚注公式与数字不一致，已改口径</td></tr>
+          <tr><td>4 期并排超宽表</td><td>改成 2 期环比 + 近 4 期图</td><td>环比足够决策，四期明细给复盘页</td></tr>
+          <tr><td>人力个人表、个人 DQS</td><td>移出管理层正文</td><td>除零、只修 Bug 的人不可比</td></tr>
+          <tr><td>人力与产出</td><td>采用角色级人数 + 故事点 + 计划外插入</td><td>人天/会议/健康度无数据源，不编造</td></tr>
+          <tr><td>业务价值达成率 / 收入</td><td>不采用</td><td>OBIS 是内部平台，价值用能力上线描述</td></tr>
+          <tr><td>需求平均周期、发布成功率、MTTR、回滚</td><td>暂不进看板</td><td>飞书未拉这些字段，也无监控对接</td></tr>
+          <tr><td>生产缺陷 / 逃逸率 / 严重事故 / 自动化覆盖率</td><td>进核心看板，本期标「待填」</td><td>管理层模板字段；飞书 Environment / 事故台账 / CI 尚未对接，不编造数字</td></tr>
+          <tr><td>Sprint 目标表</td><td>采用结构，目标需人工冻结</td><td>没有冻结 Goal 就无法自动算达成率</td></tr>
+          <tr><td>风险与管理层决策</td><td>采用</td><td>这是管理层模板里最有决策价值的两张表</td></tr>
+        </tbody>
+      </table>
+
+      <h2>口径必须先统一的两处</h2>
+      <div class="callout danger">
+        <div class="title">「完成」有两套定义</div>
+        <p style="font-size:13px;">总览 51/73=69.9% 只计「已验收」；类型完成数 35/43=81.4% 计「已验收+待验收」。最终版把前者叫验收闭环，后者叫类型完成，禁止再用同一个「完成率」词。</p>
+      </div>
+      <div class="callout">
+        <div class="title">范围稳定性脚注写错了</div>
+        <p style="font-size:13px;">原稿写（实际−计划）/计划，但 US 用的是（12 移入 + 6 移出）/ 37 = 48.6%。最终版口径改为（移入+移出）/ 计划会冻结数。</p>
+      </div>
+    </div>
+
+    <!-- ===================== 数据来源 ===================== -->
+    <div id="panel-source" class="panel">
+      <h2>可以自动化获取 / 计算</h2>
+      <p class="hint">下列项 qa-report-tool 复盘快照已经能拉或能算。条件是 Sprint 开始时冻结 Plan。</p>
+      <table class="data">
+        <thead><tr><th>数据</th><th>来源</th><th>计算方式</th><th>进管理层报告？</th></tr></thead>
+        <tbody>
+          <tr><td>Sprint 周期</td><td>Sprint 名称日期</td><td>OBIS-YYYYMMDD-YYYYMMDD 解析</td><td>是</td></tr>
+          <tr><td>验收闭环率</td><td>飞书 Status</td><td>已验收数 / Item 总数</td><td>是 · 主指标</td></tr>
+          <tr><td>类型完成率</td><td>飞书 Status</td><td>（已验收+待验收）/ 该类型总数</td><td>是 · 交付表</td></tr>
+          <tr><td>故事点计划/完成</td><td>Story Point DEV/QC 字段</td><td>父项已验收或待验收则计入全部计划点</td><td>是 · 主指标</td></tr>
+          <tr><td>状态分布</td><td>飞书 Status</td><td>计数</td><td>附录 / 复盘页</td></tr>
+          <tr><td>未完成清单</td><td>Retro Status</td><td>Status ≠ 已验收；含延迟/风险原因列（人工填）</td><td>第 6 节 · 给 TL，不进老板摘要</td></tr>
+          <tr><td>范围移入/移出/变更率</td><td>Plan 冻结快照 vs 结束快照</td><td>（移入+移出）/ 冻结数</td><td>是 · 只出率和计数</td></tr>
+          <tr><td>缺陷发现/修复/修复率</td><td>飞书 Bug + Severity + Status</td><td>Done/Closed/Converted 为已修复</td><td>是</td></tr>
+          <tr><td>基础 DQS / 归一化 DQS</td><td>Severity 加权 / DEV 完成点</td><td>权重 10/5/2/1/0.5</td><td>是 · 团队级</td></tr>
+          <tr><td>根因分布</td><td>Root Cause Category</td><td>空值归 TBD</td><td>是 · 团队级</td></tr>
+          <tr><td>跨期环比</td><td>历史 _latest.json</td><td>近 3 期汇总</td><td>是</td></tr>
+          <tr><td>参与成员（有估分）</td><td>Dev/QC/Task Owner</td><td>去重计数</td><td>是 · 团队与产能</td></tr>
+          <tr><td>角色级故事点</td><td>Story Point DEV/QC + Owner</td><td>按 DEV/QC 汇总计划/完成</td><td>是 · 团队与产能</td></tr>
+          <tr><td>计划外插入占比</td><td>范围移入 / 期末 Item</td><td>移入条数 / 期末总数</td><td>是 · 团队与产能</td></tr>
+        </tbody>
+      </table>
+
+      <h2>加字段后即可自动化（现在还没有）</h2>
+      <table class="data">
+        <thead><tr><th>数据</th><th>缺口</th><th>怎么补</th><th>是否建议进老板页</th></tr></thead>
+        <tbody>
+          <tr><td>生产缺陷数</td><td>复盘 Bug MQL 未拉 Environment</td><td>加 Bug Environment，筛 PRD；本期看板人工填</td><td>是 · 已进看板</td></tr>
+          <tr><td>严重生产事故数</td><td>无事故台账对接</td><td>PM / Oncall 人工统计 P0/P1</td><td>是 · 已进看板</td></tr>
+          <tr><td>缺陷逃逸率</td><td>缺生产缺陷数</td><td>PRD 缺陷 / 本期缺陷总数</td><td>是 · 已进看板</td></tr>
+          <tr><td>自动化测试覆盖率</td><td>无 CI 对接</td><td>接 CI / MeterSphere 覆盖率，或 QC 人工填</td><td>是 · 已进看板</td></tr>
+          <tr><td>需求平均周期</td><td>未拉创建/验收时间</td><td>status_time(已验收) − 创建时间</td><td>观察项，不必进 8 格看板</td></tr>
+          <tr><td>工作日</td><td>人工填</td><td>日历 − 节假日配置</td><td>页眉即可</td></tr>
+          <tr><td>紧急插入事项</td><td>无优先级×移入交叉</td><td>移入 ∩ 高优先级</td><td>交付表一行</td></tr>
+        </tbody>
+      </table>
+
+      <h2>必须人工维护</h2>
+      <table class="data">
+        <thead><tr><th>数据</th><th>为什么不能自动</th><th>谁填</th></tr></thead>
+        <tbody>
+          <tr><td>总体状态 / 一句话结论</td><td>规则可建议，判断在人</td><td>PM 确认</td></tr>
+          <tr><td>Sprint 目标与达成判定</td><td>飞书没有冻结的 Sprint Goal</td><td>计划会写入，结束时对照</td></tr>
+          <tr><td>业务成果（能力上线）</td><td>版本发布不在飞书工作项里</td><td>PM / 发布负责人</td></tr>
+          <tr><td>指标变化原因、业务影响、后续动作</td><td>叙事</td><td>TL + PM</td></tr>
+          <tr><td>范围变更原因</td><td>系统只知道移入移出，不知道为什么</td><td>PM</td></tr>
+          <tr><td>生产事故定性、Hotfix 优先级</td><td>无事故系统</td><td>PM + DEV Lead</td></tr>
+          <tr><td>Reopen 名单</td><td>操作记录约 7 天窗口，自动数不可信</td><td>QC 维护（工具里已有人工表）</td></tr>
+          <tr><td>管理层请求 / 截止时间</td><td>决策事项</td><td>PM</td></tr>
+          <tr><td>下 Sprint 目标与资源缺口</td><td>计划尚未发生</td><td>PM</td></tr>
+          <tr><td>建议目标值（80%/95%/85% 等）</td><td>需管理层一次性冻结</td><td>老板 / 质量负责人</td></tr>
+          <tr><td>请假 / 招聘缺口 / 会议成本</td><td>无日历与工时系统</td><td>PM 有则补一句，没有就省略</td></tr>
+          <tr><td>团队健康度</td><td>需要单独问卷</td><td>不进本报告</td></tr>
+        </tbody>
+      </table>
+
+      <h2>不建议采集，也不进报告</h2>
+      <table class="data">
+        <thead><tr><th>字段（来自管理层模板）</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>业务价值达成率 / 新增收入 / 成本节省</td><td>OBIS 无财务口径，编造会损害可信度</td></tr>
+          <tr><td>发布成功率、回滚次数、MTTR</td><td>无发布与监控对接</td></tr>
+          <tr><td>团队有效产能利用率、会议成本、人天</td><td>故事点 ≠ 人天；无日历/工时系统</td></tr>
+          <tr><td>团队健康度</td><td>需要单独问卷，和本报告节奏不同</td></tr>
+          <tr><td>个人 DQS 排行</td><td>估分 0 会除零；只修 Bug 的人不可比；不适合管理层页</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout ok">
+        <div class="title">落地顺序</div>
+        <p style="font-size:13px;">先改报告结构（零开发）：用最终版模板填本期。再在复盘快照加 Bug Environment，把生产缺陷做成自动数。最后才考虑周期时间和 CI 覆盖率。</p>
+      </div>
+    </div>
+
+    <p class="footnote">
+      状态：绿=正常（达标或偏差 ≤5%）；黄=有风险（偏离 5%–15% 且已有措施）；红=未达预期（偏离 &gt;15% 或存在线上/范围重大风险）。目标值为建议值，尚未经管理层冻结。
+    </p>
+  </div>
+
+  <script>
+    (function () {
+      var tabs = document.querySelectorAll(".tab");
+      var panels = {
+        report: document.getElementById("panel-report"),
+        diff: document.getElementById("panel-diff"),
+        source: document.getElementById("panel-source")
+      };
+      tabs.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-tab");
+          tabs.forEach(function (t) { t.classList.toggle("active", t === btn); });
+          Object.keys(panels).forEach(function (k) {
+            panels[k].classList.toggle("active", k === id);
+          });
+        });
+      });
+      window.addEventListener("beforeprint", function () {
+        document.querySelectorAll("details.fold").forEach(function (d) { d.setAttribute("open", ""); });
+      });
+    })();
+  </script>
+</body>
+</html>

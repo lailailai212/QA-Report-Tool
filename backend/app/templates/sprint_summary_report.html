@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ report.title }} · {{ report.feishuSprint }}</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #fff;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --line-soft: #ececec;
+      --accent: #171717;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --teal: #0d9488;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --fill: #f4f4f5;
+      --callout-warn-bg: #fffbeb;
+      --callout-warn-bd: #fde68a;
+      --callout-info-bg: #f8fafc;
+      --callout-info-bd: #e5e7eb;
+      --callout-danger-bg: #fef2f2;
+      --callout-danger-bd: #fecaca;
+      --callout-ok-bg: #ecfdf5;
+      --callout-ok-bd: #a7f3d0;
+      --section-lead-bg: #eff6ff;
+      --section-lead-bd: #bfdbfe;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .footnote { color: var(--muted); font-size: 12px; margin-top: 24px; }
+    .formula-ref {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .formula-ref .title { margin: 0 0 6px; font-weight: 650; color: var(--text); font-size: 12px; }
+    .formula-ref ul { margin: 0; padding-left: 1.15em; }
+    .formula-ref li { margin: 0 0 4px; }
+    .formula-ref li:last-child { margin-bottom: 0; }
+    h2, .h2 { margin: 28px 0 12px; font-size: 20px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    .more { font-size: 12px; font-weight: 650; color: var(--text); text-decoration: none; }
+    .more:hover { color: var(--info); }
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+    .banner a, .footnote a { color: var(--info); text-decoration: none; }
+    .meta {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+      font-size: 13px;
+    }
+    .meta > div { padding: 9px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .meta > div:nth-child(even) { border-right: none; }
+    .meta > div:nth-last-child(-n+2) { border-bottom: none; }
+    .meta .k { background: var(--fill); font-weight: 650; color: var(--text); }
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--callout-warn-bd);
+      background: var(--callout-warn-bg);
+      border-radius: 10px;
+    }
+    .callout.info { background: var(--callout-info-bg); border-color: var(--callout-info-bd); }
+    .callout.danger { background: var(--callout-danger-bg); border-color: var(--callout-danger-bd); }
+    .callout.ok, .callout.low { background: var(--callout-ok-bg); border-color: var(--callout-ok-bd); }
+    .callout .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .callout p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--text); }
+    .section-lead {
+      margin: 8px 0 0;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--section-lead-bg);
+      border: 1px solid var(--section-lead-bd);
+      border-radius: 8px;
+      outline: none;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+      margin: 8px 0 8px;
+      padding: 4px 0 8px;
+    }
+    .kpi { background: none; border: none; padding: 0; }
+    .kpi .head { display: flex; align-items: baseline; gap: 8px; }
+    .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--text); }
+    .kpi .label { font-size: 14px; font-weight: 650; color: var(--text); letter-spacing: 0.01em; }
+    .kpi > .label { margin-top: 8px; }
+    .kpi .prev { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .kpi.ok .value { color: var(--ok); }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.danger .value { color: var(--danger); }
+    .kpi.teal .value { color: var(--teal); }
+    table.data {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      font-size: 13px;
+      margin: 0 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data th { background: var(--fill); color: var(--text); font-weight: 650; }
+    table.data th.num, table.data td.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data td.manual { color: var(--muted); font-style: italic; min-width: 9em; }
+    table.data tr.row-danger td:first-child { color: var(--danger); font-weight: 650; }
+    table.data tr.row-warn td:first-child { color: var(--warn); font-weight: 650; }
+    table.data.plain { border: none; border-radius: 0; }
+    table.data.plain th { background: var(--fill); }
+    table.data a { color: var(--info); text-decoration: none; }
+    table.data a:hover { text-decoration: underline; }
+    table.data.compact { font-size: 12px; }
+    table.data.compact th, table.data.compact td { padding: 8px 8px; }
+    table.data td.alert {
+      color: var(--danger);
+      font-weight: 700;
+      background: var(--callout-danger-bg);
+    }
+    .rate-ok { color: var(--ok); font-weight: 650; }
+    .rate-bad { color: var(--danger); font-weight: 650; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .status.lg { font-size: 20px; gap: 8px; }
+    .status i {
+      width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+    }
+    .status.lg i { width: 18px; height: 18px; }
+    .status.ok i { background: var(--dot-ok); }
+    .status.low i { background: var(--dot-ok); }
+    .status.late i { background: var(--dot-warn); }
+    .status.warn i { background: var(--dot-warn); }
+    .status.danger i { background: var(--dot-danger); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .card h3 { margin: 0 0 8px; }
+    details.fold { border: none; background: transparent; margin: 8px 0; }
+    details.fold > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      background: none;
+    }
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.fold > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 1.1em;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    details.fold[open] > summary::before { content: "▾"; }
+    .fold-body { padding: 4px 0 12px; }
+    .chart-caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .legend { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+    .legend .dev { background: var(--info); }
+    .legend .qc { background: var(--ok); }
+    .legend .found { background: var(--info); }
+    .legend .fixed { background: var(--ok); }
+    .legend .acc { background: var(--warn); }
+    .legend .pt { background: var(--ok); }
+    .legend .rate { background: var(--warn); }
+    .trend-up { color: var(--ok); font-weight: 650; white-space: nowrap; }
+    .trend-down { color: var(--danger); font-weight: 650; white-space: nowrap; }
+    .flat { color: var(--muted); font-weight: 650; white-space: nowrap; }
+    svg.line, svg.col { width: 100%; height: 220px; display: block; }
+    td.scope-deviation-high.exec-edit {
+      background: #fdecea;
+      color: var(--danger);
+      font-weight: 600;
+    }
+    .manual { color: var(--muted); font-style: italic; }
+    .exec-edit { outline: none; cursor: text; border-radius: 4px; min-height: 1.2em; }
+    .meta .exec-edit, .section-lead.exec-edit { white-space: pre-wrap; word-break: break-word; }
+    .exec-edit:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18); background: rgba(59, 130, 246, 0.06); }
+    td.exec-edit, .meta .exec-edit { background: var(--fill); border: 1px dashed transparent; }
+    td.exec-edit:focus, .meta .exec-edit:focus { border-color: var(--info); background: #fff; }
+    .exec-edit:empty::before { content: attr(data-placeholder); color: var(--muted); font-style: italic; }
+    .exec-edit[contenteditable="true"] { position: relative; padding-right: 22px; }
+    .exec-edit[contenteditable="true"]::after {
+      content: "";
+      position: absolute;
+      top: 0.35em;
+      right: 6px;
+      width: 14px;
+      height: 14px;
+      opacity: 0.55;
+      pointer-events: none;
+      background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E");
+    }
+    .section-lead.exec-edit[contenteditable="true"]::after { top: 10px; right: 10px; }
+    .exec-status { cursor: pointer; user-select: none; }
+    .exec-status:hover { opacity: 0.85; }
+    .exec-row-add {
+      margin: 6px 0 10px;
+      padding: 4px 10px;
+      font: inherit;
+      font-size: 12px;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .exec-row-add:hover { border-color: var(--info); color: var(--info); }
+    .exec-del {
+      padding: 2px 6px;
+      font-size: 11px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    body.report-readonly .exec-edit { cursor: default; background: transparent; border: none; padding-right: 0; }
+    body.report-readonly td.exec-edit,
+    body.report-readonly .meta .exec-edit { background: transparent; border: none; }
+    body.report-readonly .exec-status { cursor: default; pointer-events: none; }
+    @media (max-width: 900px) {
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .grid-2, .meta { grid-template-columns: 1fr; }
+      .meta > div { border-right: none; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .banner { display: none; }
+      details.fold > summary::before { content: none; }
+    }
+  </style>
+</head>
+<body{% if not editable %} class="report-readonly"{% endif %}>
+{% set GOAL_STATUS_LABEL = {
+  "ok": "已完成",
+  "late": "已完成但晚于计划",
+  "warn": "部分完成",
+  "danger": "未完成"
+} %}
+{% set e = report.exec %}
+{% set m = report.metrics %}
+{% set prev = report.kpiPrev or {} %}
+{% set rt = (report.rolePoints or {}).get('total') or {} %}
+{% set ce = 'contenteditable="true" spellcheck="false"' if editable else '' %}
+{% set dp = report.detailsPath or '#' %}
+{% macro pct(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}%{%- endif -%}
+{%- endmacro %}
+{% macro num(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% set acc_cls = 'ok' if (m.acceptRate or 0) >= 80 else 'warn' %}
+{% set pt_cls = 'ok' if (m.pointRate or 0) >= 95 else 'warn' %}
+{% set bug_cls = 'ok' if (m.bugFixRate or 0) >= 85 else ('warn' if (m.bugFixRate or 0) >= 72 else 'danger') %}
+{% set dqs_cls = 'ok' if m.normDqs is not none and (m.normDqs|float) < 5 else 'warn' %}
+{% set callout_cls = 'ok' if e.overallStatus in ['ok', 'low'] else ('danger' if e.overallStatus == 'danger' else '') %}
+<div class="wrap">
+  <div class="banner">
+    <b>【Sprint 总结报告】</b> 数据来源：{{ report.sourceLabel or report.source }}。
+    {% if report.snapshotFetchedAt %}快照 {{ report.snapshotFetchedAt }}。{% endif %}
+    {% if report.planFrozenAt %}Plan 冻结于 {{ report.planFrozenAt }}。{% elif not report.hasPlan %}尚未冻结 Plan，范围偏差无法对比。{% endif %}
+    {% if editable %}
+    目标、风险、亮点/关注为手填；灰框可编辑，失焦自动保存。生成时间 {{ report.generatedAt }}。
+    {% else %}
+    本页为只读快照。生成时间 {{ report.generatedAt }}。
+    {% endif %}
+    <a class="more" href="{{ dp }}">查看详情 →</a>
+  </div>
+
+  <h1>{{ report.title }}</h1>
+  <p class="sub">{{ report.feishuSprint }}{% if report.sprintWindow %} · {{ report.sprintWindow }}{% endif %}</p>
+
+  <div class="meta" id="sec-overview">
+    <div class="k">Sprint 周期</div>
+    <div>{{ report.sprintWindow or report.feishuSprint }}</div>
+    <div class="k">本期亮点</div>
+    <div class="exec-edit" {{ ce|safe }} data-exec="highlight" data-placeholder="点击填写本期亮点…">{% for line in (e.highlight or '').splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
+    <div class="k">需要关注</div>
+    <div class="exec-edit" {{ ce|safe }} data-exec="concern" data-placeholder="点击填写需要关注…">{% for line in (e.concern or '').splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
+  </div>
+
+  <div class="callout {{ callout_cls }}">
+    <div class="title">
+      <span>总体状态</span>
+      <span class="status {{ e.overallStatus or 'warn' }} lg{% if editable %} exec-status{% endif %}" {% if editable %}data-exec="overallStatus" data-value="{{ e.overallStatus or 'warn' }}" title="点击切换：正常 / 低风险 / 中风险 / 高风险"{% endif %}><i></i><span class="exec-status-label">{{ e.overallStatusLabel or STATUS_LABEL.get(e.overallStatus, '待判定') }}</span></span>
+    </div>
+    <p style="margin-bottom:6px;"><b>一句话总结</b></p>
+    <div class="section-lead exec-edit" {{ ce|safe }} data-exec="oneLiner" data-placeholder="点击编辑一句话总结…">{% for line in (e.oneLiner or '').splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi {{ acc_cls }}">
+      <div class="head">
+        <div class="value">{{ pct(m.acceptRate) }}</div>
+        <div class="prev">{% if prev.acceptRate is not none %}上期 {{ pct(prev.acceptRate) }}{% else %}上期 —{% endif %}</div>
+      </div>
+      <div class="label">验收闭环（Story {{ m.acceptLabel or '—' }}）</div>
+    </div>
+    <div class="kpi {{ pt_cls }}">
+      <div class="head">
+        <div class="value">{{ pct(m.pointRate) }}</div>
+        <div class="prev">{% if prev.pointRate is not none %}上期 {{ pct(prev.pointRate) }}{% else %}上期 —{% endif %}</div>
+      </div>
+      <div class="label">故事点完成（{{ num(m.pointDone) }}/{{ num(m.pointPlan) }}）</div>
+    </div>
+    <div class="kpi {{ bug_cls }}">
+      <div class="head">
+        <div class="value">{{ pct(m.bugFixRate) }}</div>
+        <div class="prev">{% if prev.bugFixRate is not none %}上期 {{ pct(prev.bugFixRate) }}{% else %}上期 —{% endif %}</div>
+      </div>
+      <div class="label">缺陷修复率（{{ num(m.bugFixed) }}/{{ num(m.bugTotal) }}）</div>
+    </div>
+    <div class="kpi {{ dqs_cls }}">
+      <div class="head">
+        <div class="value">{{ num(m.normDqs) }}</div>
+        <div class="prev">{% if prev.normDqs is not none %}上期 {{ num(prev.normDqs) }}{% else %}上期 —{% endif %}</div>
+      </div>
+      <div class="label">归一化 DQS</div>
+    </div>
+  </div>
+
+  <h2 id="sec-s1">1. 风险/问题详情</h2>
+  <table class="data" id="tbl-risks">
+    <thead>
+      <tr>
+        <th>风险/问题</th><th>影响</th><th>等级</th><th>应对</th><th>负责人</th><th>截止</th>
+        {% if editable %}<th></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in e.risks %}
+      <tr data-row="risks" data-index="{{ loop.index0 }}">
+        <td class="exec-edit" {{ ce|safe }} data-exec="risks.{{ loop.index0 }}.title">{{ r.title }}</td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="risks.{{ loop.index0 }}.impact">{{ r.impact }}</td>
+        <td><span class="status {{ r.level or 'warn' }}{% if editable %} exec-status exec-risk-status{% endif %}" {% if editable %}data-exec="risks.{{ loop.index0 }}.level" data-value="{{ r.level or 'warn' }}" title="点击切换：正常 / 低风险 / 中风险 / 未达预期"{% endif %}><i></i><span class="exec-status-label">{{ RISK_STATUS_LABEL.get(r.level, r.level or '中风险') }}</span></span></td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="risks.{{ loop.index0 }}.action">{{ r.action }}</td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="risks.{{ loop.index0 }}.owner">{{ r.owner }}</td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="risks.{{ loop.index0 }}.due">{{ r.due }}</td>
+        {% if editable %}<td><button type="button" class="exec-del" data-del-row="risks">删</button></td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if editable %}<button type="button" class="exec-row-add" data-add="risks">+ 加风险行</button>{% endif %}
+
+  <h2 id="sec-s2">2. 目标偏离</h2>
+  <table class="data" id="tbl-goals">
+    <thead>
+      <tr>
+        <th>目标</th><th>预期结果</th><th>实际结果</th><th>状态</th>
+        {% if editable %}<th></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for g in e.goals %}
+      <tr data-row="goals" data-index="{{ loop.index0 }}">
+        <td class="exec-edit" {{ ce|safe }} data-exec="goals.{{ loop.index0 }}.goal">{{ g.goal }}</td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="goals.{{ loop.index0 }}.expected">{{ g.expected }}</td>
+        <td class="exec-edit" {{ ce|safe }} data-exec="goals.{{ loop.index0 }}.actual">{{ g.actual }}</td>
+        <td><span class="status {{ g.status or 'warn' }}{% if editable %} exec-status exec-goal-status{% endif %}" {% if editable %}data-exec="goals.{{ loop.index0 }}.status" data-value="{{ g.status or 'warn' }}" title="点击切换状态"{% endif %}><i></i><span class="exec-status-label">{{ GOAL_STATUS_LABEL.get(g.status, '部分完成') }}</span></span></td>
+        {% if editable %}<td><button type="button" class="exec-del" data-del-row="goals">删</button></td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if editable %}<button type="button" class="exec-row-add" data-add="goals">+ 加目标行</button>{% endif %}
+  <p class="hint" style="margin-top:10px;"><a class="more" href="{{ dp }}#plan">查看开发计划 vs 结果明细 →</a></p>
+
+  <h3 id="sec-open-stories">未完成 Story（{{ (e.incompleteItems or [])|length }}）</h3>
+  <p class="hint">状态尚未到达「待验收 / 已验收」的 User Story，不含 Task / 技改。Owner 来自飞书角色：产品经理 / Dev Owner / QC Owner。</p>
+  <table class="data compact">
+    <thead>
+      <tr>
+        <th>Item ID</th><th>Summary</th><th>状态</th>
+        <th>产品 Owner</th><th>开发 Owner</th><th>测试 Owner</th>
+        <th class="num">DEV 点</th><th class="num">QC 点</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in e.incompleteItems or [] %}
+      <tr>
+        <td>{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.id or '—' }}</a>{% else %}{{ r.id or '—' }}{% endif %}</td>
+        <td>{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.summary or '—' }}</a>{% else %}{{ r.summary or '—' }}{% endif %}</td>
+        <td>{{ r.status or '—' }}</td>
+        <td>{{ r.productOwner or '—' }}</td>
+        <td>{{ r.devOwner or r.owner or '—' }}</td>
+        <td>{{ r.qcOwner or '—' }}</td>
+        <td class="num">{{ num(r.pointDev) }}</td>
+        <td class="num">{{ num(r.pointQc) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8">本期 Story 均已到达待验收 / 已验收。</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <details class="fold" open id="sec-s3">
+    <summary>3. 项目范围</summary>
+    <div class="fold-body">
+      <h3>本期结论（按类型 Item）</h3>
+      <p class="hint">类型完成 = 已验收 + 待验收（含 Task / 技改）。验收闭环只计 User Story 的已验收，不含 Task / Tech Improvement。故事点见主表下摘要。</p>
+      <table class="data compact">
+        <thead>
+          <tr>
+            <th>类型</th>
+            <th class="num">计划</th>
+            <th class="num">完成</th>
+            <th class="num">未完成</th>
+            <th class="num">完成率</th>
+            <th class="num">环比</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for d in report.deliveryRows %}
+          <tr>
+            <td>{% if d.bold %}<b>{{ d.type }}</b>{% else %}{{ d.type }}{% endif %}</td>
+            <td class="num">{% if d.bold %}<b>{{ num(d.total) }}</b>{% else %}{{ num(d.total) }}{% endif %}</td>
+            <td class="num">{% if d.bold %}<b>{{ d.done }}</b>{% else %}{{ num(d.done) }}{% endif %}</td>
+            <td class="num">{% if d.bold %}<b>{{ num(d.unfinished) }}</b>{% else %}{{ num(d.unfinished) }}{% endif %}</td>
+            <td class="num">{% if d.bold %}<b>{{ d.doneRateLabel or pct(d.doneRate) }}</b>{% else %}{{ d.doneRateLabel or pct(d.doneRate) }}{% endif %}</td>
+            <td class="num"><span class="{{ d.deltaCls or 'flat' }}">{{ d.delta or '—' }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="hint" style="margin-top:8px;">故事点摘要：Point <b>{{ num(m.pointDone) }} / {{ num(m.pointPlan) }}</b>（{{ pct(m.pointRate) }}，环比 <span class="{{ report.pointDelta.cls if report.pointDelta else 'flat' }}">{{ report.pointDelta.text if report.pointDelta else '—' }}</span>）。分列明细见 <a class="more" href="{{ dp }}#points-split">详情页</a>。</p>
+
+      <h3>范围变更</h3>
+      <p class="hint">偏差率 =（移入 + 移出）÷ 计划会冻结数。&gt; 20% 红色。明细见 <a class="more" href="{{ dp }}#scope-list">详情页清单</a>。{% if e.scopeAuto %}已按计划会冻结快照自动计算。{% endif %}</p>
+      <table class="data compact" id="tbl-scopeSummary">
+        <thead>
+          <tr>
+            <th>类型</th>
+            <th class="num">移入</th>
+            <th class="num">移出</th>
+            <th class="num">偏差率</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for typ in ['User Story', 'Task', 'Tech Improvement'] %}
+          {% set ss = (e.scopeSummary or {}).get(typ) or {} %}
+          <tr data-scope-type="{{ typ }}">
+            <td>{{ typ }}</td>
+            {% if e.scopeAuto %}
+            <td class="num">{{ ss.movedIn if ss.movedIn is not none else '—' }}</td>
+            <td class="num">{{ ss.movedOut if ss.movedOut is not none else '—' }}</td>
+            <td class="num{% if scope_deviation_high(ss.churnRate) %} scope-deviation-high rate-bad{% endif %}">{{ ss.churnRate or '—' }}</td>
+            {% else %}
+            <td class="num exec-edit" {{ ce|safe }} data-exec-group="scopeSummary" data-scope-type="{{ typ }}" data-field="movedIn" data-placeholder="—">{{ ss.movedIn if ss.movedIn is not none else '' }}</td>
+            <td class="num exec-edit" {{ ce|safe }} data-exec-group="scopeSummary" data-scope-type="{{ typ }}" data-field="movedOut" data-placeholder="—">{{ ss.movedOut if ss.movedOut is not none else '' }}</td>
+            <td class="num exec-edit{% if scope_deviation_high(ss.churnRate) %} scope-deviation-high rate-bad{% endif %}" {{ ce|safe }} data-exec-group="scopeSummary" data-scope-type="{{ typ }}" data-field="churnRate" data-placeholder="—">{{ ss.churnRate or '' }}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="hint exec-edit" {{ ce|safe }} data-exec="scopePlanNote" data-placeholder="Plan 说明（可选）">{{ e.scopePlanNote or '' }}</p>
+      <p class="hint" style="margin-top:10px;">
+        <a class="more" href="{{ dp }}#scope-list">查看移入 / 移出清单 →</a>　·　
+        <a class="more" href="{{ dp }}#scope-mom">范围稳定性环比 →</a>　·　
+        <a class="more" href="{{ dp }}#delivery-detail">交付明细 →</a>　·　
+        <a class="more" href="{{ dp }}#type-trend">按类型趋势 →</a>　·　
+        <a class="more" href="{{ dp }}#points-split">故事点分列 →</a>
+      </p>
+
+      <h3>近 4 期交付趋势</h3>
+      <p class="hint">验收闭环 = User Story 已验收 / Story 总数；不含 Task / 技改。故事点来自飞书当前快照。</p>
+      {% if report.charts.delivery %}
+      <div class="legend"><b class="acc"></b>Story 验收闭环率　<b class="pt"></b>Point 完成率　灰线 = 80%</div>
+      {{ report.charts.delivery | safe }}
+      <p class="chart-caption">{{ (report.captions or {}).get('delivery') or '' }}</p>
+      {% else %}
+      <p class="hint">近 4 期对比需要至少 2 个 Sprint 的飞书快照。</p>
+      {% endif %}
+    </div>
+  </details>
+
+  <details class="fold" open id="sec-s4">
+    <summary>4. 项目质量</summary>
+    <div class="fold-body">
+      <h3>缺陷：发现 vs 修复</h3>
+      {% if report.charts.bugs %}
+      <div class="legend"><b class="found"></b>发现数　<b class="fixed"></b>已修复　<b class="rate"></b>修复率　左轴计数／右轴百分比</div>
+      {{ report.charts.bugs | safe }}
+      <p class="chart-caption">{{ (report.captions or {}).get('bugs') or '' }}</p>
+      {% else %}
+      <p class="hint">近 4 期缺陷图需要至少 2 个 Sprint 的数据。</p>
+      {% endif %}
+
+      <h3>缺陷数据统计</h3>
+      <p class="hint">正文只对比本期 / 上期。Critical / Major 修复率 &lt; 90% 标红。</p>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>严重等级</th>
+            <th class="num">本期计数</th><th class="num">已修复</th><th class="num">修复率</th>
+            <th class="num">上期计数</th><th class="num">已修复</th><th class="num">修复率</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for r in report.severityRows %}
+          <tr class="{{ r.rowClass }}">
+            <td>{{ r.severity }}</td>
+            <td class="num">{{ r.found }}</td>
+            <td class="num">{{ r.fixed }}</td>
+            <td class="num{% if r.alert %} alert{% endif %}">{{ pct(r.fixRate) }}</td>
+            <td class="num">{% if r.prevFound is not none %}{{ r.prevFound }}{% else %}—{% endif %}</td>
+            <td class="num">{% if r.prevFixed is not none %}{{ r.prevFixed }}{% else %}—{% endif %}</td>
+            <td class="num">{% if r.prevFixRate is not none %}{{ pct(r.prevFixRate) }}{% else %}—{% endif %}</td>
+          </tr>
+        {% endfor %}
+          <tr>
+            <td>合计</td>
+            <td class="num"><b>{{ report.severityTotals.found }}</b></td>
+            <td class="num"><b>{{ report.severityTotals.fixed }}</b></td>
+            <td class="num"><b>{{ pct(report.severityTotals.fixRate) }}</b></td>
+            <td class="num"><b>{% if report.severityTotals.prevFound is not none %}{{ report.severityTotals.prevFound }}{% else %}—{% endif %}</b></td>
+            <td class="num"><b>{% if report.severityTotals.prevFixed is not none %}{{ report.severityTotals.prevFixed }}{% else %}—{% endif %}</b></td>
+            <td class="num"><b>{% if report.severityTotals.prevFixRate is not none %}{{ pct(report.severityTotals.prevFixRate) }}{% else %}—{% endif %}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="data compact">
+        <thead>
+          <tr>
+            <th>质量评分</th>
+            <th class="num">有效 Bug</th>
+            <th class="num">基础 DQS</th>
+            <th class="num">DEV 完成点</th>
+            <th class="num">本期归一化</th>
+            <th class="num">上期</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OBIS</td>
+            <td class="num">{{ num(report.validBugs or m.validBugs) }}</td>
+            <td class="num">{{ num(m.baseDqs) }}</td>
+            <td class="num">{{ num(rt.doneDev) }}</td>
+            <td class="num">{{ num(m.normDqs) }}</td>
+            <td class="num">{{ num(prev.normDqs) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="hint">{{ (report.captions or {}).get('dqs') or '' }}</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>缺陷根因</h3>
+          <table class="data plain">
+            <thead><tr><th>缺陷根因</th><th class="num">计数</th><th class="num">占比</th></tr></thead>
+            <tbody>
+            {% for r in report.rootCauseRows %}
+              <tr>
+                <td>{{ r.cause }}</td>
+                <td class="num">{{ r.count }}</td>
+                <td class="num{% if r.alert %} alert{% endif %}">{{ pct(r.pct) }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Reopen</h3>
+          <p style="margin:0 0 8px;">
+            本期 <b>{{ report.reopen.label }}</b>
+            {% if report.reopen.detail %}（{{ report.reopen.detail }}）{% endif %}
+            {% if report.reopen.prevRate is not none %}　上期 {{ report.reopen.prevRate }}%{% endif %}
+          </p>
+          <p class="hint">口径：Reopen 条数 / Closed+Done Bug。未在日报维护 Reopen 表时显示「待填」。</p>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:10px;"><a class="more" href="{{ dp }}#personal-bug">查看个人 Bug 汇总 →</a></p>
+    </div>
+  </details>
+
+  <details class="fold" open id="sec-s5">
+    <summary>5. 团队效率</summary>
+    <div class="fold-body">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="value">{{ num(report.peopleCount) }}</div>
+          <div class="label">参与人数（DEV {{ num(report.peopleDev) }} / QC {{ num(report.peopleQc) }} / PM {{ num(report.peoplePm) }}）</div>
+        </div>
+        <div class="kpi">
+          <div class="value">{{ num(report.perCapita) }}</div>
+          <div class="label">人均故事点</div>
+        </div>
+        <div class="kpi {{ pt_cls }}">
+          <div class="value">{{ num(m.pointDone) }}</div>
+          <div class="label">完成故事点（计划 {{ num(m.pointPlan) }}）</div>
+        </div>
+        <div class="kpi">
+          <div class="value">{{ num(report.unfinishedPoints) }}</div>
+          <div class="label">未完成 Point</div>
+        </div>
+      </div>
+      {% if report.pointOutliers %}
+      <p class="hint">已排除异常估分（单条 &gt; 40，不计入汇总）：{% for o in report.pointOutliers %}{% if not loop.first %}；{% endif %}{{ o.type }} {{ o.summary }}（{{ o.pointDev }}{% if o.pointQc %} / QC {{ o.pointQc }}{% endif %}）{% endfor %}。请在飞书改正后刷新。</p>
+      {% endif %}
+      <table class="data">
+        <thead>
+          <tr>
+            <th>角色</th><th class="num">人数</th>
+            <th class="num">总估分 Point</th><th class="num">已完成 Point</th>
+            <th class="num">未完成 Point</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DEV</td><td class="num">{{ num(report.peopleDev) }}</td>
+            <td class="num">{{ num(rt.planDev) }}</td>
+            <td class="num">{{ num(rt.doneDev) }}</td>
+            <td class="num">{% if rt.planDev is not none and rt.doneDev is not none %}{{ (rt.planDev - rt.doneDev)|round(1) }}{% else %}—{% endif %}</td>
+          </tr>
+          <tr>
+            <td>QC</td><td class="num">{{ num(report.peopleQc) }}</td>
+            <td class="num">{{ num(rt.planQc) }}</td>
+            <td class="num">{{ num(rt.doneQc) }}</td>
+            <td class="num">{% if rt.planQc is not none and rt.doneQc is not none %}{{ (rt.planQc - rt.doneQc)|round(1) }}{% else %}—{% endif %}</td>
+          </tr>
+          <tr>
+            <td>PM</td><td class="num">{{ num(report.peoplePm) }}</td>
+            <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-2">
+        <div>
+          <h3>近 4 期完成故事点（DEV / QC）</h3>
+          <p class="hint">柱高为各类型完成 Point 加总。{{ (report.captions or {}).get('points') or '' }}</p>
+          {% if report.charts.points %}
+          <div class="legend"><b class="dev"></b>DEV 完成点　<b class="qc"></b>QC 完成点</div>
+          {{ report.charts.points | safe }}
+          {% else %}
+          <p class="hint">需要至少 2 期数据。</p>
+          {% endif %}
+        </div>
+        <div>
+          <h3>近 4 期人均故事点</h3>
+          <p class="hint">{{ (report.captions or {}).get('capita') or '' }}</p>
+          {% if report.charts.capita %}
+          <div class="legend"><b class="dev"></b>DEV 人均　<b class="qc"></b>QC 人均</div>
+          {{ report.charts.capita | safe }}
+          {% else %}
+          <p class="hint">需要至少 2 期数据。</p>
+          {% endif %}
+        </div>
+      </div>
+      <p class="hint" style="margin-top:10px;"><a class="more" href="{{ dp }}#personal-points">查看个人故事点明细 →</a></p>
+    </div>
+  </details>
+
+  <div class="formula-ref">
+    <div class="title">口径</div>
+    <ul>
+      <li>类型完成 = 已验收 + 待验收（按类型，含 Task / 技改）；验收闭环 = User Story 已验收 / Story 总数。</li>
+      <li>范围偏差率 =（移入 + 移出）/ 计划会冻结数；&gt; 20% 标红。</li>
+      <li>故事点取飞书 Story Point（DEV/QC）；父项已验收或待验收计完成。Lead 不计入 DEV/QC 估分。Task 的 Owner 若在 QC 名单（Points 页维护）中，计入 QC，不计入 DEV。单条 &gt; 40 视为异常估分，不计入汇总。</li>
+      <li>归一化 DQS = 基础 DQS / DEV 完成点；越低越好。</li>
+      <li>Reopen 率 = 日报 Reopen 条数 / Closed+Done Bug。</li>
+    </ul>
+  </div>
+  <p class="footnote">状态：绿=正常；黄=中风险；红=高风险 / 未达预期。</p>
+</div>
+<script>
+  window.addEventListener("beforeprint", function () {
+    document.querySelectorAll("details.fold").forEach(function (d) { d.setAttribute("open", ""); });
+  });
+</script>
+</body>
+</html>

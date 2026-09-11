@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 总结 · 详情 · {{ report.feishuSprint }}</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --fill: #f4f4f5;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --callout-danger-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    h2 {
+      margin: 28px 0 12px;
+      font-size: 20px;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      scroll-margin-top: 16px;
+    }
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+    .back {
+      display: inline-block;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .back:hover { color: var(--info); }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data th { background: var(--fill); font-weight: 650; color: var(--muted); font-size: 12px; }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    table.data.compact th, table.data.compact td { padding: 6px 8px; font-size: 12px; }
+    table.data a { color: var(--text); text-decoration: none; }
+    table.data a:hover { color: var(--info); }
+    .more { font-size: 12px; font-weight: 650; color: var(--text); text-decoration: none; }
+    .more:hover { color: var(--info); }
+    .rate-bad { color: var(--danger); font-weight: 650; }
+    .trend-up { color: var(--ok); }
+    .trend-down { color: var(--danger); }
+    .flat { color: var(--muted); }
+    .mom { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+    .cell-stack { line-height: 1.45; }
+    .scroll-x { overflow-x: auto; }
+    .scroll-x.fit table { min-width: 0; }
+    table.data.wide { min-width: 960px; }
+    .legend { font-size: 12px; color: var(--muted); margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+    .legend b.us { background: #d97706; }
+    .legend b.task { background: #3b82f6; }
+    .legend b.ti { background: #0d9488; }
+    svg.line, svg.col { width: 100%; max-width: 640px; height: auto; display: block; }
+    .chart-caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .toc { font-size: 13px; margin: 0 0 20px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+    .toc a { margin-right: 12px; display: inline-block; margin-bottom: 4px; }
+    .section { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+    table.data td.alert { color: var(--danger); font-weight: 700; background: var(--callout-danger-bg); }
+    .manual { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+{% set e = report.exec %}
+{% set dtl = report.details or {} %}
+{% set moved_in = e.scopeMovedIn or [] %}
+{% set moved_out = e.scopeMovedOut or [] %}
+{% macro pct(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}%{%- endif -%}
+{%- endmacro %}
+{% macro num(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% macro item_link(row) -%}
+{%- set iid = row.id or '—' -%}
+{%- if row.url and iid != '—' -%}
+<a href="{{ row.url }}" target="_blank" rel="noopener">{{ iid }}</a>
+{%- else -%}{{ iid }}{%- endif -%}
+{%- endmacro %}
+{% macro summary_link(row) -%}
+{%- if row.url -%}
+<a href="{{ row.url }}" target="_blank" rel="noopener">{{ row.summary }}</a>
+{%- else -%}{{ row.summary }}{%- endif -%}
+{%- endmacro %}
+<div class="wrap">
+  <a class="back" href="{{ report.backPath or '/sprint-summary' }}">← 返回 Sprint 总结报告</a>
+  <h1>Sprint 总结 · 详情</h1>
+  <p class="sub">{{ report.feishuSprint }}{% if report.sprintWindow %} · {{ report.sprintWindow }}{% endif %} · {{ report.sourceLabel or report.source }}</p>
+  <div class="banner">主报告收掉的明细：开发计划 vs 结果，以及范围 / 交付 / 质量 / 产能附录。发信时会写入邮件正文，可展开查看。</div>
+  <nav class="toc">
+    <b>目录</b><br/>
+    <a class="more" href="#plan">开发计划 vs 结果</a>
+    <a class="more" href="#open-stories">未完成 Story</a>
+    <a class="more" href="#scope-list">移入 / 移出清单</a>
+    <a class="more" href="#delivery-detail">交付明细</a>
+    <a class="more" href="#scope-mom">范围稳定性环比</a>
+    <a class="more" href="#type-trend">按类型近四期完成率</a>
+    <a class="more" href="#points-split">故事点分列</a>
+    <a class="more" href="#personal-bug">个人 Bug 汇总</a>
+    <a class="more" href="#personal-points">个人故事点明细</a>
+  </nav>
+
+  <div class="section">
+    <h2 id="plan">开发计划 vs 结果</h2>
+    <p class="hint">「完成数」以迭代结束时的 Item 个数为准。「完成数→实际」= 已验收 + 待验收。验收闭环只看 User Story。范围稳定性计划以 Sprint Plan Meeting 冻结基线为准。{% if e.scopePlanNote %}{{ e.scopePlanNote }}。{% endif %}</p>
+    <table class="data">
+      <thead>
+        <tr>
+          <th>类型</th><th>维度</th>
+          <th>计划</th><th>实际</th>
+          <th class="num">完成率</th><th class="num">偏差率</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for b in dtl.planBlocks or [] %}
+        <tr>
+          <td>{{ b.type }}</td><td>完成数</td>
+          <td>{{ num(b.plan) }} 个</td><td>{{ num(b.actual) }} 个</td>
+          <td class="num"><b>{{ pct(b.doneRate) }}</b></td><td class="num">N/A</td>
+        </tr>
+        <tr>
+          <td></td><td>状态</td>
+          <td>{% if b.acceptFocus %}全部验收完成{% else %}—{% endif %}</td>
+          <td>{% for s in b.statusDist or [] %}{{ s.status }}：{{ s.count }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+          <td class="num">N/A</td>
+          <td class="num{% if b.acceptFocus and b.acceptGap is not none and b.acceptGap > 15 %} alert{% endif %}">{% if b.acceptFocus %}{{ pct(b.acceptGap) }}{% else %}N/A{% endif %}</td>
+        </tr>
+        <tr>
+          <td></td><td>范围稳定性</td>
+          {% if b.scopePlan or b.movedIn or b.movedOut %}
+          <td>{{ num(b.scopePlan) }} 个</td>
+          <td>变更总计 {{ (b.movedIn or 0) + (b.movedOut or 0) }} 个<br>移入：{{ num(b.movedIn) }}<br>移出：{{ num(b.movedOut) }}</td>
+          <td class="num">N/A</td>
+          <td class="num{% if b.churnHigh %} rate-bad{% endif %}">{{ b.churnRate or '—' }}</td>
+          {% else %}
+          <td>N/A</td><td>N/A</td><td class="num">N/A</td><td class="num">N/A</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 id="open-stories">未完成 Story（{{ (e.incompleteItems or [])|length }}）</h2>
+    <p class="hint">状态尚未到达「待验收 / 已验收」的 User Story，不含 Task / 技改。Owner 来自飞书角色：产品经理 / Dev Owner / QC Owner。</p>
+    <table class="data compact">
+      <thead>
+        <tr>
+          <th>Item ID</th><th>Summary</th><th>状态</th>
+          <th>产品 Owner</th><th>开发 Owner</th><th>测试 Owner</th>
+          <th class="num">DEV 点</th><th class="num">QC 点</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in e.incompleteItems or [] %}
+        <tr>
+          <td>{{ item_link(r) }}</td>
+          <td>{{ summary_link(r) }}</td>
+          <td>{{ r.status or '—' }}</td>
+          <td>{{ r.productOwner or '—' }}</td>
+          <td>{{ r.devOwner or r.owner or '—' }}</td>
+          <td>{{ r.qcOwner or '—' }}</td>
+          <td class="num">{{ num(r.pointDev) }}</td>
+          <td class="num">{{ num(r.pointQc) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8">本期 Story 均已到达待验收 / 已验收。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 id="scope-list">移入 / 移出清单（{{ moved_in|length }} / {{ moved_out|length }}）</h2>
+    <p class="hint">口径含 User Story / Tech Improvement / Task。{% if e.scopePlanNote %}{{ e.scopePlanNote }}{% endif %}</p>
+    <h3>移入（{{ moved_in|length }}）</h3>
+    <table class="data compact">
+      <thead><tr><th>类型</th><th>Item ID</th><th>Summary</th></tr></thead>
+      <tbody>
+      {% for r in moved_in %}
+        <tr>
+          <td>{{ r.type }}</td>
+          <td>{{ item_link(r) }}</td>
+          <td>{{ summary_link(r) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">无移入项（或尚未冻结计划会快照）</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h3>移出（{{ moved_out|length }}）</h3>
+    <table class="data compact">
+      <thead><tr><th>类型</th><th>Item ID</th><th>Summary</th></tr></thead>
+      <tbody>
+      {% for r in moved_out %}
+        <tr>
+          <td>{{ r.type }}</td>
+          <td>{{ item_link(r) }}</td>
+          <td>{{ summary_link(r) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3">无移出项（或尚未冻结计划会快照）</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 id="delivery-detail">交付明细（本期 vs 上期）</h2>
+    <p class="hint">补充正文「本期结论」：完成数按类型（已验收+待验收）。验收偏差只针对 User Story。{% if report.prevSprint %}对比 {{ report.prevSprint }}{% else %}尚无上期数据{% endif %}。</p>
+    <div class="scroll-x fit">
+      <table class="data compact compare">
+        <thead>
+          <tr>
+            <th>类型</th><th>维度</th>
+            <th>本期</th>
+            <th>上期（−1）</th>
+            <th>环比</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in dtl.deliveryDetail or [] %}
+          <tr>
+            <td>{{ row.type }}</td><td>完成数</td>
+            <td class="cell-stack">计划 {{ num(row.curPlan) }} 个<br>实际 {{ num(row.curActual) }} 个<br>完成率 {{ pct(row.curRate) }}</td>
+            <td class="cell-stack">{% if report.prevSprintLoaded %}计划 {{ num(row.prevPlan) }} 个<br>实际 {{ num(row.prevActual) }} 个<br>完成率 {{ pct(row.prevRate) }}{% else %}—{% endif %}</td>
+            <td>
+              <div class="mom">
+                <span class="{{ row.rateMom.cls if row.rateMom else 'flat' }}">完成率 {{ row.rateMom.text if row.rateMom else '—' }}</span>
+                {% if row.actualDelta %}<span>{{ row.actualDelta }}</span>{% endif %}
+                {% if row.planDelta %}<span>{{ row.planDelta }}</span>{% endif %}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td></td><td>{% if row.acceptFocus %}验收状态{% else %}状态{% endif %}</td>
+            <td class="cell-stack">{% for s in row.curDist or [] %}{{ s.status }}：{{ s.count }}<br>{% endfor %}{% if row.acceptFocus %}验收偏差 {{ pct(row.curGap) }}{% endif %}</td>
+            <td class="cell-stack">{% if report.prevSprintLoaded %}{% for s in row.prevDist or [] %}{{ s.status }}：{{ s.count }}<br>{% endfor %}{% if row.acceptFocus %}验收偏差 {{ pct(row.prevGap) }}{% endif %}{% else %}—{% endif %}</td>
+            <td>
+              <div class="mom">
+                {% if row.gapMom %}<span class="{{ row.gapMom.cls }}">{{ row.gapMom.text }}</span>{% endif %}
+                {% if row.acceptedDelta %}<span>{{ row.acceptedDelta }}</span>{% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 id="scope-mom">范围稳定性环比</h2>
+    <p class="hint">补充正文「范围变更」：仅本期 vs 上期冻结口径。</p>
+    <table class="data compact">
+      <thead>
+        <tr>
+          <th>类型</th>
+          <th>本期</th>
+          <th>上期（−1）</th>
+          <th>环比</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in dtl.scopeMom or [] %}
+        <tr>
+          <td>{{ row.type }}</td>
+          <td class="cell-stack">
+            {% if row.hasCur %}
+            冻结 {{ num(row.plan) }} · 移入 {{ num(row.movedIn) }} / 移出 {{ num(row.movedOut) }}<br>
+            偏差率 <span class="{% if row.churnHigh %}rate-bad{% endif %}">{{ row.churnRate or '—' }}</span>
+            {% else %}本期无基线 · N/A{% endif %}
+          </td>
+          <td class="cell-stack">
+            {% if row.hasPrev %}
+            冻结 {{ num(row.prevPlan) }} · 移入 {{ num(row.prevIn) }} / 移出 {{ num(row.prevOut) }}<br>
+            偏差率 {{ row.prevChurn or '—' }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="mom">
+              {% if row.hasCur and row.hasPrev %}
+              <span class="{{ row.churnMom.cls if row.churnMom else 'flat' }}">{{ row.churnMom.text if row.churnMom else '—' }}</span>
+              {% if row.changeDelta %}<span>{{ row.changeDelta }}</span>{% endif %}
+              {% else %}
+              <span class="flat">本期无口径或缺少上期，环比 N/A</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 id="type-trend">按类型近四期完成率</h2>
+    <p class="hint">补充正文总趋势图：拆到 US / Task / TI。</p>
+    {% if report.charts.typeTrend %}
+    <div class="legend"><b class="us"></b>User Story　<b class="task"></b>Task　<b class="ti"></b>Tech Improvement　灰线 = 80%</div>
+    {{ report.charts.typeTrend | safe }}
+    {% else %}
+    <p class="hint">需要至少 2 期数据。</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2 id="points-split">故事点分列（DEV/QC · 四期）</h2>
+    <p class="hint">完成率 = 完成 Story Point / 计划 Story Point（含 US / TI / Task）。</p>
+    <div class="scroll-x">
+      <table class="data compact wide">
+        <thead>
+          <tr>
+            <th>类型</th><th>维度</th>
+            {% for lab in dtl.histLabels or [] %}
+            <th class="num">{{ lab }} DEV</th><th class="num">{{ lab }} QC</th><th class="num">TOTAL</th><th class="num">完成率</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in dtl.pointsSplit or [] %}
+          <tr>
+            <td>{% if row.bold %}<b>{{ row.type }}</b>{% else %}{{ row.type }}{% endif %}</td>
+            <td>{{ row.dim }}</td>
+            {% for c in row.cells or [] %}
+              {% if row.bold %}
+              <td colspan="3"><b>{{ c.total }}{% if c.rate is not none %} ≈ {{ pct(c.rate) }}{% endif %}</b></td>
+              <td class="num"></td>
+              {% else %}
+              <td class="num">{{ num(c.dev) }}</td>
+              <td class="num">{{ num(c.qc) }}</td>
+              <td class="num">{{ num(c.total) }}</td>
+              <td class="num">{{ pct(c.rate) if c.rate is not none else '' }}</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 id="personal-bug">个人 Bug 汇总</h2>
+    <p class="hint">估分为 0（只修 Bug）时归一化 DQS 为 #DIV/0!，不能当绩效。</p>
+    <table class="data">
+      <thead>
+        <tr>
+          <th>个人 Bug 汇总</th>
+          <th class="num">Bug 个数</th>
+          <th class="num">基础 DQS</th>
+          <th class="num">已完成 Point</th>
+          <th class="num">归一化 DQS</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in dtl.personalBugs or report.personalBugs or [] %}
+        <tr>
+          <td>{{ r.owner }}</td>
+          <td class="num">{{ r.bugCount }}</td>
+          <td class="num">{{ r.baseDqs }}</td>
+          <td class="num">{{ num(r.donePoint) }}</td>
+          <td class="num">{{ r.normDqs }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">暂无个人 Bug 归属（飞书 Bug 未带 Owner，或本期无缺陷）</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2 id="personal-points">个人故事点明细（DEV {{ num(report.peopleDev) }} / QC {{ num(report.peopleQc) }}）</h2>
+    <h3>人力资源投入 · DEV</h3>
+    <table class="data compact">
+      <thead>
+        <tr>
+          <th>No</th><th>团队成员</th>
+          <th class="num">总估分</th><th class="num">已完成</th>
+          <th class="num">未完成</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in dtl.personalDev or report.personalDev or [] %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ r.owner }}</td>
+          <td class="num">{{ num(r.planPoint) }}</td>
+          <td class="num">{{ num(r.donePoint) }}</td>
+          <td class="num">{{ num(r.openPoint) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">暂无 DEV 故事点明细</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>人力资源投入 · QC</h3>
+    <table class="data">
+      <thead>
+        <tr>
+          <th>No</th><th>团队成员</th>
+          <th class="num">总估分 Point</th><th class="num">已完成 Point</th>
+          <th class="num">未完成 Point</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in dtl.personalQc or report.personalQc or [] %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ r.owner }}</td>
+          <td class="num">{{ num(r.planPoint) }}</td>
+          <td class="num">{{ num(r.donePoint) }}</td>
+          <td class="num">{{ num(r.openPoint) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">暂无 QC 故事点明细</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

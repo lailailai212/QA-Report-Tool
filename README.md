@@ -1,6 +1,6 @@
 # QA Report Tool
 
-Web 工具集：首页（`/`）提供工具入口；**快速建 Bug**（`/bug`）按 JSON 模板预填飞书字段并一键创建；**QA 测试执行日报**（`/report`）打开即自动拉取并预览当前模块日报（MeterSphere 执行数据 + 本地飞书 Story/Bug 快照）；**Sprint QA 结项总汇报**（`/completion`）汇总整 Sprint 测试完成情况，支持预览与手动发信（无定时）。
+Web 工具集：首页（`/`）提供工具入口；**快速建 Bug**（`/bug`）按 JSON 模板预填飞书字段并一键创建；**QA 测试执行日报**（`/report`）打开即自动拉取并预览当前模块日报（MeterSphere 执行数据 + 本地飞书 Story/Bug 快照）；**Sprint QA 结项总汇报**（`/completion`）汇总整 Sprint 测试完成情况；**Sprint 管理复盘报告**（`/sprint-retro`）按 Story Point / Severity / DQS 做管理复盘（独立快照，无定时）；**QC Story Points**（`/points`）按 QC Owner 统计迭代任务与剩余产能。
 
 **组员上手（含注意事项）：** 日报页右上角 **「使用教程」**（`/help`），或看 [docs/组员使用教程.md](docs/组员使用教程.md)。
 
@@ -11,7 +11,7 @@ pip install -r requirements.txt
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
-浏览器打开：http://127.0.0.1:8000/（Home）· 建 Bug：http://127.0.0.1:8000/bug · 日报：http://127.0.0.1:8000/report · 结项：http://127.0.0.1:8000/completion
+浏览器打开：[http://127.0.0.1:8000/](http://127.0.0.1:8000/)（Home）· 建 Bug：[http://127.0.0.1:8000/bug](http://127.0.0.1:8000/bug) · 日报：[http://127.0.0.1:8000/report](http://127.0.0.1:8000/report) · 结项：[http://127.0.0.1:8000/completion](http://127.0.0.1:8000/completion) · 复盘：[http://127.0.0.1:8000/sprint-retro](http://127.0.0.1:8000/sprint-retro) · Points：[http://127.0.0.1:8000/points](http://127.0.0.1:8000/points)
 
 **开机自启动（Windows）：** 见 [docs/开机自启动.md](docs/开机自启动.md)。快速注册：
 
@@ -30,6 +30,8 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 - 飞书快照刷新 / 快速建 Bug：`MCP_USER_TOKEN`；本机需有 **Node / npx**（后端通过 `@lark-project/mcp` 拉数、创建工作项、上传描述图片）
   - 定时默认：工作日 `FEISHU_SNAPSHOT_TIME=20:20`（可用 `FEISHU_SNAPSHOT_WEEKDAYS` / `FEISHU_SNAPSHOT_SPRINT` 覆盖）
 
+
+
 ## 快速建 Bug（/bug）
 
 - **创建流程**：选模板 → 填/改 Summary、Severity、Priority、Description、Component Versions → 创建
@@ -38,6 +40,8 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 - **Description 截图**：在编辑区内光标处 Ctrl+V 粘贴（图文混排）；创建时按文档顺序自动上传到飞书（最多 12 张，单张 ≤ 8MB）
 - **连续创建**：创建成功后自动重新套用当前模板预置
 - **依赖**：与快照刷新相同的 `MCP_USER_TOKEN`（MCP `create_workitem` / `upload_file`）。若报「user has not enabled this MCP feature」，需在飞书项目个人偏好中开通对应 MCP 写能力
+
+
 
 ## 飞书 Story / Bug 数据（本地快照）
 
@@ -50,7 +54,7 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1
 
 仍可用 Cursor + Skill 手动拉数：对话中说「刷新飞书快照」或 `@feishu-sprint-snapshot`。拉取约束（全量分页、`count` 对齐、校验通过才覆盖 latest）：
 
-[`.cursor/skills/feishu-sprint-snapshot/SKILL.md`](.cursor/skills/feishu-sprint-snapshot/SKILL.md)
+`[.cursor/skills/feishu-sprint-snapshot/SKILL.md](.cursor/skills/feishu-sprint-snapshot/SKILL.md)`
 
 字段与规则说明见 [exports/feishu/README.md](exports/feishu/README.md)。
 
@@ -67,12 +71,21 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
 
 （`--expect-*` 以当次 MCP `list.count` 为准。）
 
+## QC Story Points（/points）
+
+- **初始 Points**：手工维护，保存后写入本 Sprint override，并更新全局 QC 花名册（带到下一 Sprint）
+- **迭代任务**：飞书 User Story 的 `Story Point (QC)`，按 `QC Owner` 归属；多名 Owner 时均分。点数字可看 Story 明细
+- **其他 Task&Tech**：当前 Sprint 的 Task（Task Owner 且在 QC 花名册）+ Tech Improvement 的 QC points；可改，点「手改」可还原飞书值
+- **剩余 Points**：初始 − 迭代任务 − 其他预计 − 回归 − 回滚演练
+- 飞书数据与复盘页共用 `exports/retro/{Sprint}_latest.json`，页面上「刷新飞书数据」会拉 Story/Task/TI/Bug
+
 ## 行为说明
 
 - **默认预览**：进入页面后自动选中**名称中日期最新**的 Module（如 `OBIS-20260706-20260717`）并拉取预览；切换模块也会自动刷新。
-- **表格行来源**：行 = MeterSphere 模块下的**子计划（TEST_PLAN）**；飞书 Story / Ready 按标题合并（**忽略大小写**、规范化空白/全半角、去掉 `[数字]` 前缀，相似度 ≥ 0.88；歧义则不匹配）。MS 无对应子计划的飞书 Story **不会单独成行**。
+- **表格行来源**：行 = 飞书该 Sprint 下的全部 Story（本地快照）；MeterSphere 子计划按标题（Summary）匹配后填充执行数（忽略大小写、规范化空白/全半角、去掉 `[数字]` 前缀，相似度 ≥ 0.88；歧义则不匹配）。未匹配到子计划的飞书 Story **仍会成行**，执行数为 0。无飞书快照时回退为 MS 子计划。
 - **Sprint 维护数据**（服务端持久化，路径 `backend/data/overrides/{Sprint}.json`）：
-  - **Test ENV / Risk/Block**：「编辑 Test ENV / Risk」弹窗维护并「保存 ENV/Risk」（打开时会重新拉取最新数据）。Test ENV 为多选标签（`SIT / UAT1 / UAT2 / PRE1 / PRE2 / PROD`），日报以标签展示；同 Sprint 下次预览、发信、**定时任务**都会用。
+  - **Test ENV / Risk/Block / 今日结论**：「编辑 Test ENV / Risk」弹窗维护并保存。Test ENV 为多选标签；风险等级可覆盖计划线自动判定。同 Sprint 下次预览、发信、**定时任务**都会用。
+  - **计划线**：「编辑计划线」为每个环节设日期区间与状态门槛（可按 Sprint 窗口预填）。日报按工作日线性插值「本日应到」，窗口结束日为硬门槛。
   - **Ready for Test**（Yes/No、Ready Date、Comment）：「编辑 Ready for Test」独立弹窗维护；**人工值优先于飞书推导**。
   - **Bug Reopen**：「编辑 Bug Reopen」独立弹窗维护；保存后覆盖飞书快照 Reopen；可「恢复飞书 Reopen」。
 - **工具按钮**：手动发送、定时任务、收件人以弹窗打开。
@@ -80,4 +93,5 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
 - **手动发送**：使用当前表单 ENV/Risk + 已保存 Ready/Reopen；**会重新拉取** MS + 读本地飞书快照。
 - **定时发送**：读取该模块已保存的维护数据 + 飞书快照 + MS（需事先有可用快照或依赖工作日 20:20 / 发信人按需刷新）。
 - 进程需常驻，关闭后定时任务（含飞书快照 cron）不会触发。
-- 主表列分组：Story（Name/Status）· Testing（含 Case Num / No Run 等）· Ready for Test。
+- 主表列分组：邮件为新版摘要（结论 / 计划线对照 / Story 瘦表 / Bug）；完整明细见 `/report/details`。
+

@@ -130,8 +130,15 @@ def normalize_template(payload: dict[str, Any], *, existing: dict[str, Any] | No
         "qcOwner": _normalize_people(roles_in.get("qcOwner")),
         "reporter": _normalize_people(roles_in.get("reporter")),
     }
+    sprints = _as_str_list(labels_in.get("sprints"))
+    if not sprints:
+        one = str(labels_in.get("sprint") or "").strip()
+        if one:
+            # legacy single string may be "A、B"
+            sprints = [x.strip() for x in one.replace(",", "、").split("、") if x.strip()]
     labels = {
-        "sprint": str(labels_in.get("sprint") or "").strip(),
+        "sprint": "、".join(sprints),
+        "sprints": sprints,
         "versionFound": _as_str_list(labels_in.get("versionFound")),
     }
 

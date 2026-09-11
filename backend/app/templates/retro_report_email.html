@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ report.title }}</title>
+</head>
+<body style="margin:0;padding:24px;font-family:Arial,'Microsoft YaHei',sans-serif;color:#0F172A;background:#F4F7FB;">
+  {% set o = report.overview %}
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;background:#FFFFFF;border:1px solid #9BB7D4;">
+    <tr>
+      <td colspan="2" style="font-size:20px;font-weight:700;padding:14px 14px 12px;color:#1E4A7A;">{{ report.title }}</td>
+    </tr>
+    <tr>
+      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;width:140px;font-weight:700;">Sprint</td>
+      <td style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#1E4A7A;font-weight:500;">【{{ report.feishuSprint or report.sprint }}】</td>
+    </tr>
+    <tr>
+      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">周期</td>
+      <td style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;">{{ report.sprintWindow or "—" }}{% if report.workdays is not none %} · 工作日 {{ report.workdays }}{% endif %}</td>
+    </tr>
+    <tr>
+      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">生成时间</td>
+      <td style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;">{{ report.generatedAt }}（快照 {{ report.fetchedAt or "—" }}）</td>
+    </tr>
+    {% if report.membersNote %}
+    <tr>
+      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">参与成员</td>
+      <td style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;">{{ report.membersNote }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">核心结论</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;border:1px solid #9BB7D4;">
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:10px 12px;background:#F5F9FC;">
+        Item 完成 <b>{{ o.itemDone }}/{{ o.itemTotal }}</b>（{{ o.itemDoneRate }}）
+        · Point 完成 <b>{{ o.doneTotal }}/{{ o.planTotal }}</b>（{{ o.pointDoneRate }}）
+        · Bug <b>{{ o.bugTotal }}</b>（修复率 {{ o.bugFixedRate }}）
+        · 基础 DQS <b>{{ o.baseDqs }}</b>
+        · 归一化 DQS <b>{% if o.normalizedDqs is not none %}{{ o.normalizedDqs }}{% else %}N/A{% endif %}</b>
+      </td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:10px 12px;color:#64748B;font-size:12px;">{{ report.pointNote }}</td>
+    </tr>
+  </table>
+
+  {% if report.highlights or report.concerns or report.nextFocus %}
+  <div style="height:12px;"></div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;border:1px solid #9BB7D4;">
+    {% if report.highlights %}
+    <tr>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;width:120px;font-weight:700;color:#1E4A7A;vertical-align:top;">本期亮点</td>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;">{{ report.highlights }}</td>
+    </tr>
+    {% endif %}
+    {% if report.concerns %}
+    <tr>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;color:#1E4A7A;vertical-align:top;">需要关注</td>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;">{{ report.concerns }}</td>
+    </tr>
+    {% endif %}
+    {% if report.nextFocus %}
+    <tr>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;color:#1E4A7A;vertical-align:top;">下阶段重点</td>
+      <td style="border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;">{{ report.nextFocus }}</td>
+    </tr>
+    {% endif %}
+  </table>
+  {% endif %}
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">按类型完成情况（Item）</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">类型</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成率</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">状态分布</th>
+    </tr>
+    {% for b in report.typeBlocks %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ b.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.doneCount }}/{{ b.total }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.doneRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;">
+        {% for s in b.statusDist %}{{ s.status }} {{ s.count }}{% if not loop.last %} · {% endif %}{% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">Point 汇总（Story Point 字段）</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">类型</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计划 DEV</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计划 QC</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计划 TOTAL</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成 DEV</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成 QC</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成 TOTAL</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成率</th>
+    </tr>
+    {% for b in report.typeBlocks %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ b.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.planDev }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.planQc }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.planTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.doneDev }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.doneQc }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.doneTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ b.pointDoneRate }}</td>
+    </tr>
+    {% endfor %}
+    {% set p = report.pointTotals %}
+    <tr style="background:#F5F9FC;font-weight:700;">
+      <td style="border:1px solid #DCE6F0;padding:8px;">合计</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.planDev }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.planQc }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.planTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.doneDev }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.doneQc }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.doneTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ p.pointDoneRate }}</td>
+    </tr>
+  </table>
+
+  {% set sc = report.scope %}
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">范围稳定性</div>
+  {% if sc.hasPlan %}
+  <div style="max-width:1200px;font-size:12px;color:#64748B;margin-bottom:6px;">Plan 冻结于 {{ sc.frozenAt }}</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">类型</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计划数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">实际数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">移入</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">移出</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">变更率</th>
+    </tr>
+    {% for t in sc.types %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ t.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ t.planCount }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ t.actualCount }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ t.movedIn }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ t.movedOut }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ t.churnRate }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if sc.movedIn or sc.movedOut or report.scopeChangeNotes %}
+  <div style="height:8px;"></div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:12px;background:#FFFFFF;">
+    <tr style="background:#E8F0F8;color:#1E4A7A;">
+      <th style="border:1px solid #DCE6F0;padding:6px;">操作</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">类型</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">Item</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">备注</th>
+    </tr>
+    {% for r in sc.movedIn %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:6px;">移入</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{% if r.url %}<a href="{{ r.url }}">{{ r.summary }}</a>{% else %}{{ r.summary }}{% endif %}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;"></td>
+    </tr>
+    {% endfor %}
+    {% for r in sc.movedOut %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:6px;">移出</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.summary }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;"></td>
+    </tr>
+    {% endfor %}
+    {% for r in report.scopeChangeNotes %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.op }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.summary }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.remark }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% else %}
+  <div style="max-width:1200px;font-size:13px;color:#64748B;">尚未冻结 Plan 基线；可在页面点击「冻结当前范围为 Plan」。</div>
+  {% endif %}
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">缺陷 Severity</div>
+  {% set bg = report.bugs %}
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">Severity</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">已修复</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">修复率</th>
+    </tr>
+    {% for r in bg.severityRows %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ r.severity }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.count }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.fixed }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.fixRate }}</td>
+    </tr>
+    {% endfor %}
+    <tr style="background:#F5F9FC;font-weight:700;">
+      <td style="border:1px solid #DCE6F0;padding:8px;">合计</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ bg.total }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ bg.fixed }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ bg.fixedRate }}</td>
+    </tr>
+  </table>
+  <div style="max-width:1200px;font-size:12px;color:#64748B;margin-top:6px;">
+    有效 Bug {{ bg.validBugs }} · 基础 DQS {{ bg.baseDqs }} · 归一化 DQS（/ DEV 完成 Point {{ o.doneDev }}）
+    {% if o.normalizedDqs is not none %}{{ o.normalizedDqs }}{% else %}N/A{% endif %}
+  </div>
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">缺陷根因</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">根因</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">占比</th>
+    </tr>
+    {% for r in bg.rootCauseRows %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ r.rootCause }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.count }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.share }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  {% if report.reopenRows %}
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">Reopen（人工）</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">Priority</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Summary</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Times</th>
+    </tr>
+    {% for r in report.reopenRows %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ r.priority }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{% if r.url %}<a href="{{ r.url }}">{{ r.summary }}</a>{% else %}{{ r.summary }}{% endif %}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.reopenTimes }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">人力资源投入（按 Owner）</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">成员</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">计划 Point</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成 Point</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">未完成</th>
+    </tr>
+    {% for r in report.hrRows %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ r.owner }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.planPoint }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.donePoint }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.openPoint }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">个人 Bug / DQS</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">Dev Owner</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Bug 数</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">基础 DQS</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">完成 Point</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">归一化 DQS</th>
+    </tr>
+    {% for r in report.personalBugs %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ r.owner }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.bugCount }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.baseDqs }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ r.donePoint }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{% if r.normalizedDqs is not none %}{{ r.normalizedDqs }}{% else %}N/A{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  {% if report.unfinishedItems %}
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">未完成 Item</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:12px;background:#FFFFFF;">
+    <tr style="background:#E8F0F8;color:#1E4A7A;">
+      <th style="border:1px solid #DCE6F0;padding:6px;">类型</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">状态</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">Owner</th>
+      <th style="border:1px solid #DCE6F0;padding:6px;">Summary</th>
+    </tr>
+    {% for r in report.unfinishedItems %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.type }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.status }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{{ r.owner }}</td>
+      <td style="border:1px solid #DCE6F0;padding:6px;">{% if r.url %}<a href="{{ r.url }}">{{ r.summary }}</a>{% else %}{{ r.summary }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if report.history %}
+  <div style="height:16px;"></div>
+  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">跨期对比（历史复盘快照）</div>
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;">
+    <tr style="background:#1E4A7A;color:#FFFFFF;">
+      <th style="border:1px solid #9BB7D4;padding:8px;">Sprint</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Item 完成率</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Point 完成率</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">Bug</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">修复率</th>
+      <th style="border:1px solid #9BB7D4;padding:8px;">归一化 DQS</th>
+    </tr>
+    <tr style="background:#F5F9FC;font-weight:600;">
+      <td style="border:1px solid #DCE6F0;padding:8px;">本期 {{ report.feishuSprint or report.sprint }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ o.itemDoneRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ o.pointDoneRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ o.bugTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ o.bugFixedRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{% if o.normalizedDqs is not none %}{{ o.normalizedDqs }}{% else %}N/A{% endif %}</td>
+    </tr>
+    {% for h in report.history %}
+    <tr>
+      <td style="border:1px solid #DCE6F0;padding:8px;">{{ h.feishuSprint or h.sprint }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ h.itemDoneRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ h.pointDoneRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ h.bugTotal }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{{ h.bugFixedRate }}</td>
+      <td style="border:1px solid #DCE6F0;padding:8px;text-align:right;">{% if h.normalizedDqs is not none %}{{ h.normalizedDqs }}{% else %}N/A{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</body>
+</html>

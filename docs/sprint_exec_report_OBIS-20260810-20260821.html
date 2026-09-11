@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 总结报告 · OBIS-20260810—20260821 · Demo</title>
+  <!--
+    Sprint 总结报告样本（Demo，未接入现网发信）
+    打开：/demo/sprint-summary · 明细：/demo/sprint-summary/details
+  -->
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #fff;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --line-soft: #ececec;
+      --accent: #171717;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --teal: #0d9488;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --fill: #f4f4f5;
+      --callout-warn-bg: #fffbeb;
+      --callout-warn-bd: #fde68a;
+      --callout-info-bg: #f8fafc;
+      --callout-info-bd: #e5e7eb;
+      --callout-danger-bg: #fef2f2;
+      --callout-danger-bd: #fecaca;
+      --callout-ok-bg: #ecfdf5;
+      --callout-ok-bd: #a7f3d0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .footnote { color: var(--muted); font-size: 12px; margin-top: 24px; }
+    .formula-ref {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .formula-ref .title {
+      margin: 0 0 6px;
+      font-weight: 650;
+      color: var(--text);
+      font-size: 12px;
+    }
+    .formula-ref ul {
+      margin: 0;
+      padding-left: 1.15em;
+    }
+    .formula-ref li { margin: 0 0 4px; }
+    .formula-ref li:last-child { margin-bottom: 0; }
+    h2, .h2 {
+      margin: 28px 0 12px;
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    .more { font-size: 12px; font-weight: 650; color: var(--text); text-decoration: none; }
+    .more:hover { color: var(--info); }
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+    .banner a, .footnote a { color: var(--info); text-decoration: none; }
+    .meta {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+      font-size: 13px;
+    }
+    .meta > div { padding: 9px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .meta > div:nth-child(even) { border-right: none; }
+    .meta > div:nth-last-child(-n+2) { border-bottom: none; }
+    .meta .k { background: var(--fill); font-weight: 650; color: var(--text); }
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--callout-warn-bd);
+      background: var(--callout-warn-bg);
+      border-radius: 10px;
+    }
+    .callout.info { background: var(--callout-info-bg); border-color: var(--callout-info-bd); }
+    .callout.danger { background: var(--callout-danger-bg); border-color: var(--callout-danger-bd); }
+    .callout.ok { background: var(--callout-ok-bg); border-color: var(--callout-ok-bd); }
+    .callout .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .callout .title .ico {
+      width: 18px; height: 18px; flex: 0 0 auto; color: var(--warn);
+    }
+    .callout p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--text); }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+      margin: 8px 0 8px;
+      padding: 4px 0 8px;
+    }
+    .kpi { background: none; border: none; padding: 0; }
+    .kpi .head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--text); }
+    .kpi .label { font-size: 13px; color: var(--muted); }
+    .kpi > .label { margin-top: 6px; }
+    .kpi .prev {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi.ok .value { color: var(--ok); }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.danger .value { color: var(--danger); }
+    .kpi.teal .value { color: var(--teal); }
+    table.data {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      font-size: 13px;
+      margin: 0 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data th {
+      background: var(--fill);
+      color: var(--text);
+      font-weight: 650;
+    }
+    table.data th.num,
+    table.data td.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data td.manual {
+      color: var(--muted);
+      font-style: italic;
+      min-width: 9em;
+    }
+    table.data tr.row-danger td:first-child { color: var(--danger); font-weight: 650; }
+    table.data tr.row-warn td:first-child { color: var(--warn); font-weight: 650; }
+    table.data.kv td:first-child {
+      background: var(--fill);
+      font-weight: 650;
+      width: 7.5em;
+      white-space: nowrap;
+    }
+    table.data.plain { border: none; border-radius: 0; }
+    table.data.plain th { background: var(--fill); }
+    table.data a { color: var(--info); text-decoration: none; }
+    table.data a:hover { text-decoration: underline; }
+    table.data.compact { font-size: 12px; }
+    table.data.compact th, table.data.compact td { padding: 8px 8px; }
+    table.data td.alert {
+      color: var(--danger);
+      font-weight: 700;
+      background: var(--callout-danger-bg);
+    }
+    .rate-ok { color: var(--ok); font-weight: 650; }
+    .rate-bad { color: var(--danger); font-weight: 650; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .status.lg { font-size: 20px; gap: 8px; }
+    .status i {
+      width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+    }
+    .status.lg i { width: 18px; height: 18px; }
+    .status.ok i { background: var(--dot-ok); }
+    .status.warn i { background: var(--dot-warn); }
+    .status.danger i { background: var(--dot-danger); }
+    .delta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .delta svg { flex: 0 0 auto; }
+    .delta.good { color: var(--text); }
+    .delta.good svg { fill: var(--info); }
+    .delta.bad { color: var(--danger); }
+    .delta.bad svg { fill: var(--danger); }
+    .delta.flat { color: var(--ok); }
+    .delta.flat svg { fill: var(--ok); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .grid-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .card h3 { margin: 0 0 8px; }
+    .card .trailing { float: right; font-size: 12px; color: var(--muted); font-weight: 500; }
+    details.fold {
+      border: none;
+      background: transparent;
+      margin: 8px 0;
+    }
+    details.fold > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      background: none;
+    }
+    details.fold[open] > summary { border-bottom: none; }
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.fold > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 1.1em;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    details.fold[open] > summary::before { content: "▾"; }
+    details.fold.sub {
+      margin-left: 0;
+      border-left: 3px solid var(--line-soft);
+      padding-left: 12px;
+    }
+    details.fold.sub > summary {
+      font-size: 14px;
+      font-weight: 650;
+      color: var(--muted);
+    }
+    .fold-body { padding: 4px 0 12px; }
+    .chart-caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .legend { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+    .legend .dev { background: var(--info); }
+    .legend .qc { background: var(--ok); }
+    .legend .found { background: var(--info); }
+    .legend .fixed { background: var(--ok); }
+    .legend .acc { background: var(--warn); }
+    .legend .pt { background: var(--ok); }
+    .legend .wip { background: var(--info); }
+    .legend .rate { background: var(--warn); }
+    .legend .reopen { background: var(--danger); }
+    .trend-up { color: var(--ok); font-weight: 650; white-space: nowrap; }
+    .trend-down { color: var(--danger); font-weight: 650; white-space: nowrap; }
+    .flat { color: var(--muted); font-weight: 650; white-space: nowrap; }
+    .mom { display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.45; }
+    .mom .flat { color: var(--muted); }
+    .cell-stack { font-size: 12px; line-height: 1.5; }
+    .spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      height: 40px;
+      width: 108px;
+      padding: 2px 4px 0;
+      background: var(--fill);
+      border-radius: 4px;
+    }
+    .spark span {
+      display: block;
+      width: 18px;
+      border-radius: 2px 2px 0 0;
+      background: #94a3b8;
+    }
+    .spark span.now { background: var(--accent); }
+    .spark span.na { height: 2px !important; background: var(--line); }
+    table.data.trend4 { table-layout: auto; width: 100%; }
+    table.data.trend4 th:first-child,
+    table.data.trend4 td:first-child {
+      width: 1%;
+      max-width: 11em;
+      white-space: nowrap;
+    }
+    table.data.trend4 th:last-child,
+    table.data.trend4 td:last-child {
+      width: 132px;
+      min-width: 132px;
+      white-space: nowrap;
+    }
+    .legend .us { background: var(--warn); }
+    .legend .task { background: var(--info); }
+    .legend .ti { background: var(--teal); }
+    svg.line, svg.col { width: 100%; height: 220px; display: block; }
+    hr { border: none; border-top: 1px solid var(--line); margin: 28px 0 12px; }
+    .cell-list { margin: 0; padding-left: 1.15em; font-size: 12px; line-height: 1.55; }
+    .cell-list li { margin: 0 0 2px; }
+    .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .scroll-x table.data { min-width: 1280px; }
+    .scroll-x table.data.wide { min-width: 1880px; }
+    .scroll-x table.data th { white-space: nowrap; }
+    .scroll-x.fit table.data,
+    .scroll-x.fit table.data.wide { min-width: 0; }
+    .scroll-x.fit table.data.compare { min-width: 760px; }
+    .scroll-x.fit table.data.trend4 { min-width: 0; }
+    @media (max-width: 900px) {
+      .kpis, .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-split, .meta { grid-template-columns: 1fr; }
+      .meta > div { border-right: none; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .banner { display: none; }
+      details.fold { border: none; }
+      details.fold > summary { background: none; padding-left: 0; }
+      details.fold > summary::before { content: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <b>【数据数值与原稿一致】</b> 来源：<code>Sprint "OBIS-20260810--20260821" 总结报告.md</code>。下表数字未改口径、未重算；完成率 / 偏差率 / DQS / Reopen 均按原稿原文。在线预览：<a href="/demo/sprint-summary">/demo/sprint-summary</a> · 明细页：<a class="more" href="/demo/sprint-summary/details">查看详情 Demo</a> · 未接入现网发信。
+    </div>
+
+    <h1>Sprint 总结报告</h1>
+    <p class="sub">OBIS-20260810—20260821 · 2026-08-10 — 2026-08-21</p>
+
+    <div class="meta">
+      <div class="k">Sprint 周期</div>
+      <div>2026-08-10 — 2026-08-21</div>
+      <div class="k">本期亮点</div>
+      <div>生产环境 Cloud 端已升级至 V3.3.2</div>
+      <div class="k">需要关注</div>
+      <div>生产发布后出现多例数据转换相关的问题</div>
+    </div>
+
+    <div class="callout">
+      <div class="title">
+        <span>总体状态</span>
+        <span class="status warn lg"><i></i>高风险</span>
+      </div>
+      <p><b>一句话总结</b>产品验收率较低，导致整体完成率偏低；缺陷修复偏慢且 Critical 未清完，生产发布有一定风险。</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi warn">
+        <div class="head">
+          <div class="value">69.9%</div>
+          <div class="prev">上期 27.7%</div>
+        </div>
+        <div class="label">验收闭环（51/73）</div>
+      </div>
+      <div class="kpi ok">
+        <div class="head">
+          <div class="value">99.5%</div>
+          <div class="prev">上期 93.3%</div>
+        </div>
+        <div class="label">故事点完成（95.1/95.6）</div>
+      </div>
+      <div class="kpi danger">
+        <div class="head">
+          <div class="value">65.9%</div>
+          <div class="prev">上期 91.5%</div>
+        </div>
+        <div class="label">缺陷修复率（93/141）</div>
+      </div>
+      <div class="kpi ok">
+        <div class="head">
+          <div class="value">4.3</div>
+          <div class="prev">上期 5.8</div>
+        </div>
+        <div class="label">归一化 DQS</div>
+      </div>
+    </div>
+
+    <h2>1. 风险/问题详情</h2>
+    <table class="data">
+      <thead>
+        <tr><th>风险/问题</th><th>影响</th><th>等级</th><th>应对</th><th>负责人</th><th>截止</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>生产数据转换问题</td>
+          <td>影响已升级 Cloud 环境的数据正确性</td>
+          <td><span class="status danger"><i></i>未达预期</span></td>
+          <td>单独立项，与 Edge Hotfix 排优先级</td>
+          <td>PM + DEV Lead</td>
+          <td>下一 Sprint 第 2 天</td>
+        </tr>
+        <tr>
+          <td>组件化目标未改口</td>
+          <td>管理层按旧目标看会判定技改失败（完成 4/13，偏差率 97.1%）</td>
+          <td><span class="status warn"><i></i>中风险</span></td>
+          <td>书面确认目标是否降级</td>
+          <td>PM</td>
+          <td>本周五</td>
+        </tr>
+        <tr>
+          <td>根因 TBD 43.64%</td>
+          <td>质量改进无法对症（48 / 有效 Bug）</td>
+          <td><span class="status warn"><i></i>中风险</span></td>
+          <td>修复缺陷后必填 Root Cause</td>
+          <td>DEV Team</td>
+          <td>立即生效</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. 目标偏离</h2>
+    <table class="data">
+      <thead><tr><th>目标</th><th>预期结果</th><th>实际结果</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>生产 Cloud 升级</td>
+          <td>V3.3.2 上线且稳定</td>
+          <td>已升级至 V3.3.2；发布后出现多例数据转换相关的问题</td>
+          <td><span class="status warn"><i></i>部分完成</span></td>
+        </tr>
+        <tr>
+          <td>权限与模块入口收敛</td>
+          <td>相关 Story 验收</td>
+          <td>User Story 移入 12 / 移出 6，范围稳定性偏差率 48.6%</td>
+          <td><span class="status warn"><i></i>部分完成</span></td>
+        </tr>
+        <tr>
+          <td>组件化 P1/P2</td>
+          <td>技改按计划推进</td>
+          <td>完成 4/13（30.8%）；移入 6 / 移出 27，偏差率 97.1%</td>
+          <td><span class="status danger"><i></i>未完成</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="hint" style="margin-top:10px;"><a class="more" href="/demo/sprint-summary/details#plan">查看开发计划 vs 结果明细 →</a></p>
+
+    <details class="fold" open>
+      <summary>3. 项目范围</summary>
+      <div class="fold-body">
+        <h3>本期结论（按类型 Item）</h3>
+        <p class="hint">类型完成 = 已验收 + 待验收。合计行「验收闭环」= 仅已验收。故事点见主表下摘要。</p>
+        <table class="data compact">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th class="num">计划</th>
+              <th class="num">完成</th>
+              <th class="num">未完成</th>
+              <th class="num">完成率</th>
+              <th class="num">环比</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User Story</td>
+              <td class="num">43</td>
+              <td class="num">35</td>
+              <td class="num">8</td>
+              <td class="num">81.4%</td>
+              <td class="num"><span class="trend-up">+3.6 pp</span></td>
+            </tr>
+            <tr>
+              <td>Task</td>
+              <td class="num">17</td>
+              <td class="num">14</td>
+              <td class="num">3</td>
+              <td class="num">82.4%</td>
+              <td class="num"><span class="trend-up">+29.5 pp</span></td>
+            </tr>
+            <tr>
+              <td>Tech Improvement</td>
+              <td class="num">13</td>
+              <td class="num">4</td>
+              <td class="num">9</td>
+              <td class="num">30.8%</td>
+              <td class="num"><span class="trend-up">+30.8 pp</span></td>
+            </tr>
+            <tr>
+              <td><b>合计（验收闭环）</b></td>
+              <td class="num"><b>73</b></td>
+              <td class="num"><b>51 已验收</b></td>
+              <td class="num"><b>22</b></td>
+              <td class="num"><b>69.9%</b></td>
+              <td class="num"><span class="trend-up">+42.2 pp</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="hint" style="margin-top:8px;">故事点摘要：Point <b>95.1 / 95.6</b>（99.48%，环比 <span class="trend-up">+6.18 pp</span>）。分列明细见 <a class="more" href="/demo/sprint-summary/details#points-split">详情页</a>。</p>
+
+        <h3>范围变更</h3>
+        <p class="hint">偏差率 =（移入 + 移出）÷ 计划会冻结数。&gt; 20% 红色。明细见 <a class="more" href="/demo/sprint-summary/details#scope-list">详情页清单</a>。</p>
+        <table class="data compact">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th class="num">移入</th>
+              <th class="num">移出</th>
+              <th class="num">偏差率</th>
+              <th>一句话原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User Story</td>
+              <td class="num">12</td>
+              <td class="num">6</td>
+              <td class="num"><span class="rate-bad">48.6%</span></td>
+              <td>权限 / 模块收敛类中途插入为主，供应链等移出</td>
+            </tr>
+            <tr>
+              <td>Task</td>
+              <td class="num">N/A</td>
+              <td class="num">N/A</td>
+              <td class="num">N/A</td>
+              <td>本期无计划会基线，未计范围偏差</td>
+            </tr>
+            <tr>
+              <td>Tech Improvement</td>
+              <td class="num">6</td>
+              <td class="num">27</td>
+              <td class="num"><span class="rate-bad">97.1%</span></td>
+              <td>组件化 P1/P2 成批移出；VA 系列成批移入</td>
+            </tr>
+          </tbody>
+        </table>
+
+        
+
+        <p class="hint" style="margin-top:10px;"><a class="more" href="/demo/sprint-summary/details#scope-list">查看移入 / 移出清单 →</a>　·　<a class="more" href="/demo/sprint-summary/details#scope-mom">范围稳定性环比 →</a>　·　<a class="more" href="/demo/sprint-summary/details#delivery-detail">交付明细 →</a>　·　<a class="more" href="/demo/sprint-summary/details#type-trend">按类型趋势 →</a>　·　<a class="more" href="/demo/sprint-summary/details#points-split">故事点分列 →</a></p>
+
+        <h3>近 4 期交付趋势</h3>
+        <p class="hint">验收闭环只计已验收；故事点按子任务 Estimated。公式见页脚。</p>
+        <div>
+            <div class="legend"><b class="acc"></b>Item 验收闭环率　<b class="pt"></b>Point 完成率　灰线 = 80%</div>
+            <svg class="line" viewBox="0 0 480 240" role="img" aria-label="近 4 期 Sprint 完成率趋势">
+              <line x1="44" y1="204" x2="464" y2="204" stroke="#dce6f0" />
+              <line x1="44" y1="16" x2="44" y2="204" stroke="#dce6f0" />
+              <line x1="44" y1="53.6" x2="464" y2="53.6" stroke="#94a3b8" stroke-dasharray="4 4" />
+              <text x="468" y="57" font-size="10" fill="#64748b">80%</text>
+              <text x="36" y="208" font-size="10" fill="#64748b" text-anchor="end">0</text>
+              <text x="36" y="20" font-size="10" fill="#64748b" text-anchor="end">100</text>
+              <text x="44" y="222" font-size="11" fill="#64748b" text-anchor="middle">−3</text>
+              <text x="184" y="222" font-size="11" fill="#64748b" text-anchor="middle">−2</text>
+              <text x="324" y="222" font-size="11" fill="#64748b" text-anchor="middle">−1</text>
+              <text x="464" y="222" font-size="11" fill="#64748b" text-anchor="middle">本期</text>
+              <polyline fill="none" stroke="#d97706" stroke-width="2"
+                points="44,176.4 184,196.9 324,151.9 464,72.6" />
+              <circle cx="44" cy="176.4" r="3.5" fill="#d97706" />
+              <circle cx="184" cy="196.9" r="3.5" fill="#d97706" />
+              <circle cx="324" cy="151.9" r="3.5" fill="#d97706" />
+              <circle cx="464" cy="72.6" r="3.5" fill="#d97706" />
+              <text x="44" y="168" font-size="10" fill="#d97706" text-anchor="middle">14.7%</text>
+              <text x="184" y="188" font-size="10" fill="#d97706" text-anchor="middle">3.8%</text>
+              <text x="324" y="143" font-size="10" fill="#d97706" text-anchor="middle">27.7%</text>
+              <text x="430" y="70" font-size="10" fill="#d97706" text-anchor="end">69.9%</text>
+              <polyline fill="none" stroke="#059669" stroke-width="2"
+                points="44,19.6 184,44.2 324,28.6 464,18.0" />
+              <circle cx="44" cy="19.6" r="3.5" fill="#059669" />
+              <circle cx="184" cy="44.2" r="3.5" fill="#059669" />
+              <circle cx="324" cy="28.6" r="3.5" fill="#059669" />
+              <circle cx="464" cy="18.0" r="3.5" fill="#059669" />
+              <text x="58" y="14" font-size="10" fill="#059669" text-anchor="start">98.1%</text>
+              <text x="184" y="58" font-size="10" fill="#059669" text-anchor="middle">85%</text>
+              <text x="324" y="42" font-size="10" fill="#059669" text-anchor="middle">93.3%</text>
+              <text x="454" y="12" font-size="10" fill="#059669" text-anchor="end">99.48%</text>
+            </svg>
+            <p class="chart-caption">验收闭环自 −2 探底后连续两期回升至 69.9%；故事点完成率持续在 85% 以上。</p>
+        </div>
+
+                
+
+        
+
+        
+
+        
+
+      </div>
+    </details>
+
+<details class="fold" open>
+      <summary>4. 项目质量</summary>
+      <div class="fold-body">
+        <h3>缺陷：发现 vs 修复</h3>
+        <div class="legend"><b class="found"></b>发现数　<b class="fixed"></b>已修复　<b class="rate"></b>修复率　左轴计数（上限 250）／右轴百分比</div>
+        <svg class="col" viewBox="0 0 510 240" role="img" aria-label="近 4 期缺陷发现、修复与修复率">
+          <line x1="44" y1="204" x2="464" y2="204" stroke="#e5e5e5" />
+          <line x1="44" y1="16" x2="44" y2="204" stroke="#e5e5e5" />
+          <line x1="464" y1="16" x2="464" y2="204" stroke="#e5e5e5" />
+          <text x="36" y="208" font-size="10" fill="#737373" text-anchor="end">0</text>
+          <text x="36" y="116" font-size="10" fill="#737373" text-anchor="end">125</text>
+          <text x="36" y="20" font-size="10" fill="#737373" text-anchor="end">250</text>
+          <text x="470" y="20" font-size="10" fill="#d97706">100%</text>
+          <text x="470" y="116" font-size="10" fill="#d97706">50%</text>
+          <text x="470" y="208" font-size="10" fill="#d97706">0%</text>
+          <rect x="66" y="87.4" width="28" height="116.6" rx="3" fill="#3b82f6" />
+          <rect x="98" y="114.5" width="28" height="89.5" rx="3" fill="#059669" />
+          <text x="80" y="81" font-size="10" fill="#737373" text-anchor="middle">155</text>
+          <text x="112" y="108" font-size="10" fill="#737373" text-anchor="middle">119</text>
+          <text x="96" y="222" font-size="11" fill="#737373" text-anchor="middle">−3</text>
+          <rect x="176" y="99.5" width="28" height="104.5" rx="3" fill="#3b82f6" />
+          <rect x="208" y="125.8" width="28" height="78.2" rx="3" fill="#059669" />
+          <text x="190" y="93" font-size="10" fill="#737373" text-anchor="middle">139</text>
+          <text x="222" y="119" font-size="10" fill="#737373" text-anchor="middle">104</text>
+          <text x="206" y="222" font-size="11" fill="#737373" text-anchor="middle">−2</text>
+          <rect x="286" y="26.5" width="28" height="177.5" rx="3" fill="#3b82f6" />
+          <rect x="318" y="41.6" width="28" height="162.4" rx="3" fill="#059669" />
+          <text x="300" y="20" font-size="10" fill="#737373" text-anchor="middle">236</text>
+          <text x="332" y="35" font-size="10" fill="#737373" text-anchor="middle">216</text>
+          <text x="316" y="222" font-size="11" fill="#737373" text-anchor="middle">−1</text>
+          <rect x="396" y="98.0" width="28" height="106.0" rx="3" fill="#3b82f6" />
+          <rect x="428" y="134.1" width="28" height="69.9" rx="3" fill="#059669" />
+          <text x="410" y="92" font-size="10" fill="#737373" text-anchor="middle">141</text>
+          <text x="442" y="128" font-size="10" fill="#737373" text-anchor="middle">93</text>
+          <text x="426" y="222" font-size="11" fill="#737373" text-anchor="middle">本期</text>
+          <polyline fill="none" stroke="#d97706" stroke-width="2"
+            points="96,59.7 206,63.3 316,31.9 426,80.0" />
+          <circle cx="96" cy="59.7" r="3.5" fill="#d97706" />
+          <circle cx="206" cy="63.3" r="3.5" fill="#d97706" />
+          <circle cx="316" cy="31.9" r="3.5" fill="#d97706" />
+          <circle cx="426" cy="80.0" r="3.5" fill="#d97706" />
+          <text x="96" y="52" font-size="10" fill="#d97706" text-anchor="middle">76.77%</text>
+          <text x="206" y="56" font-size="10" fill="#d97706" text-anchor="middle">74.82%</text>
+          <text x="348" y="30" font-size="10" fill="#d97706" text-anchor="start">91.53%</text>
+          <text x="438" y="74" font-size="10" fill="#d97706" text-anchor="start">65.96%</text>
+        </svg>
+        <p class="chart-caption">修复率 −3 76.77% → −2 74.82% → −1 91.53% → 本期 65.96%。本期 Bug 141、已修复 93。</p>
+
+        <h3>缺陷数据统计</h3>
+        <p class="hint">正文只对比本期 / 上期。Critical / Major 修复率 &lt; 90% 标红。−2 / −3 见上方图表。</p>
+        <table class="data">
+          <thead>
+            <tr>
+              <th>严重等级</th>
+              <th class="num">本期计数</th><th class="num">已修复</th><th class="num">修复率</th>
+              <th class="num">上期计数</th><th class="num">已修复</th><th class="num">修复率</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-danger">
+              <td>Critical</td>
+              <td class="num">7</td><td class="num">4</td><td class="num alert">57.14%</td>
+              <td class="num">5</td><td class="num">5</td><td class="num">100.00%</td>
+            </tr>
+            <tr class="row-warn">
+              <td>Major</td>
+              <td class="num">17</td><td class="num">12</td><td class="num alert">70.59%</td>
+              <td class="num">25</td><td class="num">23</td><td class="num">92.00%</td>
+            </tr>
+            <tr>
+              <td>Medium</td>
+              <td class="num">52</td><td class="num">40</td><td class="num">76.92%</td>
+              <td class="num">83</td><td class="num">75</td><td class="num">90.36%</td>
+            </tr>
+            <tr>
+              <td>Minor</td>
+              <td class="num">60</td><td class="num">34</td><td class="num">56.67%</td>
+              <td class="num">72</td><td class="num">63</td><td class="num">87.50%</td>
+            </tr>
+            <tr>
+              <td>Trivial</td>
+              <td class="num">5</td><td class="num">3</td><td class="num">60.00%</td>
+              <td class="num">51</td><td class="num">50</td><td class="num">98.04%</td>
+            </tr>
+            <tr>
+              <td>合计</td>
+              <td class="num"><b>141</b></td><td class="num"><b>93</b></td><td class="num"><b>65.96%</b></td>
+              <td class="num"><b>236</b></td><td class="num"><b>216</b></td><td class="num"><b>91.53%</b></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="data compact">
+          <thead>
+            <tr>
+              <th>质量评分</th>
+              <th class="num">有效 Bug</th>
+              <th class="num">基础 DQS</th>
+              <th class="num">DEV 完成点</th>
+              <th class="num">本期归一化</th>
+              <th class="num">上期</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>OBIS</td>
+              <td class="num">110</td>
+              <td class="num">248.5</td>
+              <td class="num">58.4</td>
+              <td class="num">4.26</td>
+              <td class="num">5.85</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="hint">公式见页脚。近四期归一化 DQS：5.06 → 3.31 → 5.85 → 4.26。</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>缺陷根因</h3>
+            <table class="data plain">
+              <thead><tr><th>缺陷根因</th><th class="num">计数</th><th class="num">占比</th></tr></thead>
+              <tbody>
+                <tr><td>需求与设计</td><td class="num">11</td><td class="num">10.00%</td></tr>
+                <tr><td>流程与沟通</td><td class="num">1</td><td class="num">0.91%</td></tr>
+                <tr><td>开发</td><td class="num">50</td><td class="num">45.45%</td></tr>
+                <tr><td>TBD</td><td class="num">48</td><td class="num alert">43.64%</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Reopen</h3>
+            <p style="margin:0 0 8px;">本期 <b>0%</b>（0 / 62） 👍　上期 1.1%　−2 期 10.6%</p>
+            <p class="hint">公式见页脚。本期无 Reopen 明细。</p>
+          </div>
+        </div>
+
+        <p class="hint" style="margin-top:10px;"><a class="more" href="/demo/sprint-summary/details#personal-bug">查看个人 Bug 汇总 →</a></p>
+
+
+        
+      </div>
+    </details>
+
+    <details class="fold" open>
+      <summary>5. 团队效率</summary>
+      <div class="fold-body">
+        <div class="kpis">
+          <div class="kpi"><div class="value">29</div><div class="label">参与人数（DEV 17 / QC 9 / PM 3）</div></div>
+          <div class="kpi"><div class="value">3.3</div><div class="label">人均故事点</div></div>
+          <div class="kpi ok"><div class="value">95.1</div><div class="label">完成故事点（计划 95.6）</div></div>
+          <div class="kpi"><div class="value">0.5</div><div class="label">未完成 Point</div></div>
+        </div>
+        <table class="data">
+          <thead>
+            <tr>
+              <th>角色</th><th class="num">人数</th>
+              <th class="num">总估分 Point</th><th class="num">已完成 Point</th>
+              <th class="num">未完成 Point</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>DEV</td><td class="num">17</td>
+              <td class="num">58.9</td><td class="num">58.4</td><td class="num">0.5</td>
+            </tr>
+            <tr>
+              <td>QC</td><td class="num">9</td>
+              <td class="num">36.7</td><td class="num">36.7</td><td class="num">0</td>
+            </tr>
+            <tr>
+              <td>PM</td><td class="num">3</td>
+              <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid-2">
+          <div>
+            <h3>近 4 期完成故事点（DEV / QC）</h3>
+            <p class="hint">柱高为各类型完成 Point 加总。本期 DEV 58.4、QC 36.7。</p>
+            <div class="legend"><b class="dev"></b>DEV 完成点　<b class="qc"></b>QC 完成点</div>
+            <svg class="col" viewBox="0 0 480 240" role="img" aria-label="近 4 期 DEV/QC 完成故事点">
+              <line x1="44" y1="204" x2="464" y2="204" stroke="#e5e5e5" />
+              <line x1="44" y1="16" x2="44" y2="204" stroke="#e5e5e5" />
+              <text x="36" y="208" font-size="10" fill="#737373" text-anchor="end">0</text>
+              <text x="36" y="116" font-size="10" fill="#737373" text-anchor="end">50</text>
+              <text x="36" y="20" font-size="10" fill="#737373" text-anchor="end">100</text>
+              <rect x="66" y="60.2" width="28" height="143.8" rx="3" fill="#3b82f6" />
+              <rect x="98" y="114.9" width="28" height="89.1" rx="3" fill="#059669" />
+              <text x="80" y="54" font-size="10" fill="#737373" text-anchor="middle">76.5</text>
+              <text x="112" y="108" font-size="10" fill="#737373" text-anchor="middle">47.4</text>
+              <text x="96" y="222" font-size="11" fill="#737373" text-anchor="middle">−3</text>
+              <rect x="176" y="27.5" width="28" height="176.5" rx="3" fill="#3b82f6" />
+              <rect x="208" y="118.8" width="28" height="85.2" rx="3" fill="#059669" />
+              <text x="190" y="22" font-size="10" fill="#737373" text-anchor="middle">93.9</text>
+              <text x="222" y="112" font-size="10" fill="#737373" text-anchor="middle">45.3</text>
+              <text x="206" y="222" font-size="11" fill="#737373" text-anchor="middle">−2</text>
+              <rect x="286" y="90.4" width="28" height="113.6" rx="3" fill="#3b82f6" />
+              <rect x="318" y="156.2" width="28" height="47.8" rx="3" fill="#059669" />
+              <text x="300" y="84" font-size="10" fill="#737373" text-anchor="middle">60.4</text>
+              <text x="332" y="150" font-size="10" fill="#737373" text-anchor="middle">25.4</text>
+              <text x="316" y="222" font-size="11" fill="#737373" text-anchor="middle">−1</text>
+              <rect x="396" y="94.2" width="28" height="109.8" rx="3" fill="#3b82f6" />
+              <rect x="428" y="135.0" width="28" height="69.0" rx="3" fill="#059669" />
+              <text x="410" y="88" font-size="10" fill="#737373" text-anchor="middle">58.4</text>
+              <text x="442" y="129" font-size="10" fill="#737373" text-anchor="middle">36.7</text>
+              <text x="426" y="222" font-size="11" fill="#737373" text-anchor="middle">本期</text>
+            </svg>
+            <p class="chart-caption">刻度上限 100。本期 DEV 完成 58.4 / QC 完成 36.7（与人力资源合计一致）。</p>
+          </div>
+          <div>
+            <h3>近 4 期人均故事点（DEV / QC）</h3>
+            <p class="hint">人均 = 完成 Point / 本期人数（DEV 17、QC 9）。上期人数原稿未给出。</p>
+            <div class="legend"><b class="dev"></b>DEV 人均　<b class="qc"></b>QC 人均</div>
+            <svg class="col" viewBox="0 0 480 240" role="img" aria-label="近 4 期 DEV/QC 人均故事点">
+              <line x1="44" y1="204" x2="464" y2="204" stroke="#e5e5e5" />
+              <line x1="44" y1="16" x2="44" y2="204" stroke="#e5e5e5" />
+              <text x="36" y="208" font-size="10" fill="#737373" text-anchor="end">0</text>
+              <text x="36" y="110" font-size="10" fill="#737373" text-anchor="end">3</text>
+              <text x="36" y="20" font-size="10" fill="#737373" text-anchor="end">6</text>
+              <rect x="66" y="63.0" width="28" height="141.0" rx="3" fill="#3b82f6" />
+              <rect x="98" y="38.9" width="28" height="165.1" rx="3" fill="#059669" />
+              <text x="80" y="57" font-size="10" fill="#737373" text-anchor="middle">4.50</text>
+              <text x="112" y="33" font-size="10" fill="#737373" text-anchor="middle">5.27</text>
+              <text x="96" y="222" font-size="11" fill="#737373" text-anchor="middle">−3</text>
+              <rect x="176" y="31.0" width="28" height="173.0" rx="3" fill="#3b82f6" />
+              <rect x="208" y="46.4" width="28" height="157.6" rx="3" fill="#059669" />
+              <text x="176" y="24" font-size="10" fill="#737373" text-anchor="start">5.52</text>
+              <text x="236" y="50" font-size="10" fill="#737373" text-anchor="start">5.03</text>
+              <text x="206" y="222" font-size="11" fill="#737373" text-anchor="middle">−2</text>
+              <rect x="286" y="92.8" width="28" height="111.2" rx="3" fill="#3b82f6" />
+              <rect x="318" y="115.6" width="28" height="88.4" rx="3" fill="#059669" />
+              <text x="300" y="87" font-size="10" fill="#737373" text-anchor="middle">3.55</text>
+              <text x="332" y="110" font-size="10" fill="#737373" text-anchor="middle">2.82</text>
+              <text x="316" y="222" font-size="11" fill="#737373" text-anchor="middle">−1</text>
+              <rect x="396" y="96.2" width="28" height="107.8" rx="3" fill="#3b82f6" />
+              <rect x="428" y="76.2" width="28" height="127.8" rx="3" fill="#059669" />
+              <text x="410" y="90" font-size="10" fill="#737373" text-anchor="middle">3.44</text>
+              <text x="442" y="70" font-size="10" fill="#737373" text-anchor="middle">4.08</text>
+              <text x="426" y="222" font-size="11" fill="#737373" text-anchor="middle">本期</text>
+            </svg>
+            <p class="chart-caption">刻度上限 6。不等于人天。本期 QC 人均 4.08 高于 DEV 3.44；−2 两角色人均最高。</p>
+          </div>
+        </div>
+
+        <p class="hint" style="margin-top:10px;"><a class="more" href="/demo/sprint-summary/details#personal-points">查看个人故事点明细 →</a></p>
+
+
+        
+      </div>
+    </details>
+
+
+  </div>
+  <script>
+    window.addEventListener("beforeprint", function () {
+      document.querySelectorAll("details.fold").forEach(function (d) { d.setAttribute("open", ""); });
+    });
+    (function () {
+      document.querySelectorAll("table.data").forEach(function (table) {
+        var cols = [];
+        table.querySelectorAll("thead th").forEach(function (th, i) {
+          if ((th.textContent || "").trim() === "偏差率") cols.push(i);
+        });
+        if (!cols.length) return;
+        table.querySelectorAll("tbody tr").forEach(function (tr) {
+          cols.forEach(function (i) {
+            var td = tr.children[i];
+            if (!td) return;
+            var n = parseFloat(String(td.textContent).replace(/%/g, "").trim());
+            if (!isNaN(n) && n > 15) td.classList.add("alert");
+          });
+        });
+      });
+    })();
+    (function () {
+      var h = Array.prototype.find.call(document.querySelectorAll("h3"), function (el) {
+        return (el.textContent || "").trim() === "按 Item 计数统计";
+      });
+      if (!h) return;
+      var wrap = h.nextElementSibling;
+      while (wrap && !wrap.querySelector("table.compare")) wrap = wrap.nextElementSibling;
+      if (!wrap) return;
+      wrap.querySelectorAll("table.compare td.cell-stack").forEach(function (td) {
+        td.innerHTML = td.innerHTML.replace(/偏差率\s+([\d.]+)%/g, function (_, n) {
+          var cls = parseFloat(n) > 20 ? "rate-bad" : "rate-ok";
+          return "偏差率 <span class=\"" + cls + "\">" + n + "%</span>";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
