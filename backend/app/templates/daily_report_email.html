@@ -5,186 +5,324 @@
   <title>{{ report.title }}</title>
 </head>
 {#
-  商务蓝 + 三组表头：Story / Testing / Ready for Test
-  Ready / Reopen 可被 Sprint 人工覆盖
+  飞书等邮件客户端不支持 CSS 变量 / Grid / Flex。
+  预览与发信共用本模板：全部用 table + 内联 style。
 #}
-<body style="margin:0;padding:24px;font-family:Arial,'Microsoft YaHei',sans-serif;color:#0F172A;background:#F4F7FB;">
-  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;background:#FFFFFF;border:1px solid #9BB7D4;">
-    <tr>
-      <td colspan="13" style="font-size:20px;font-weight:700;padding:14px 14px 12px;color:#1E4A7A;letter-spacing:0.2px;">{{ report.title }}</td>
-    </tr>
-    <tr>
-      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;width:132px;font-weight:700;">Sprint</td>
-      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#1E4A7A;font-weight:500;">【{{ report.moduleName }}】</td>
-    </tr>
-    <tr>
-      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">Test ENV</td>
-      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#0F172A;height:28px;">
-        {% set env_tags = report.testEnvTags if report.testEnvTags else [] %}
-        {% if env_tags %}
-          {% for tag in env_tags %}
-          <span style="display:inline-block;background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;border-radius:12px;padding:2px 10px;margin:2px 6px 2px 0;font-size:12px;font-weight:600;line-height:1.4;font-family:Arial,'Microsoft YaHei',sans-serif;">{{ tag }}</span>
-          {% endfor %}
-        {% elif report.testEnv %}
-          <span style="color:#0F172A;">{{ report.testEnv }}</span>
-        {% else %}
-          <span style="color:#94A3B8;">—</span>
-        {% endif %}
-      </td>
-    </tr>
-    <tr>
-      <td style="background:#FFFFFF;color:#1E4A7A;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;">Testing Progress</td>
-      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;color:#1E4A7A;">{{ report.testingProgress }}{% if report.feishu and not report.feishu.loaded %}<span style="color:#DC2626;margin-left:8px;">（{{ report.feishu.warning }}）</span>{% endif %}</td>
-    </tr>
-    <tr>
-      <td style="background:#FFFFFF;color:#E67E22;border:1px solid #9BB7D4;padding:9px 12px;font-weight:700;vertical-align:top;">Risk/Block</td>
-      <td colspan="12" style="background:#FFFFFF;border:1px solid #9BB7D4;padding:9px 12px;white-space:pre-wrap;min-height:40px;color:#0F172A;height:40px;">{{ report.riskBlock }}</td>
-    </tr>
-  </table>
+{% set plan = report.plan or {} %}
+{% set kpis = report.kpis or {} %}
+{% set bugs = (report.feishu.bugs if report.feishu else None) %}
+{% set risk_tone = report.riskLevel or 'ok' %}
+{% macro tc(tone) -%}
+{%- if tone == 'danger' -%}#dc2626
+{%- elif tone == 'warn' -%}#d97706
+{%- elif tone == 'ok' or tone == 'low' -%}#059669
+{%- else -%}#171717
+{%- endif -%}
+{%- endmacro %}
+{% macro status(tone, label) -%}
+<span style="font-weight:700;font-size:13px;color:{{ tc(tone) }};white-space:nowrap;">● {{ label }}</span>
+{%- endmacro %}
+{% set callout_bg = '#fef2f2' if risk_tone == 'danger' else ('#fffbeb' if risk_tone == 'warn' else '#ecfdf5') %}
+{% set callout_bd = '#fecaca' if risk_tone == 'danger' else ('#fde68a' if risk_tone == 'warn' else '#a7f3d0') %}
+{% set th = "background:#f4f4f5;color:#171717;border:1px solid #e5e5e5;padding:9px 10px;font-size:12px;font-weight:700;text-align:left;" %}
+{% set td = "border:1px solid #e5e5e5;padding:9px 10px;font-size:13px;color:#171717;vertical-align:top;" %}
+{% set tdnum = "border:1px solid #e5e5e5;padding:9px 10px;font-size:13px;color:#171717;text-align:right;white-space:nowrap;" %}
+<body style="margin:0;padding:24px;background:#fafafa;color:#171717;font-family:Arial,'Microsoft YaHei','PingFang SC',sans-serif;line-height:1.55;">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  <tr>
+    <td style="font-size:24px;font-weight:700;padding:0 0 6px;color:#171717;">Sprint 质量日报</td>
+  </tr>
+  <tr>
+    <td style="font-size:13px;color:#737373;padding:0 0 14px;">{{ report.subtitle or report.moduleName }} · {{ report.generatedAt }}</td>
+  </tr>
+</table>
 
-  <div style="height:16px;"></div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <td width="112" style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;">Sprint</td>
+    <td style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;">{{ report.moduleName }}</td>
+    <td width="112" style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;">Test ENV</td>
+    <td style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;">
+      {% if report.testEnvTags %}
+        {% for tag in report.testEnvTags %}
+        <span style="display:inline-block;padding:2px 8px;margin:0 4px 0 0;border:1px solid #e5e5e5;background:#f4f4f5;font-size:12px;font-weight:700;">{{ tag }}</span>
+        {% endfor %}
+      {% elif report.testEnv %}{{ report.testEnv }}{% else %}—{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;">相对计划</td>
+    <td colspan="3" style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;">
+      {% if plan.configured %}
+        {{ status(plan.overallTone, plan.overallLabel) }}{% if plan.overallHint %} · {{ plan.overallHint }}{% endif %}
+      {% else %}
+        {{ status('', '未设置计划线') }}
+        <div style="margin-top:6px;font-size:12px;color:#737373;font-weight:400;">在日报页「编辑计划线」填写各环节区间和状态门槛后，系统会自动算本日应到 / 快慢。</div>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;">风险等级</td>
+    <td colspan="3" style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;">
+      {{ status(risk_tone, report.riskLabel or '正常') }}
+      <span style="color:#737373;font-size:12px;"> · {% if report.override and report.override.riskLevel %}人工覆盖{% else %}自动判定{% endif %}（计划线偏差 + 未关 P0/P1；可手选覆盖）</span>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin-top:8px;">
+        <tr>
+          <td style="padding:3px 8px 3px 0;font-size:12px;color:#059669;font-weight:700;white-space:nowrap;width:56px;{% if risk_tone in ['ok'] %}background:#ecfdf5;{% endif %}">正常</td>
+          <td style="padding:3px 0;font-size:12px;color:#737373;{% if risk_tone in ['ok'] %}background:#ecfdf5;color:#171717;{% endif %}">各启用环节达到本日应到，且无未关 P0/P1</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 8px 3px 0;font-size:12px;color:#059669;font-weight:700;white-space:nowrap;{% if risk_tone == 'low' %}background:#ecfdf5;{% endif %}">低风险</td>
+          <td style="padding:3px 0;font-size:12px;color:#737373;{% if risk_tone == 'low' %}background:#ecfdf5;color:#171717;{% endif %}">计划线未维护完整（缺区间或门槛），不等于已经落后</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 8px 3px 0;font-size:12px;color:#d97706;font-weight:700;white-space:nowrap;{% if risk_tone == 'warn' %}background:#fffbeb;{% endif %}">中风险</td>
+          <td style="padding:3px 0;font-size:12px;color:#737373;{% if risk_tone == 'warn' %}background:#fffbeb;color:#171717;{% endif %}">窗口内慢于本日应到，或存在未关 P0/P1；收口窗口可能被压缩</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 8px 3px 0;font-size:12px;color:#dc2626;font-weight:700;white-space:nowrap;{% if risk_tone == 'danger' %}background:#fef2f2;{% endif %}">高风险</td>
+          <td style="padding:3px 0;font-size:12px;color:#737373;{% if risk_tone == 'danger' %}background:#fef2f2;color:#171717;{% endif %}">窗口已到期/过窗仍未达标，或验收阶段仍有未关 P0/P1；可能无法按期收口</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:12px;background:#FFFFFF;border:1px solid #9BB7D4;">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  <tr>
+    <td bgcolor="{{ callout_bg }}" style="padding:14px 16px;background:{{ callout_bg }};border:1px solid {{ callout_bd }};">
+      <div style="font-size:16px;font-weight:700;margin:0 0 8px;">今日结论　{{ status(risk_tone, report.riskLabel or '正常') }}</div>
+      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap;">{{ report.dailyConclusion or '暂无结论。保存计划线后会按偏差自动起草；也可在「编辑 Test ENV / Risk」里改写。' }}</div>
+    </td>
+  </tr>
+</table>
+
+{% if report.attention %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:12px;">
+  <tr>
+    <td bgcolor="#fef2f2" style="padding:14px 16px;background:#fef2f2;border:1px solid #fecaca;">
+      <div style="font-size:16px;font-weight:700;margin:0 0 8px;">需关注</div>
+      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap;">{{ report.attention }}</div>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<div style="max-width:1080px;font-size:16px;font-weight:700;margin:24px 0 10px;">进展摘要</div>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  <tr>
+    <td width="20%" valign="top" style="padding:4px 12px 8px 0;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#171717;">{{ kpis.readyYes or 0 }} / {{ kpis.storyTotal or 0 }}</div>
+      <div style="font-size:13px;color:#737373;margin-top:6px;">已提测 / Story 总数</div>
+    </td>
+    <td width="20%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{% if (kpis.execPct or 0) < 50 %}#d97706{% else %}#171717{% endif %};">{{ kpis.execPct or 0 }}%</div>
+      <div style="font-size:13px;color:#737373;margin-top:6px;">测试执行</div>
+    </td>
+    <td width="20%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#059669;">{{ kpis.passRate or '-' }}</div>
+      <div style="font-size:13px;color:#737373;margin-top:6px;">测试 Pass Rate</div>
+    </td>
+    <td width="20%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#171717;">{{ kpis.bugTotal or 0 }}</div>
+      <div style="font-size:13px;color:#737373;margin-top:6px;">Bug 总数 · 未关 {{ kpis.bugOpen or 0 }}{% if kpis.bugFixedRate %} · Fixed {{ kpis.bugFixedRate }}{% endif %}</div>
+    </td>
+    <td width="20%" valign="top" style="padding:4px 0 8px 12px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{% if (kpis.p0p1Open or 0) > 0 %}#dc2626{% else %}#171717{% endif %};">{{ kpis.p0p1Open or 0 }}</div>
+      <div style="font-size:13px;color:#737373;margin-top:6px;">未关 Bug P0/P1</div>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:20px;">
+  <tr>
+    <td style="font-size:16px;font-weight:700;padding:0 0 8px;">风险与应对措施</td>
+  </tr>
+</table>
+{% if report.riskRows %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <th style="{{ th }}width:36px;">#</th>
+    <th style="{{ th }}">风险</th>
+    <th style="{{ th }}">应对措施</th>
+    <th style="{{ th }}width:120px;">执行人</th>
+  </tr>
+  {% for r in report.riskRows %}
+  <tr>
+    <td style="{{ td }}">{{ loop.index }}</td>
+    <td style="{{ td }}white-space:pre-wrap;">{{ r.risk or '—' }}</td>
+    <td style="{{ td }}white-space:pre-wrap;">{{ r.action or '—' }}</td>
+    <td style="{{ td }}">{{ r.owner or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  <tr>
+    <td style="font-size:13px;line-height:1.65;padding:0 0 8px;">
+      <span style="color:#737373;font-size:12px;">暂无风险申报。发信人可在「编辑 Test ENV / Risk」按行填写风险、应对措施和执行人。</span>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:12px;">
+  <tr>
+    <td style="font-size:16px;font-weight:700;padding:0 0 8px;">Sprint 现状 vs 计划</td>
+  </tr>
+  <tr>
+    <td style="font-size:12px;color:#737373;padding:0 0 10px;">判定口径：以你保存的计划线为基线，按工作日线性插值「本日应到」；窗口结束日必须达到状态门槛。</td>
+  </tr>
+</table>
+
+{% if plan.phases %}
+{% set enabled_phases = plan.phases | selectattr('enabled') | list %}
+{% set ns = namespace(i=0) %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;">
+  {% for row in enabled_phases | batch(3) %}
+  <tr>
+    {% for p in row %}
+    {% set ns.i = ns.i + 1 %}
+    <td width="33%" valign="top" style="padding:0 6px 8px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background:#ffffff;">
+        <tr>
+          <td style="border:1px solid #e5e5e5;padding:12px 14px;">
+            <div style="font-size:12px;color:#737373;">{{ ns.i }} {{ p.name }}</div>
+            <div style="font-size:13px;font-weight:700;margin-top:4px;color:{{ tc(p.tone) }};">{{ p.rangeLabel }} · {{ p.windowNote or p.verdictLabel }}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+    {% endfor %}
+    {% for _ in range(3 - (row | length)) %}
+    <td width="33%" style="padding:0;"></td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <th style="{{ th }}">对照项</th>
+    <th style="{{ th }}">计划（本日应到）</th>
+    <th style="{{ th }}">实际</th>
+    <th style="{{ th }}">快 / 慢</th>
+  </tr>
+  {% if plan.compareRows %}
+    {% for row in plan.compareRows %}
+    {% set bg = '#fef2f2' if row.tone == 'danger' else ('#fffbeb' if row.tone == 'warn' else '#ffffff') %}
     <tr>
-      <th rowspan="2" style="background:#1E4A7A;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;text-align:center;font-weight:600;width:36px;">#</th>
-      <th colspan="2" style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;text-align:center;font-weight:600;">Story</th>
-      <th colspan="7" style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;text-align:center;font-weight:600;">Testing</th>
-      <th colspan="3" style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;text-align:center;font-weight:600;">Ready for Test</th>
-    </tr>
-    <tr>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;min-width:280px;width:280px;">Story Name</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Story Status</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Case Num</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Passed</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Failed</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Blocked</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">No Run</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Pass Rate</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Executable Pass Rate</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Yes/No</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Ready Date</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:7px 6px;font-weight:600;">Comment</th>
-    </tr>
-    {% for row in report.rows %}
-    <tr>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ loop.index }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 8px;text-align:left;min-width:280px;width:280px;word-break:break-word;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{% if row.storyUrl %}<a href="{{ row.storyUrl }}" style="color:#1E5A96;text-decoration:none;">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};font-weight:600;color:{{ row.storyStatusColor or '#64748B' }};">{{ row.storyStatus }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.caseNum }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#059669;font-weight:600;">{{ row.passed }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#DC2626;font-weight:600;">{{ row.failed }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#EA580C;font-weight:600;">{{ row.blocked }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.noRun }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};{% if row.passRate == '100%' %}color:#059669;font-weight:700;{% else %}color:#1E4A7A;{% endif %}">{{ row.passRate or "-" }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};color:#1E4A7A;">{{ row.executablePassRate or "-" }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyForTesting }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyDate }}</td>
-      <td style="border:1px solid #DCE6F0;padding:7px 6px;text-align:center;background:{% if loop.index is even %}#F5F9FC{% else %}#FFFFFF{% endif %};">{{ row.readyComment }}</td>
+      <td style="{{ td }}background:{{ bg }};">{{ row.name }}</td>
+      <td style="{{ td }}background:{{ bg }};">{{ row.plannedLabel }}</td>
+      <td style="{{ td }}background:{{ bg }};">{{ row.actualLabel }}</td>
+      <td style="{{ td }}background:{{ bg }};">{{ status(row.tone, row.verdictLabel) }}</td>
     </tr>
     {% endfor %}
-    {% if report.rowTotals %}
-    <tr>
-      <td colspan="3" style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">Total</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.caseNum }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#059669;">{{ report.rowTotals.passed }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#DC2626;">{{ report.rowTotals.failed }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#EA580C;">{{ report.rowTotals.blocked }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.noRun }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;{% if report.rowTotals.passRate == '100%' %}color:#059669;{% else %}color:#1E4A7A;{% endif %}">{{ report.rowTotals.passRate or "-" }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#E8F0F8;color:#1E4A7A;">{{ report.rowTotals.executablePassRate or "-" }}</td>
-      <td colspan="3" style="border:1px solid #DCE6F0;padding:8px 6px;background:#E8F0F8;"></td>
-    </tr>
-    {% endif %}
-  </table>
+  {% else %}
+    <tr><td colspan="4" style="{{ td }}color:#737373;">尚未设置计划线。</td></tr>
+  {% endif %}
+</table>
 
-  {% if report.feishu and report.feishu.bugs %}
-  {% set bugs = report.feishu.bugs %}
-  {% if bugs.statusColumns %}
-  <div style="height:20px;"></div>
-  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">Bug Total</div>
-  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;border:1px solid #9BB7D4;">
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:20px;">
+  <tr>
+    <td style="font-size:14px;font-weight:700;padding:0 0 8px;">Story 进度</td>
+  </tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <th style="{{ th }}width:36px;">#</th>
+    <th style="{{ th }}">Story</th>
+    <th style="{{ th }}width:160px;white-space:nowrap;">Status</th>
+    <th style="{{ th }}">Pass / Fail / Block / NoRun</th>
+    <th style="{{ th }}text-align:right;">Exec Pass</th>
+    <th style="{{ th }}">vs 计划</th>
+    <th style="{{ th }}">备注</th>
+  </tr>
+  {% for row in report.rows %}
+  {% set bg = '#fef2f2' if row.vsPlanTone == 'danger' else ('#fffbeb' if row.vsPlanTone == 'warn' else '#ffffff') %}
+  <tr>
+    <td style="{{ td }}background:{{ bg }};">{{ loop.index }}</td>
+    <td style="{{ td }}background:{{ bg }};">{% if row.storyUrl %}<a href="{{ row.storyUrl }}" target="_blank" style="color:#1E5A96;text-decoration:none;">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
+    <td width="160" style="{{ td }}background:{{ bg }};font-weight:700;color:{{ row.storyStatusColor or '#737373' }};white-space:nowrap;width:160px;">{{ row.storyStatus }}</td>
+    <td style="{{ td }}background:{{ bg }};white-space:nowrap;">{{ row.passed }} / {{ row.failed }} / {{ row.blocked }} / {{ row.noRun }}</td>
+    <td style="{{ tdnum }}background:{{ bg }};{% if row.executablePassRate == '100%' %}color:#059669;font-weight:700;{% endif %}">{{ row.executablePassRate or '—' }}</td>
+    <td style="{{ td }}background:{{ bg }};">{{ status(row.vsPlanTone, row.vsPlan or '—') }}</td>
+    <td style="{{ td }}background:{{ bg }};">{{ row.vsNote }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:20px;">
+  <tr>
+    <td style="font-size:14px;font-weight:700;padding:0 0 8px;">Bug 统计</td>
+  </tr>
+</table>
+{% if bugs and bugs.statusColumns %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <th style="{{ th }}">Priority</th>
+    {% for col in bugs.statusColumns %}
+    <th style="{{ th }}text-align:right;">{{ col }}</th>
+    {% endfor %}
+    <th style="{{ th }}text-align:right;">Total</th>
+    <th style="{{ th }}text-align:right;">Fixed Rate</th>
+  </tr>
+  {% for r in bugs.matrixRows %}
+  <tr>
+    <td style="{{ td }}{% if r.priority == 'P1' %}color:#dc2626;font-weight:700;{% elif r.priority == 'P0' %}font-weight:700;{% endif %}">{{ r.priority }}</td>
+    {% for col in bugs.statusColumns %}
+    <td style="{{ tdnum }}">{{ r.counts[col] }}</td>
+    {% endfor %}
+    <td style="{{ tdnum }}">{{ r.total }}</td>
+    <td style="{{ tdnum }}">{{ r.fixedRate }}</td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <td style="{{ td }}background:#f4f4f5;font-weight:700;">Total</td>
+    {% for col in bugs.statusColumns %}
+    <td style="{{ tdnum }}background:#f4f4f5;font-weight:700;">{{ bugs.matrixTotals.counts[col] }}</td>
+    {% endfor %}
+    <td style="{{ tdnum }}background:#f4f4f5;font-weight:700;">{{ bugs.matrixTotals.total }}</td>
+    <td style="{{ tdnum }}background:#f4f4f5;font-weight:700;">{{ bugs.matrixTotals.fixedRate }}</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;margin-top:20px;">
+  <tr>
+    <td style="font-size:14px;font-weight:700;padding:0 0 8px;">未关 P0/P1</td>
+  </tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:1080px;border-collapse:collapse;background:#fff;">
+  <tr>
+    <th style="{{ th }}width:36px;">#</th>
+    <th style="{{ th }}">Priority</th>
+    <th style="{{ th }}">Status</th>
+    <th style="{{ th }}">Summary</th>
+  </tr>
+  {% if bugs.p0p1Rows %}
+    {% for b in bugs.p0p1Rows %}
     <tr>
-      <th style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;">Priority</th>
-      {% for col in bugs.statusColumns %}
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">{{ col }}</th>
-      {% endfor %}
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Total</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Fixed Rate</th>
-    </tr>
-    {% for r in bugs.matrixRows %}
-    <tr>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:600;">{{ r.priority }}</td>
-      {% for col in bugs.statusColumns %}
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ r.counts[col] }}</td>
-      {% endfor %}
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ r.total }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ r.fixedRate }}</td>
+      <td style="{{ td }}">{{ loop.index }}</td>
+      <td style="{{ td }}{% if b.priority == 'P0' or b.priority == 'P1' %}color:#dc2626;font-weight:700;{% endif %}">{{ b.priority }}</td>
+      <td style="{{ td }}">{{ b.status }}</td>
+      <td style="{{ td }}">{% if b.url %}<a href="{{ b.url }}" target="_blank" style="color:#1E5A96;text-decoration:none;">{{ b.summary or b.name }}</a>{% else %}{{ b.summary or b.name }}{% endif %}</td>
     </tr>
     {% endfor %}
-    <tr>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#F0F5FA;">Total</td>
-      {% for col in bugs.statusColumns %}
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#F0F5FA;">{{ bugs.matrixTotals.counts[col] }}</td>
-      {% endfor %}
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#F0F5FA;">{{ bugs.matrixTotals.total }}</td>
-      <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;font-weight:700;background:#F0F5FA;">{{ bugs.matrixTotals.fixedRate }}</td>
-    </tr>
-  </table>
+  {% else %}
+    <tr><td colspan="4" style="{{ td }}color:#737373;">暂无未关闭的 P0/P1</td></tr>
   {% endif %}
+</table>
+{% if bugs.reopenRows %}
+<div style="max-width:1080px;font-size:12px;color:#737373;margin-top:8px;">Reopen {{ bugs.reopenRows|length }} 条</div>
+{% endif %}
+{% else %}
+<div style="max-width:1080px;font-size:12px;color:#737373;">{% if report.feishu and report.feishu.warning %}{{ report.feishu.warning }}{% else %}暂无 Bug 数据。{% endif %}</div>
+{% endif %}
 
-  <div style="height:20px;"></div>
-  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">Bug Reopen{% if bugs.reopenSource == 'override' %} <span style="font-size:12px;font-weight:500;color:#5A6B7D;">（人工维护）</span>{% endif %}</div>
-  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;border:1px solid #9BB7D4;">
-    <tr>
-      <th style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;">#</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Priority</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Status</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Summary</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Reopen Times</th>
-    </tr>
-    {% if bugs.reopenRows %}
-      {% for b in bugs.reopenRows %}
-      <tr>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ loop.index }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ b.priority }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ b.status }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 10px;">{% if b.url %}<a href="{{ b.url }}" style="color:#1E5A96;text-decoration:none;">{{ b.summary or b.name }}</a>{% else %}{{ b.summary or b.name }}{% endif %}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ b.reopenTimes }}</td>
-      </tr>
-      {% endfor %}
-    {% else %}
-      <tr><td colspan="5" style="border:1px solid #DCE6F0;padding:10px;color:#64748B;text-align:center;">{% if bugs.reopenSource == 'override' %}暂无人工维护的 Reopen 记录{% else %}暂无 Reopen 记录（快照 reopenTimes 均为 0，可在页面维护）{% endif %}</td></tr>
-    {% endif %}
-  </table>
-
-  {% if bugs.p0p1Rows is defined %}
-  <div style="height:20px;"></div>
-  <div style="max-width:1200px;font-size:15px;font-weight:700;color:#1E4A7A;margin-bottom:8px;">Bug List（P0/P1）</div>
-  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:1200px;font-size:13px;background:#FFFFFF;border:1px solid #9BB7D4;">
-    <tr>
-      <th style="background:#1E5A96;color:#FFFFFF;border:1px solid #9BB7D4;padding:8px 6px;">#</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Priority</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Status</th>
-      <th style="background:#E8F0F8;color:#1E4A7A;border:1px solid #9BB7D4;padding:8px 6px;">Summary</th>
-    </tr>
-    {% if bugs.p0p1Rows %}
-      {% for b in bugs.p0p1Rows %}
-      <tr>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ loop.index }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ b.priority }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 6px;text-align:center;">{{ b.status }}</td>
-        <td style="border:1px solid #DCE6F0;padding:8px 10px;">{% if b.url %}<a href="{{ b.url }}" style="color:#1E5A96;text-decoration:none;">{{ b.summary or b.name }}</a>{% else %}{{ b.summary or b.name }}{% endif %}</td>
-      </tr>
-      {% endfor %}
-    {% else %}
-      <tr><td colspan="4" style="border:1px solid #DCE6F0;padding:10px;color:#64748B;text-align:center;">暂无未关闭的 P0/P1</td></tr>
-    {% endif %}
-  </table>
-  {% endif %}
-  {% endif %}
-  <div style="height:24px;"></div>
-  <div style="max-width:1200px;font-size:12px;color:#94A3B8;line-height:1.5;">
-    本日报由 QA Report Tool 自动生成；用例执行数据来自 MeterSphere，Story/Bug 来自飞书项目快照，Test ENV / Risk / Ready / Reopen 含人工维护项。<br/>
-  </div>
+<div style="max-width:1080px;font-size:12px;color:#737373;margin-top:24px;">由 QA Report Tool 生成 · 计划线对照 {{ plan.today or report.generatedAt }}</div>
 </body>
 </html>

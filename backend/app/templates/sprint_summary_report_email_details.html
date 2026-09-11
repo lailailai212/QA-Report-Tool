@@ -1,0 +1,340 @@
+{#
+  邮件附录明细。用 details open：支持折叠的客户端可点收起；
+  飞书若剥掉 details，内部表格仍会显示，保证能看到明细。
+#}
+{% set dtl = report.details or {} %}
+{% set moved_in = e.scopeMovedIn or [] %}
+{% set moved_out = e.scopeMovedOut or [] %}
+{% set personal_dev = dtl.personalDev or report.personalDev or [] %}
+{% set personal_qc = dtl.personalQc or report.personalQc or [] %}
+{% set personal_bugs = dtl.personalBugs or report.personalBugs or [] %}
+{% set summary_st = "cursor:pointer;font-size:16px;font-weight:700;color:#171717;padding:8px 0;" %}
+{% macro pct(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}%{%- endif -%}
+{%- endmacro %}
+{% macro num(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% macro elink(row, text) -%}
+{%- set label = text if text else (row.id or '—') -%}
+{%- set href = row.url or (row.id and ('https://project.feishu.cn/obis/workitem/' ~ row.id)) -%}
+{%- if href -%}
+<a href="{{ href }}" target="_blank" style="color:#2563eb;text-decoration:none;">{{ label }}</a>
+{%- else -%}{{ label }}{%- endif -%}
+{%- endmacro %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}margin-top:8px;">
+  <tr>
+    <td style="padding-top:18px;border-top:1px solid #e5e5e5;font-size:16px;font-weight:700;color:#171717;">明细（点击标题可收起 / 展开）</td>
+  </tr>
+  <tr>
+    <td style="{{ hint }}">以下为原详情页内容，已写入本邮件。飞书等客户端若不支持折叠，请直接下拉查看。</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">移入 / 移出清单（{{ moved_in|length }} / {{ moved_out|length }}）</summary>
+        <div style="{{ hint }}">口径含 User Story / Tech Improvement / Task。</div>
+        <div style="font-size:14px;font-weight:700;padding:8px 0 6px;">移入（{{ moved_in|length }}）</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">Item ID</th>
+            <th style="{{ th }}">Summary</th>
+          </tr>
+          {% for r in moved_in %}
+          <tr>
+            <td style="{{ td }}">{{ r.type }}</td>
+            <td style="{{ td }}">{{ elink(r, r.id) }}</td>
+            <td style="{{ td }}">{{ elink(r, r.summary) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="{{ td }}color:#737373;">无移入项（或尚未冻结计划会快照）</td></tr>
+          {% endfor %}
+        </table>
+        <div style="font-size:14px;font-weight:700;padding:14px 0 6px;">移出（{{ moved_out|length }}）</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">Item ID</th>
+            <th style="{{ th }}">Summary</th>
+          </tr>
+          {% for r in moved_out %}
+          <tr>
+            <td style="{{ td }}">{{ r.type }}</td>
+            <td style="{{ td }}">{{ elink(r, r.id) }}</td>
+            <td style="{{ td }}">{{ elink(r, r.summary) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="{{ td }}color:#737373;">无移出项（或尚未冻结计划会快照）</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">开发计划 vs 结果</summary>
+        <div style="{{ hint }}">完成数 = 已验收 + 待验收。验收闭环只看 User Story。范围稳定性以计划会冻结基线为准。</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">维度</th>
+            <th style="{{ th }}">计划</th>
+            <th style="{{ th }}">实际</th>
+            <th style="{{ thn }}">完成率</th>
+            <th style="{{ thn }}">偏差率</th>
+          </tr>
+          {% for b in dtl.planBlocks or [] %}
+          <tr>
+            <td style="{{ td }}">{{ b.type }}</td>
+            <td style="{{ td }}">完成数</td>
+            <td style="{{ td }}">{{ num(b.plan) }} 个</td>
+            <td style="{{ td }}">{{ num(b.actual) }} 个</td>
+            <td style="{{ tdn }}"><b>{{ pct(b.doneRate) }}</b></td>
+            <td style="{{ tdn }}">N/A</td>
+          </tr>
+          <tr>
+            <td style="{{ td }}"></td>
+            <td style="{{ td }}">状态</td>
+            <td style="{{ td }}">{% if b.acceptFocus %}全部验收完成{% else %}—{% endif %}</td>
+            <td style="{{ td }}">{% for s in b.statusDist or [] %}{{ s.status }}：{{ s.count }}{% if not loop.last %}<br />{% endif %}{% else %}—{% endfor %}</td>
+            <td style="{{ tdn }}">N/A</td>
+            <td style="{{ tdn }}{% if b.acceptFocus and b.acceptGap is not none and b.acceptGap > 15 %}color:#dc2626;font-weight:700;background:#fef2f2;{% endif %}">{% if b.acceptFocus %}{{ pct(b.acceptGap) }}{% else %}N/A{% endif %}</td>
+          </tr>
+          <tr>
+            <td style="{{ td }}"></td>
+            <td style="{{ td }}">范围稳定性</td>
+            {% if b.scopePlan or b.movedIn or b.movedOut %}
+            <td style="{{ td }}">{{ num(b.scopePlan) }} 个</td>
+            <td style="{{ td }}">变更总计 {{ (b.movedIn or 0) + (b.movedOut or 0) }} 个<br />移入：{{ num(b.movedIn) }}<br />移出：{{ num(b.movedOut) }}</td>
+            <td style="{{ tdn }}">N/A</td>
+            <td style="{{ tdn }}{% if b.churnHigh %}color:#dc2626;font-weight:700;{% endif %}">{{ b.churnRate or '—' }}</td>
+            {% else %}
+            <td style="{{ td }}">N/A</td>
+            <td style="{{ td }}">N/A</td>
+            <td style="{{ tdn }}">N/A</td>
+            <td style="{{ tdn }}">N/A</td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="{{ td }}color:#737373;">暂无计划对比数据</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">交付明细（本期 vs 上期）</summary>
+        <div style="{{ hint }}">{% if report.prevSprint %}对比 {{ report.prevSprint }}。{% else %}尚无上期数据。{% endif %}</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">维度</th>
+            <th style="{{ th }}">本期</th>
+            <th style="{{ th }}">上期（−1）</th>
+            <th style="{{ th }}">环比</th>
+          </tr>
+          {% for row in dtl.deliveryDetail or [] %}
+          <tr>
+            <td style="{{ td }}">{{ row.type }}</td>
+            <td style="{{ td }}">完成数</td>
+            <td style="{{ td }}">计划 {{ num(row.curPlan) }} 个<br />实际 {{ num(row.curActual) }} 个<br />完成率 {{ pct(row.curRate) }}</td>
+            <td style="{{ td }}">{% if report.prevSprintLoaded %}计划 {{ num(row.prevPlan) }} 个<br />实际 {{ num(row.prevActual) }} 个<br />完成率 {{ pct(row.prevRate) }}{% else %}—{% endif %}</td>
+            <td style="{{ td }}">完成率 {{ row.rateMom.text if row.rateMom else '—' }}{% if row.actualDelta %}<br />{{ row.actualDelta }}{% endif %}{% if row.planDelta %}<br />{{ row.planDelta }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td style="{{ td }}"></td>
+            <td style="{{ td }}">{% if row.acceptFocus %}验收状态{% else %}状态{% endif %}</td>
+            <td style="{{ td }}">{% for s in row.curDist or [] %}{{ s.status }}：{{ s.count }}<br />{% endfor %}{% if row.acceptFocus %}验收偏差 {{ pct(row.curGap) }}{% endif %}</td>
+            <td style="{{ td }}">{% if report.prevSprintLoaded %}{% for s in row.prevDist or [] %}{{ s.status }}：{{ s.count }}<br />{% endfor %}{% if row.acceptFocus %}验收偏差 {{ pct(row.prevGap) }}{% endif %}{% else %}—{% endif %}</td>
+            <td style="{{ td }}">{% if row.gapMom %}{{ row.gapMom.text }}{% endif %}{% if row.acceptedDelta %}<br />{{ row.acceptedDelta }}{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="{{ td }}color:#737373;">暂无交付明细</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">范围稳定性环比</summary>
+        <div style="{{ hint }}">仅本期 vs 上期冻结口径。</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">本期</th>
+            <th style="{{ th }}">上期（−1）</th>
+            <th style="{{ th }}">环比</th>
+          </tr>
+          {% for row in dtl.scopeMom or [] %}
+          <tr>
+            <td style="{{ td }}">{{ row.type }}</td>
+            <td style="{{ td }}">
+              {% if row.hasCur %}
+              冻结 {{ num(row.plan) }} · 移入 {{ num(row.movedIn) }} / 移出 {{ num(row.movedOut) }}<br />
+              偏差率 {% if row.churnHigh %}<span style="color:#dc2626;font-weight:700;">{% endif %}{{ row.churnRate or '—' }}{% if row.churnHigh %}</span>{% endif %}
+              {% else %}本期无基线 · N/A{% endif %}
+            </td>
+            <td style="{{ td }}">
+              {% if row.hasPrev %}
+              冻结 {{ num(row.prevPlan) }} · 移入 {{ num(row.prevIn) }} / 移出 {{ num(row.prevOut) }}<br />
+              偏差率 {{ row.prevChurn or '—' }}
+              {% else %}—{% endif %}
+            </td>
+            <td style="{{ td }}">
+              {% if row.hasCur and row.hasPrev %}
+              {{ row.churnMom.text if row.churnMom else '—' }}{% if row.changeDelta %}<br />{{ row.changeDelta }}{% endif %}
+              {% else %}本期无口径或缺少上期，环比 N/A{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="{{ td }}color:#737373;">暂无范围环比</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">故事点分列（DEV / QC）</summary>
+        <div style="{{ hint }}">完成率 = 完成 Story Point / 计划 Story Point（含 US / TI / Task）。</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">类型</th>
+            <th style="{{ th }}">维度</th>
+            {% for lab in dtl.histLabels or [] %}
+            <th style="{{ thn }}">{{ lab }} DEV</th>
+            <th style="{{ thn }}">{{ lab }} QC</th>
+            <th style="{{ thn }}">TOTAL</th>
+            <th style="{{ thn }}">完成率</th>
+            {% endfor %}
+          </tr>
+          {% for row in dtl.pointsSplit or [] %}
+          <tr>
+            <td style="{{ td }}{% if row.bold %}font-weight:700;{% endif %}">{{ row.type }}</td>
+            <td style="{{ td }}">{{ row.dim }}</td>
+            {% for c in row.cells or [] %}
+              {% if row.bold %}
+              <td colspan="3" style="{{ td }}font-weight:700;">{{ c.total }}{% if c.rate is not none %} ≈ {{ pct(c.rate) }}{% endif %}</td>
+              <td style="{{ tdn }}"></td>
+              {% else %}
+              <td style="{{ tdn }}">{{ num(c.dev) }}</td>
+              <td style="{{ tdn }}">{{ num(c.qc) }}</td>
+              <td style="{{ tdn }}">{{ num(c.total) }}</td>
+              <td style="{{ tdn }}">{{ pct(c.rate) if c.rate is not none else '' }}</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          {% else %}
+          <tr><td colspan="2" style="{{ td }}color:#737373;">暂无故事点分列</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">个人 Bug 汇总</summary>
+        <div style="{{ hint }}">估分为 0（只修 Bug）时归一化 DQS 为 #DIV/0!，不能当绩效。</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">个人 Bug 汇总</th>
+            <th style="{{ thn }}">Bug 个数</th>
+            <th style="{{ thn }}">基础 DQS</th>
+            <th style="{{ thn }}">已完成 Point</th>
+            <th style="{{ thn }}">归一化 DQS</th>
+          </tr>
+          {% for r in personal_bugs %}
+          <tr>
+            <td style="{{ td }}">{{ r.owner }}</td>
+            <td style="{{ tdn }}">{{ r.bugCount }}</td>
+            <td style="{{ tdn }}">{{ r.baseDqs }}</td>
+            <td style="{{ tdn }}">{{ num(r.donePoint) }}</td>
+            <td style="{{ tdn }}">{{ r.normDqs }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="{{ td }}color:#737373;">暂无个人 Bug 归属</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="padding:4px 0 12px;">
+      <details open>
+        <summary style="{{ summary_st }}">个人故事点明细（DEV {{ num(report.peopleDev) }} / QC {{ num(report.peopleQc) }}）</summary>
+        <div style="font-size:14px;font-weight:700;padding:8px 0 6px;">人力资源投入 · DEV</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">No</th>
+            <th style="{{ th }}">团队成员</th>
+            <th style="{{ thn }}">总估分</th>
+            <th style="{{ thn }}">已完成</th>
+            <th style="{{ thn }}">未完成</th>
+          </tr>
+          {% for r in personal_dev %}
+          <tr>
+            <td style="{{ td }}">{{ loop.index }}</td>
+            <td style="{{ td }}">{{ r.owner }}</td>
+            <td style="{{ tdn }}">{{ num(r.planPoint) }}</td>
+            <td style="{{ tdn }}">{{ num(r.donePoint) }}</td>
+            <td style="{{ tdn }}">{{ num(r.openPoint) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="{{ td }}color:#737373;">暂无 DEV 故事点明细</td></tr>
+          {% endfor %}
+        </table>
+        <div style="font-size:14px;font-weight:700;padding:14px 0 6px;">人力资源投入 · QC</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+          <tr>
+            <th style="{{ th }}">No</th>
+            <th style="{{ th }}">团队成员</th>
+            <th style="{{ thn }}">总估分 Point</th>
+            <th style="{{ thn }}">已完成 Point</th>
+            <th style="{{ thn }}">未完成 Point</th>
+          </tr>
+          {% for r in personal_qc %}
+          <tr>
+            <td style="{{ td }}">{{ loop.index }}</td>
+            <td style="{{ td }}">{{ r.owner }}</td>
+            <td style="{{ tdn }}">{{ num(r.planPoint) }}</td>
+            <td style="{{ tdn }}">{{ num(r.donePoint) }}</td>
+            <td style="{{ tdn }}">{{ num(r.openPoint) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="{{ td }}color:#737373;">暂无 QC 故事点明细</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    </td>
+  </tr>
+</table>

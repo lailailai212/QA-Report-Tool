@@ -7,6 +7,7 @@ import json
 import re
 from typing import Any
 
+from .bug_ai import REQUIRED_SECTIONS, normalize_section_headers
 from .bug_meta import BUG_WORK_ITEM_TYPE, FIELD_KEYS
 from .bug_template_store import get_template
 from .config import settings
@@ -149,6 +150,45 @@ def compose_description_with_inline_images(
     return re.sub(r"\{\{IMG:(\d+)\}\}", repl, text).strip()
 
 
+def _is_section_title(line: str) -> bool:
+    s = (line or "").strip()
+    if s in REQUIRED_SECTIONS:
+        return True
+    return s.startswith("【") and s.endswith("】") and len(s) <= 20
+
+
+def format_description_for_feishu(text: str) -> str:
+    """
+    Feishu Description is multi-text (Markdown).
+    A single \\n is often a soft break and appears glued in the UI; convert to
+    hard breaks / paragraph breaks so 【章节】 and list lines render correctly.
+    """
+    cleaned = normalize_section_headers(text or "")
+    if not cleaned:
+        return ""
+    lines = []
+    for raw in cleaned.split("\n"):
+        s = raw.rstrip()
+        if s == "\u200b":
+            s = ""
+        lines.append(s)
+    content = [ln for ln in lines if ln.strip()]
+    if not content:
+        return ""
+
+    pieces: list[str] = [content[0]]
+    for cur in content[1:]:
+        prev = pieces[-1].lstrip("\n").rstrip()
+        # 取上一片段最后一行判断是否章节标题
+        prev_line = prev.rsplit("\n", 1)[-1]
+        if _is_section_title(cur) or _is_section_title(prev_line):
+            pieces.append("\n\n" + cur)
+        else:
+            # Markdown hard line break
+            pieces.append("  \n" + cur)
+    return "".join(pieces)
+
+
 def append_images_to_description(
     description: str, uploaded: list[dict[str, str]]
 ) -> str:
@@ -183,6 +223,7 @@ def build_create_fields(
     severity_id: str,
     priority_id: str,
     component_versions: str,
+    bug_environment_id: str = "",
 ) -> list[dict[str, Any]]:
     fields_cfg = template.get("fields") if isinstance(template.get("fields"), dict) else {}
     roles_cfg = template.get("roles") if isinstance(template.get("roles"), dict) else {}
@@ -197,7 +238,10 @@ def build_create_fields(
     if not pri:
         raise ValueError("Priority 不能为空")
 
-    env = str(fields_cfg.get("bugEnvironmentId") or "").strip()
+    env = (
+        (bug_environment_id or "").strip()
+        or str(fields_cfg.get("bugEnvironmentId") or "").strip()
+    )
     stage = str(fields_cfg.get("issueStageId") or "").strip()
     exec_m = str(fields_cfg.get("executionMethodId") or "").strip()
     issue_types = [
@@ -272,6 +316,7 @@ def create_bug_from_template(
     severity_id: str,
     priority_id: str,
     component_versions: str,
+    bug_environment_id: str = "",
     images: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     template = get_template(template_id)
@@ -282,6 +327,7 @@ def create_bug_from_template(
 
     uploaded = upload_description_images(images, project_key=project_key)
     final_description = compose_description_with_inline_images(description, uploaded)
+    final_description = format_description_for_feishu(final_description)
 
     fields = build_create_fields(
         template,
@@ -290,6 +336,7 @@ def create_bug_from_template(
         severity_id=severity_id,
         priority_id=priority_id,
         component_versions=component_versions,
+        bug_environment_id=bug_environment_id,
     )
     result = create_workitem(
         project_key=project_key,

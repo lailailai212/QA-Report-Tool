@@ -265,6 +265,107 @@
       cursor: default;
       background: #f8fafc;
     }
+    .ai-box {
+      margin: 10px 0 4px;
+      padding: 0;
+      border: 1px dashed #93c5fd;
+      border-radius: 10px;
+      background: #f8fbff;
+      overflow: hidden;
+    }
+    .ai-box.disabled {
+      opacity: 0.72;
+      border-color: var(--line);
+      background: #f8fafc;
+    }
+    .ai-box .ai-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #1E4A7A;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+    .ai-box .ai-toggle:hover { background: rgba(30, 90, 150, 0.06); }
+    .ai-box .ai-toggle-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .ai-box .ai-bot-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+    .ai-box .ai-chevron {
+      display: inline-block;
+      width: 0.55em;
+      height: 0.55em;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform 0.15s ease;
+      flex-shrink: 0;
+    }
+    .ai-box:not(.collapsed) .ai-chevron {
+      transform: rotate(45deg);
+      margin-top: -2px;
+    }
+    .ai-box .ai-model {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .ai-box .ai-body {
+      padding: 0 12px 12px;
+    }
+    .ai-box.collapsed .ai-body { display: none; }
+    .ai-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .ai-row input { flex: 1; }
+    .ai-row button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .ai-row .btn-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    .ai-preview {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-family: Consolas, "Microsoft YaHei", monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+      display: none;
+    }
+    .ai-preview.show { display: block; }
   </style>
 </head>
 <body>
@@ -297,6 +398,54 @@
         </div>
       </div>
 
+      <div id="aiDescBox" class="ai-box collapsed disabled">
+        <button
+          id="btnAiToggle"
+          type="button"
+          class="ai-toggle"
+          aria-expanded="false"
+          aria-controls="aiDescBody"
+        >
+          <span class="ai-toggle-left">
+            <span class="ai-chevron" aria-hidden="true"></span>
+            <svg class="ai-bot-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="5" y="8" width="14" height="11" rx="3" fill="currentColor" opacity="0.15"/>
+              <rect x="5" y="8" width="14" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="12" cy="4.5" r="1.4" fill="currentColor"/>
+              <path d="M12 5.9V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="9.2" cy="13" r="1.35" fill="currentColor"/>
+              <circle cx="14.8" cy="13" r="1.35" fill="currentColor"/>
+              <path d="M9 16.2h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M5 12.5H3.4a1 1 0 0 1 0-2H5M19 12.5h1.6a1 1 0 0 0 0-2H19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <span>AI智能生成Description</span>
+          </span>
+          <span id="aiModelHint" class="ai-model">未配置 API Key</span>
+        </button>
+        <div id="aiDescBody" class="ai-body">
+          <div class="ai-row">
+            <input
+              id="aiPrompt"
+              type="text"
+              placeholder="一句话描述缺陷，例如：登录页点提交后无响应"
+              disabled
+            />
+            <button id="btnAiGenerate" type="button" class="secondary" disabled>
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  fill="currentColor"
+                  d="M12 2.2l1.1 4.2L17.3 7.5l-4.2 1.1L12 12.8l-1.1-4.2L6.7 7.5l4.2-1.1L12 2.2zm6.4 8.1l.7 2.6 2.6.7-2.6.7-.7 2.6-.7-2.6-2.6-.7 2.6-.7.7-2.6zM5.6 13.4l.8 3 3 .8-3 .8-.8 3-.8-3-3-.8 3-.8.8-3z"
+                />
+              </svg>
+              生成
+            </button>
+            <button id="btnAiApply" type="button" disabled>一键应用</button>
+          </div>
+          <div id="aiPreview" class="ai-preview" aria-live="polite"></div>
+          <div id="aiMsg" class="msg"></div>
+        </div>
+      </div>
+
       <label for="descriptionEditor">Description</label>
       <div
         id="descriptionEditor"
@@ -308,8 +457,20 @@
       ></div>
       <div class="hint">截图粘贴在当前光标位置；创建时按文档中的图文顺序自动上传</div>
 
+      <div class="row">
+        <div>
+          <label for="createEnv">Bug Environment <span class="req">*</span></label>
+          <select id="createEnv"></select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <button id="btnGenbuVersions" type="button" class="secondary" style="margin-bottom:0">
+            从 Genbu 拉取版本
+          </button>
+        </div>
+      </div>
       <label for="componentVersions">Component Versions <span class="req">*</span></label>
-      <textarea id="componentVersions" style="min-height:88px" placeholder="问题被发现时的各模块版本"></textarea>
+      <textarea id="componentVersions" style="min-height:88px" placeholder="问题被发现时的各模块版本（可从 Genbu 按环境自动拉取）"></textarea>
+      <div class="hint">按上方环境从 Genbu 拉取：Title / 服务名称 / 发布环境 / 命名空间 / 版本；可再手工微调</div>
 
       <div class="actions">
         <button id="btnCreate" type="button">创建 Bug</button>
@@ -393,14 +554,16 @@
       <label>Labels</label>
       <div id="tplLabels" class="check-grid"></div>
 
-      <label for="tplSprint">Sprint</label>
+      <label for="sprintPick">Sprint</label>
       <div class="search-row">
         <div class="field">
-          <select id="tplSprint"></select>
-          <div class="hint">从飞书拉取；创建时写入关联 Sprint</div>
+          <div class="hint" style="margin-top:0">从飞书拉取；可多选（跨 Sprint Bug 会写入多个）</div>
         </div>
         <button id="btnLoadSprints" type="button" class="secondary">刷新 Sprint</button>
       </div>
+      <select id="sprintPick" class="multi-select" multiple size="5" style="margin-top:6px"></select>
+      <div id="sprintChips" class="chips"></div>
+      <div class="hint">Ctrl/⌘ 多选后点选即加入已选；下方 chips 可移除</div>
 
       <label>Version Found <span class="req">*</span></label>
       <div class="search-row">
@@ -414,6 +577,12 @@
       <div class="hint">可多选；下方已选会随模板保存</div>
 
       <label for="tplComponentVersions">默认 Component Versions</label>
+      <div class="search-row" style="margin-bottom:6px">
+        <div class="field">
+          <div class="hint" style="margin-top:0">可按上方 Bug Environment 从 Genbu 拉取并写入模板预置</div>
+        </div>
+        <button id="btnTplGenbuVersions" type="button" class="secondary">从 Genbu 拉取</button>
+      </div>
       <textarea id="tplComponentVersions" style="min-height:72px"></textarea>
 
       <div class="row3">
@@ -456,10 +625,12 @@
       meta: null,
       templates: [],
       selectedVersions: [],
+      selectedSprints: [],
       roles: { devOwner: [], qcOwner: [], reporter: [] },
       editingId: null,
       inlineImageMap: {},
       inlineImageSeq: 0,
+      aiDraft: "",
     };
 
     const $ = (id) => document.getElementById(id);
@@ -572,6 +743,36 @@
       }
     }
 
+    function sprintLabels(tpl) {
+      const labels = (tpl && tpl.labels) || {};
+      if (Array.isArray(labels.sprints) && labels.sprints.length) {
+        return labels.sprints.map(String).filter(Boolean);
+      }
+      const one = String(labels.sprint || "").trim();
+      return one ? [one] : [];
+    }
+
+    function renderSprintChips() {
+      const box = $("sprintChips");
+      box.innerHTML = "";
+      for (const s of state.selectedSprints) {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = s.name || s.id;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.onclick = () => {
+          state.selectedSprints = state.selectedSprints.filter(
+            (x) => String(x.id) !== String(s.id)
+          );
+          renderSprintChips();
+        };
+        chip.appendChild(btn);
+        box.appendChild(chip);
+      }
+    }
+
     function renderVersionChips() {
       const box = $("versionChips");
       box.innerHTML = "";
@@ -610,7 +811,7 @@
       box.className = "summary-box";
       box.innerHTML = [
         `<div><strong>${escapeHtml(tpl.name)}</strong> · 空间 ${escapeHtml(tpl.simpleName || "obis")}</div>`,
-        `<div>Sprint：${escapeHtml((tpl.labels && tpl.labels.sprint) || "—")}</div>`,
+        `<div>Sprint：${escapeHtml(sprintLabels(tpl).join("、") || "—")}</div>`,
         `<div>Env：${escapeHtml(optionName(state.meta.bugEnvironment, f.bugEnvironmentId))} · Stage：${escapeHtml(optionName(state.meta.issueStage, f.issueStageId))} · Exec：${escapeHtml(optionName(state.meta.executionMethod, f.executionMethodId))}</div>`,
         `<div>Issue Type：${escapeHtml((f.issueTypeIds || []).map((id) => optionName(state.meta.issueType, id)).join("、") || "—")}</div>`,
         `<div>Version Found：${escapeHtml(((tpl.labels && tpl.labels.versionFound) || []).join("、") || "—")}</div>`,
@@ -642,6 +843,86 @@
         div.textContent = line.length ? line : "\u200b";
         ed.appendChild(div);
       }
+    }
+
+    const AI_COLLAPSE_KEY = "bugAiDescCollapsed";
+
+    function isAiCollapsed() {
+      return $("aiDescBox").classList.contains("collapsed");
+    }
+
+    function setAiCollapsed(collapsed) {
+      const box = $("aiDescBox");
+      const btn = $("btnAiToggle");
+      box.classList.toggle("collapsed", collapsed);
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      try {
+        localStorage.setItem(AI_COLLAPSE_KEY, collapsed ? "1" : "0");
+      } catch (_) {}
+    }
+
+    function toggleAiCollapsed() {
+      setAiCollapsed(!isAiCollapsed());
+    }
+
+    function syncAiUi() {
+      const ai = (state.meta && state.meta.ai) || {};
+      const enabled = !!ai.enabled;
+      const box = $("aiDescBox");
+      box.classList.toggle("disabled", !enabled);
+      $("aiPrompt").disabled = !enabled;
+      $("btnAiGenerate").disabled = !enabled;
+      $("btnAiApply").disabled = !enabled || !state.aiDraft;
+      $("aiModelHint").textContent = enabled
+        ? `模型 ${ai.model || "deepseek-chat"}`
+        : "未配置 DEEPSEEK_API_KEY / AI_API_KEY";
+    }
+
+    async function generateAiDescription() {
+      const prompt = ($("aiPrompt").value || "").trim();
+      if (!prompt) {
+        setMsg($("aiMsg"), "请先填写一句话缺陷描述", false);
+        return;
+      }
+      $("btnAiGenerate").disabled = true;
+      setMsg($("aiMsg"), "生成中…", true);
+      try {
+        const data = await api("/api/bugs/ai-description", {
+          method: "POST",
+          body: JSON.stringify({
+            prompt,
+            summary: ($("summary").value || "").trim(),
+          }),
+        });
+        state.aiDraft = data.description || "";
+        const preview = $("aiPreview");
+        preview.textContent = state.aiDraft;
+        preview.classList.add("show");
+        setMsg($("aiMsg"), "已生成，可点「一键应用」写入 Description", true);
+      } catch (err) {
+        setMsg($("aiMsg"), err.message, false);
+      } finally {
+        syncAiUi();
+      }
+    }
+
+    function applyAiDescription() {
+      if (!state.aiDraft) {
+        setMsg($("aiMsg"), "请先生成 Description", false);
+        return;
+      }
+      const ed = $("descriptionEditor");
+      const hasContent =
+        countInlineImages() > 0 ||
+        (ed.innerText || "").replace(/\u200b/g, "").trim().length > 0;
+      if (
+        hasContent &&
+        !confirm("将覆盖当前 Description（含已粘贴截图）。确定应用？")
+      ) {
+        return;
+      }
+      setDescriptionText(state.aiDraft);
+      setMsg($("aiMsg"), "已写入 Description", true);
     }
 
     function clearDescriptionEditor() {
@@ -784,7 +1065,44 @@
       setDescriptionText(f.description || "");
       if (f.severityId) $("severity").value = f.severityId;
       if (f.priorityId) $("priority").value = f.priorityId;
+      if (f.bugEnvironmentId) $("createEnv").value = f.bugEnvironmentId;
       $("componentVersions").value = f.componentVersions || "";
+      syncGenbuUi();
+    }
+
+    function syncGenbuUi() {
+      const enabled = !!(state.meta && state.meta.genbu && state.meta.genbu.enabled);
+      $("btnGenbuVersions").disabled = !enabled;
+      $("btnTplGenbuVersions").disabled = !enabled;
+      if (!enabled) {
+        $("btnGenbuVersions").title = "未配置 BEAST_USERNAME / BEAST_PASSWORD";
+        $("btnTplGenbuVersions").title = "未配置 BEAST_USERNAME / BEAST_PASSWORD";
+      } else {
+        $("btnGenbuVersions").title = "";
+        $("btnTplGenbuVersions").title = "";
+      }
+    }
+
+    async function fetchGenbuVersionsInto(textareaId, envValue, msgEl) {
+      const env = (envValue || "").trim();
+      if (!env) {
+        setMsg(msgEl, "请先选择 Bug Environment", false);
+        return;
+      }
+      setMsg(msgEl, "正在从 Genbu 拉取版本…", true);
+      try {
+        const data = await api(
+          "/api/bug/genbu-versions?env=" + encodeURIComponent(env)
+        );
+        $(textareaId).value = data.text || "";
+        setMsg(
+          msgEl,
+          `已填入 ${data.env} 环境 ${data.count || 0} 个 component 版本`,
+          true
+        );
+      } catch (err) {
+        setMsg(msgEl, err.message, false);
+      }
     }
 
     function refreshTemplateSelect() {
@@ -807,7 +1125,7 @@
         return;
       }
       body.innerHTML = state.templates.map((t) => {
-        const sprint = (t.labels && t.labels.sprint) || "—";
+        const sprint = sprintLabels(t).join("、") || "—";
         const env = envLabel((t.fields || {}).bugEnvironmentId);
         return `<tr>
           <td>${escapeHtml(t.name)}</td>
@@ -844,15 +1162,23 @@
       try {
         const data = await api("/api/bug/sprints");
         const sprints = data.sprints || [];
-        const prev = $("tplSprint").value;
-        fillSelect($("tplSprint"), sprints, { emptyLabel: "（不关联 Sprint）", valueKey: "id", labelKey: "name" });
-        if (prev) $("tplSprint").value = prev;
-        setMsg($("modalMsg"), `已加载 ${sprints.length} 个 Sprint`, true);
+        fillSelect($("sprintPick"), sprints, { valueKey: "id", labelKey: "name" });
+        setMsg($("modalMsg"), `已加载 ${sprints.length} 个 Sprint，可多选加入`, true);
       } catch (err) {
         setMsg($("modalMsg"), err.message, false);
       } finally {
         $("btnLoadSprints").disabled = false;
       }
+    }
+
+    function addSelectedSprintsFromPick() {
+      const sel = $("sprintPick");
+      const map = new Map(state.selectedSprints.map((s) => [String(s.id), s]));
+      [...sel.selectedOptions].forEach((opt) => {
+        map.set(opt.value, { id: Number(opt.value) || opt.value, name: opt.textContent });
+      });
+      state.selectedSprints = [...map.values()];
+      renderSprintChips();
     }
 
     async function searchVersions() {
@@ -927,17 +1253,20 @@
       $("tplComponentVersions").value = f.componentVersions || "";
 
       const sprintIds = f.sprintIds || [];
-      const sprintLabel = (tpl && tpl.labels && tpl.labels.sprint) || "";
-      if (sprintIds.length) {
-        fillSelect($("tplSprint"), [{ id: String(sprintIds[0]), name: sprintLabel || String(sprintIds[0]) }], {
-          emptyLabel: "（不关联 Sprint）",
-          valueKey: "id",
-          labelKey: "name",
-        });
-        $("tplSprint").value = String(sprintIds[0]);
-      } else {
-        fillSelect($("tplSprint"), [], { emptyLabel: "（不关联 Sprint）点击刷新加载", valueKey: "id", labelKey: "name" });
+      const sprintNames = sprintLabels(tpl);
+      state.selectedSprints = sprintIds.map((sid, i) => ({
+        id: sid,
+        name: sprintNames[i] || String(sid),
+      }));
+      // If legacy template only had a display name without aligning ids length, still show chips
+      if (!state.selectedSprints.length && sprintNames.length) {
+        state.selectedSprints = sprintNames.map((name, i) => ({
+          id: sprintIds[i] || name,
+          name,
+        }));
       }
+      renderSprintChips();
+      fillSelect($("sprintPick"), [], { valueKey: "id", labelKey: "name" });
 
       const vIds = f.versionFoundIds || [];
       const vNames = (tpl && tpl.labels && tpl.labels.versionFound) || [];
@@ -967,11 +1296,6 @@
     }
 
     function collectTplPayload() {
-      const sprintSel = $("tplSprint");
-      const sprintId = sprintSel.value ? Number(sprintSel.value) : null;
-      const sprintName = sprintId
-        ? (sprintSel.selectedOptions[0] && sprintSel.selectedOptions[0].textContent) || ""
-        : "";
       const issueTypeIds = checkedValues($("tplIssueTypes"));
       if (!$("tplName").value.trim()) throw new Error("模板名称不能为空");
       if (!issueTypeIds.length) throw new Error("请至少选择一个 Issue Type");
@@ -980,13 +1304,16 @@
       if (!$("tplStage").value) throw new Error("请选择 Issue Stage");
       if (!$("tplExec").value) throw new Error("请选择 Execution Method");
 
+      const sprintNames = state.selectedSprints.map((s) => s.name || String(s.id));
       return {
         name: $("tplName").value.trim(),
         feishuTemplateId: $("tplFeishuTemplate").value,
         fields: {
           summary: $("tplSummary").value,
           description: $("tplDescription").value,
-          sprintIds: sprintId ? [sprintId] : [],
+          sprintIds: state.selectedSprints
+            .map((s) => Number(s.id))
+            .filter((n) => Number.isFinite(n)),
           issueTypeIds,
           executionMethodId: $("tplExec").value,
           labelIds: checkedValues($("tplLabels")),
@@ -1003,7 +1330,8 @@
           reporter: state.roles.reporter,
         },
         labels: {
-          sprint: sprintName,
+          sprint: sprintNames.join("、"),
+          sprints: sprintNames,
           versionFound: state.selectedVersions.map((v) => v.name),
         },
       };
@@ -1096,6 +1424,7 @@
           description: packed.description,
           severityId: $("severity").value,
           priorityId: $("priority").value,
+          bugEnvironmentId: $("createEnv").value,
           componentVersions,
         };
         if (packed.images.length) {
@@ -1136,6 +1465,7 @@
       state.meta = await api("/api/bug/meta");
       fillSelect($("severity"), state.meta.severity);
       fillSelect($("priority"), state.meta.priority);
+      fillSelect($("createEnv"), state.meta.bugEnvironment);
       fillSelect($("tplFeishuTemplate"), state.meta.feishuTemplates);
       fillSelect($("tplEnv"), state.meta.bugEnvironment);
       fillSelect($("tplStage"), state.meta.issueStage);
@@ -1144,9 +1474,31 @@
       fillSelect($("tplPriority"), state.meta.priority);
       renderCheckGrid($("tplIssueTypes"), state.meta.issueType, "issueType");
       renderCheckGrid($("tplLabels"), state.meta.labels, "labels");
+      syncAiUi();
+      syncGenbuUi();
+      try {
+        const saved = localStorage.getItem(AI_COLLAPSE_KEY);
+        // 默认收起；仅当用户曾展开过才恢复展开
+        setAiCollapsed(saved !== "0");
+      } catch (_) {
+        setAiCollapsed(true);
+      }
 
       $("createTemplate").onchange = applyTemplateDefaults;
       $("btnCreate").onclick = createBug;
+      $("btnGenbuVersions").onclick = () =>
+        fetchGenbuVersionsInto("componentVersions", $("createEnv").value, $("createMsg"));
+      $("btnTplGenbuVersions").onclick = () =>
+        fetchGenbuVersionsInto("tplComponentVersions", $("tplEnv").value, $("modalMsg"));
+      $("btnAiToggle").onclick = toggleAiCollapsed;
+      $("btnAiGenerate").onclick = generateAiDescription;
+      $("btnAiApply").onclick = applyAiDescription;
+      $("aiPrompt").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          generateAiDescription();
+        }
+      });
       $("descriptionEditor").addEventListener("paste", (e) => {
         onDescriptionPaste(e).catch((err) => setMsg($("createMsg"), err.message, false));
       });
@@ -1168,6 +1520,7 @@
       $("btnCancelTpl").onclick = closeTplModal;
       $("btnSaveTpl").onclick = saveTpl;
       $("btnLoadSprints").onclick = loadSprints;
+      $("sprintPick").onchange = addSelectedSprintsFromPick;
       $("btnSearchVersions").onclick = searchVersions;
       $("versionPick").onchange = addSelectedVersionsFromPick;
       $("btnSearchDev").onclick = () => searchUser("devOwner", "devQuery");

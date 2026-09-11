@@ -590,6 +590,82 @@ def fetch_sprint_raw(
     return _run_coro(_run)
 
 
+async def fetch_retro_raw_async(
+    module_sprint: str,
+    *,
+    story_mql: str,
+    task_mql: str,
+    ti_mql: str,
+    bug_mql: str,
+) -> dict[str, Any]:
+    """
+    One MCP process: resolve Sprint, pull Story/Task/TI/Bug for retro report.
+    """
+    requested = (module_sprint or "").strip()
+    if not requested:
+        raise FeishuMcpError("sprint 不能为空")
+    try:
+        async with _mcp_session() as session:
+            sprints = await _list_sprint_names_on_session(session)
+            feishu_sprint, note = _resolve_from_names(requested, sprints)
+            stories, expect_stories = await _fetch_all_mql_on_session(
+                session, story_mql.format(sprint=feishu_sprint)
+            )
+            tasks, expect_tasks = await _fetch_all_mql_on_session(
+                session, task_mql.format(sprint=feishu_sprint)
+            )
+            tis, expect_tis = await _fetch_all_mql_on_session(
+                session, ti_mql.format(sprint=feishu_sprint)
+            )
+            bugs, expect_bugs = await _fetch_all_mql_on_session(
+                session, bug_mql.format(sprint=feishu_sprint)
+            )
+            return {
+                "feishuSprint": feishu_sprint,
+                "sprintResolveNote": note,
+                "stories": stories,
+                "expectStories": expect_stories,
+                "tasks": tasks,
+                "expectTasks": expect_tasks,
+                "techImprovements": tis,
+                "expectTechImprovements": expect_tis,
+                "bugs": bugs,
+                "expectBugs": expect_bugs,
+            }
+    except FeishuMcpError:
+        raise
+    except BaseExceptionGroup as eg:
+        root = root_exception(eg)
+        if isinstance(root, FeishuMcpError):
+            raise root from None
+        raise FeishuMcpError(format_mcp_exception(eg)) from eg
+    except Exception as exc:  # noqa: BLE001
+        root = root_exception(exc)
+        if isinstance(root, FeishuMcpError):
+            raise root from None
+        raise FeishuMcpError(format_mcp_exception(exc)) from exc
+
+
+def fetch_retro_raw(
+    module_sprint: str,
+    *,
+    story_mql: str,
+    task_mql: str,
+    ti_mql: str,
+    bug_mql: str,
+) -> dict[str, Any]:
+    async def _run() -> dict[str, Any]:
+        return await fetch_retro_raw_async(
+            module_sprint,
+            story_mql=story_mql,
+            task_mql=task_mql,
+            ti_mql=ti_mql,
+            bug_mql=bug_mql,
+        )
+
+    return _run_coro(_run)
+
+
 def _extract_work_item_id(data: dict[str, Any]) -> str:
     for key in ("id", "work_item_id", "workItemId", "item_id"):
         val = data.get(key)

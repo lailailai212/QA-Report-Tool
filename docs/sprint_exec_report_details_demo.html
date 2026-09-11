@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 总结 · 详情 Demo · OBIS-20260810—20260821</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --fill: #f4f4f5;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--text); font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    h2 {
+      margin: 28px 0 12px;
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+      scroll-margin-top: 16px;
+    }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .banner b { color: var(--text); }
+    .back {
+      display: inline-block;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .back:hover { color: var(--info); }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data th {
+      background: var(--fill);
+      font-weight: 650;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .status i {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; background: var(--dot-warn);
+    }
+    .status.ok i { background: var(--dot-ok); }
+    .status.danger i { background: var(--dot-danger); }
+
+    h3 { margin: 16px 0 8px; font-size: 14px; color: var(--text); font-weight: 650; }
+    a { color: var(--text); text-decoration: none; }
+    a:hover { color: var(--info); }
+    .more { font-size: 12px; font-weight: 650; color: var(--text); text-decoration: none; }
+    .more:hover { color: var(--info); }
+    table.data.compact th, table.data.compact td { padding: 6px 8px; font-size: 12px; }
+    table.data .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rate-bad { color: var(--danger); font-weight: 650; }
+    .trend-up { color: var(--ok); }
+    .trend-down { color: var(--danger); }
+    .flat { color: var(--muted); }
+    .mom { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+    .cell-stack { line-height: 1.45; }
+    .scroll-x { overflow-x: auto; }
+    .scroll-x.fit table { min-width: 0; }
+    table.data.wide { min-width: 960px; }
+    .legend { font-size: 12px; color: var(--muted); margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+    .legend b.us { background: #d97706; }
+    .legend b.task { background: #3b82f6; }
+    .legend b.ti { background: #0d9488; }
+    .legend b.acc { background: #d97706; }
+    .legend b.pt { background: #059669; }
+    svg.line, svg.col { width: 100%; max-width: 640px; height: auto; display: block; }
+    .chart-caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .toc { font-size: 13px; margin: 0 0 20px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+    .toc a { margin-right: 12px; display: inline-block; margin-bottom: 4px; }
+    .section { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+    </style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/demo/sprint-summary">← 返回 Sprint 总结样本</a>
+  <h1>Sprint 总结 · 详情（Demo）</h1>
+  <p class="sub">对应主报告里的「查看详情」。OBIS-20260810—20260821 · 数据与原稿一致。</p>
+
+  <div class="banner">本页展示主报告收掉的明细：开发计划 vs 结果，以及范围 / 交付 / 质量 / 产能附录。正式版将挂到工具页，不塞进邮件正文。</div>
+<nav class="toc"><b>目录</b><br/><a class="more" href="#plan">开发计划 vs 结果</a> <a class="more" href="#scope-list">移入 / 移出清单</a> <a class="more" href="#delivery-detail">交付明细</a> <a class="more" href="#scope-mom">范围稳定性环比</a> <a class="more" href="#type-trend">按类型近四期完成率</a> <a class="more" href="#points-split">故事点分列</a> <a class="more" href="#personal-bug">个人 Bug 汇总</a> <a class="more" href="#personal-points">个人故事点明细</a></nav>
+
+<div class="section">
+<h2 id="plan">开发计划 vs 结果</h2>
+  <p class="hint">「完成数」以迭代结束时的 Item 个数为准（包括计划部分 &amp; 变更部分）。「完成数→实际」= Count(Item(“验收完成”)) + Count(Item(“待验收”))。「范围稳定性」计划以 Sprint Plan Meeting 为准，实际以 Sprint 结束时为准。偏差率 &gt; 15% 红色高亮。</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>类型</th><th>维度</th>
+        <th>计划</th><th>实际</th>
+        <th class="num">完成率</th><th class="num">偏差率</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>User Story</td><td>完成数</td>
+        <td>43 个</td><td>35 个</td>
+        <td class="num"><b>81.4%</b></td><td class="num">N/A</td>
+      </tr>
+      <tr>
+        <td></td><td>状态</td>
+        <td>全部验收完成</td>
+        <td>已验收：33<br>测试中：7<br>待验收：2<br>待提测：1</td>
+        <td class="num">N/A</td><td class="num">19.6%</td>
+      </tr>
+      <tr>
+        <td></td><td>范围稳定性</td>
+        <td>37 个</td>
+        <td>变更总计 18 个<br>移入：12<br>移出：6</td>
+        <td class="num">N/A</td><td class="num">48.6%</td>
+      </tr>
+      <tr>
+        <td>Task</td><td>完成数</td>
+        <td>17 个</td><td>14 个</td>
+        <td class="num"><b>82.4%</b></td><td class="num">N/A</td>
+      </tr>
+      <tr>
+        <td></td><td>状态</td>
+        <td>全部验收完成</td>
+        <td>已验收：14<br>进行中：2<br>待排期：1</td>
+        <td class="num">N/A</td><td class="num">17.6%</td>
+      </tr>
+      <tr>
+        <td></td><td>范围稳定性</td>
+        <td>N/A</td><td>N/A</td>
+        <td class="num">N/A</td><td class="num">N/A</td>
+      </tr>
+      <tr>
+        <td>Tech Improvement</td><td>完成数</td>
+        <td>13 个</td><td>4 个</td>
+        <td class="num"><b>30.8%</b></td><td class="num">N/A</td>
+      </tr>
+      <tr>
+        <td></td><td>状态</td>
+        <td>全部验收完成</td>
+        <td>进行中：9<br>已验收：4</td>
+        <td class="num">N/A</td><td class="num">69.2%</td>
+      </tr>
+      <tr>
+        <td></td><td>范围稳定性</td>
+        <td>34 个</td>
+        <td>变更 33 个<br>移入：6<br>移出：27</td>
+        <td class="num">N/A</td><td class="num">97.1%</td>
+      </tr>
+      <tr>
+        <td><b>合计</b></td><td>完成数</td>
+        <td><b>73 个</b></td><td><b>53 个</b></td>
+        <td class="num"><b>72.6%</b></td><td class="num">N/A</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2 id="scope-list">移入 / 移出清单（18 / 33）</h2>
+  <p class="hint">口径含 User Story / Tech Improvement / Task。本期：US 移入 12 / 移出 6；TI 移入 6 / 移出 27；Task 无计划会基线，清单无 Task 行。部分早期移出项无法反查 Item ID，记为 —。</p>
+            <h3>移入（18）</h3>
+            <table class="data compact">
+              <thead>
+                <tr><th>类型</th><th>Item ID</th><th>Summary</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067827604" target="_blank" rel="noopener">7067827604</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067827604" target="_blank" rel="noopener">[1]E1-S01: 创建版本 Tab 固件表 SBOM 列按权限收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067942240" target="_blank" rel="noopener">7067942240</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067942240" target="_blank" rel="noopener">[2]E1-S02: 成员 Tab 添加弹窗角色下拉按权限收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067952077" target="_blank" rel="noopener">7067952077</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067952077" target="_blank" rel="noopener">[3]E2-S01: 模块入口与导航收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067866360" target="_blank" rel="noopener">7067866360</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067866360" target="_blank" rel="noopener">[4]E2-S02: 列表模块列收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067998066" target="_blank" rel="noopener">7067998066</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067998066" target="_blank" rel="noopener">[5]E2-S03: 表单与日志收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7067845734" target="_blank" rel="noopener">7067845734</a></td><td><a href="https://project.feishu.cn/obis/workitem/7067845734" target="_blank" rel="noopener">[6]E2-S04: 设备档案收敛</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7061996715" target="_blank" rel="noopener">7061996715</a></td><td><a href="https://project.feishu.cn/obis/workitem/7061996715" target="_blank" rel="noopener">[GPCA] E1-S25：根 CA 状态操作入口可见性补充</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069266606" target="_blank" rel="noopener">7069266606</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069266606" target="_blank" rel="noopener">[GPCA] E1-S29：5F20 应用提供方标识自动带入</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069219625" target="_blank" rel="noopener">7069219625</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069219625" target="_blank" rel="noopener">[SEMS] E4-S12：SD 安装参数 5F20 自动写入</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7069485685" target="_blank" rel="noopener">7069485685</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069485685" target="_blank" rel="noopener">[SEMS] E5-S1：Factory Reset API（IF-09）</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7070612278" target="_blank" rel="noopener">7070612278</a></td><td><a href="https://project.feishu.cn/obis/workitem/7070612278" target="_blank" rel="noopener">【体验优化P3】Batch增加Secure Debug Key</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7070702881" target="_blank" rel="noopener">7070702881</a></td><td><a href="https://project.feishu.cn/obis/workitem/7070702881" target="_blank" rel="noopener">PS-S-F01-09: Secure Debug Reopen 上位机工具</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068975006" target="_blank" rel="noopener">7068975006</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068975006" target="_blank" rel="noopener">【VA-003】调研各类 HSM 是否支持密钥不出安全区的生成、封装、重包裹、派生及面向 U-Safe 的密文交付</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071704245" target="_blank" rel="noopener">7071704245</a></td><td><a href="https://project.feishu.cn/obis/workitem/7071704245" target="_blank" rel="noopener">【VA-006】去除 Factory TK，U-Safe RSA 初始化</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071896300" target="_blank" rel="noopener">7071896300</a></td><td><a href="https://project.feishu.cn/obis/workitem/7071896300" target="_blank" rel="noopener">【VA-007】去除 Factory TK，同步 Node Identity/Communication 双凭据</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071995724" target="_blank" rel="noopener">7071995724</a></td><td><a href="https://project.feishu.cn/obis/workitem/7071995724" target="_blank" rel="noopener">【VA-008】去除 Factory TK， Node、CryptoBoundary 与逐卡 RSA 公钥可信登记</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7071700233" target="_blank" rel="noopener">7071700233</a></td><td><a href="https://project.feishu.cn/obis/workitem/7071700233" target="_blank" rel="noopener">【VA-009】去除 Factory TK，HSM 生成安全区交付密文</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7081897780" target="_blank" rel="noopener">7081897780</a></td><td><a href="https://project.feishu.cn/obis/workitem/7081897780" target="_blank" rel="noopener">【VA-010】去除 Factory TK，Node ECDH shareData泄漏修复</a></td></tr>
+              </tbody>
+            </table>
+            <h3>移出（33）</h3>
+            <table class="data compact">
+              <thead>
+                <tr><th>类型</th><th>Item ID</th><th>Summary</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6999830977" target="_blank" rel="noopener">6999830977</a></td><td><a href="https://project.feishu.cn/obis/workitem/6999830977" target="_blank" rel="noopener">【供应链管理】OTA模块的改动</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/6999697755" target="_blank" rel="noopener">6999697755</a></td><td><a href="https://project.feishu.cn/obis/workitem/6999697755" target="_blank" rel="noopener">【供应链管理】漏洞模块改动</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7013392035" target="_blank" rel="noopener">7013392035</a></td><td><a href="https://project.feishu.cn/obis/workitem/7013392035" target="_blank" rel="noopener">【卡片编辑】设备详情基于卡片内容改动</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7025856235" target="_blank" rel="noopener">7025856235</a></td><td><a href="https://project.feishu.cn/obis/workitem/7025856235" target="_blank" rel="noopener">PKI-Cert-S35：移除证书创建中的 Matter PAI / VID 硬编码逻辑</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7004609041" target="_blank" rel="noopener">7004609041</a></td><td><a href="https://project.feishu.cn/obis/workitem/7004609041" target="_blank" rel="noopener">PKI-证书状态查询服务（CRL/OCSP）</a></td></tr>
+                <tr><td>User Story</td><td><a href="https://project.feishu.cn/obis/workitem/7022688610" target="_blank" rel="noopener">7022688610</a></td><td><a href="https://project.feishu.cn/obis/workitem/7022688610" target="_blank" rel="noopener">PM-S-F09-01：SE Profile 引用同步到 SEMS</a></td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W31] GP Profile 边端烧入能力完善</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 gpca</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 hsm-gateway</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 kms</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 pki</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>[SI-W33] 技改合并 sems</td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069049997" target="_blank" rel="noopener">7069049997</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069049997" target="_blank" rel="noopener">【OBIS组件化P1】D-11/D-12：独立部署构建与组件独立 Git 仓库管理调研</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068769451" target="_blank" rel="noopener">7068769451</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068769451" target="_blank" rel="noopener">【OBIS组件化P1】iot-client-gateway服务业务功能迁入业务组件（pki,kms的迁入放在P2）</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068643439" target="_blank" rel="noopener">7068643439</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068643439" target="_blank" rel="noopener">【OBIS组件化P1】iot-logtail-service服务迁入iot-module-logtail组件</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068681142" target="_blank" rel="noopener">7068681142</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068681142" target="_blank" rel="noopener">【OBIS组件化P1】P0-5：Workspace 与 Factory Cloud Local/Remote 等价链路替换样板实现</a></td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-A：iot-admin-service 最新增量迁入 Workspace-基于release/3.3.4-sems</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-B：iot-factory-cloud-service 最新增量迁入 Factory Cloud-基于release/3.3.4-sems</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P1】P0-5-C：iot-factory-edge-service 最新增量迁入 Factory Edge-基于release/3.3.4-sems</td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068641601" target="_blank" rel="noopener">7068641601</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068641601" target="_blank" rel="noopener">【OBIS组件化P1】P1-0.5：组件化数据库拆分与数据边界基线</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069083043" target="_blank" rel="noopener">7069083043</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069083043" target="_blank" rel="noopener">【OBIS组件化P1】P1-1.1 Auth 登录、登出及会话授权管理接入（Workspace、Factory Edge）</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068678097" target="_blank" rel="noopener">7068678097</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068678097" target="_blank" rel="noopener">【OBIS组件化P1】P1-1.1 Auth 域数据迁移与唯一写入方切换</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068937571" target="_blank" rel="noopener">7068937571</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068937571" target="_blank" rel="noopener">【OBIS组件化P1】P1-1.2：ARBAC 服务能力迁入 Auth</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068912541" target="_blank" rel="noopener">7068912541</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068912541" target="_blank" rel="noopener">【OBIS组件化P1】P1-1-A：Client Gateway Netty/WebFlux 运行时与远程路由迁入</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068986023" target="_blank" rel="noopener">7068986023</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068986023" target="_blank" rel="noopener">【OBIS组件化P1】P1-1-B：Authorization S1 会话认证 Core/Reactive/Servlet 双适配器落地</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068689985" target="_blank" rel="noopener">7068689985</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068689985" target="_blank" rel="noopener">【OBIS组件化P1】定时任务处理与xxl-job的关系</a></td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】D-13：Genbu 双部署模式适配调研</td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068938546" target="_blank" rel="noopener">7068938546</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068938546" target="_blank" rel="noopener">【OBIS组件化P2】P2-1 基础设施兼容扩展与基础工具组件抽取</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068902873" target="_blank" rel="noopener">7068902873</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068902873" target="_blank" rel="noopener">【OBIS组件化P2】P2-3-A：Workspace 适配 PKI/KMS/SEMS 并清理遗留重复代码</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7069042878" target="_blank" rel="noopener">7069042878</a></td><td><a href="https://project.feishu.cn/obis/workitem/7069042878" target="_blank" rel="noopener">【OBIS组件化P2】P2-3-B：Factory Cloud 适配 PKI/KMS/SEMS 并清理重复代码</a></td></tr>
+                <tr><td>Tech Improvement</td><td><a href="https://project.feishu.cn/obis/workitem/7068672390" target="_blank" rel="noopener">7068672390</a></td><td><a href="https://project.feishu.cn/obis/workitem/7068672390" target="_blank" rel="noopener">【OBIS组件化P2】P2-3-C：Factory Edge 适配 PKI/KMS/SEMS 并清理重复代码</a></td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】P2-4：Factory Edge 边界盘点和必要拆分</td></tr>
+                <tr><td>Tech Improvement</td><td>—</td><td>【OBIS组件化P2】P2-5 OTA、云边与 U-safe 初始化迁入 Factory Cloud 并完成切流</td></tr>
+              </tbody>
+            </table>
+</div>
+
+
+<div class="section">
+  <h2 id="delivery-detail">交付明细（本期 vs 上期）</h2>
+  <p class="hint">补充正文「本期结论」：完成数 + 验收状态拆分。环比：计数 =（本期 − 上期）/ 上期；完成率 / 偏差率用 pp。</p>
+            <div class="scroll-x fit">
+              <table class="data compact compare">
+                <thead>
+                  <tr>
+                    <th>类型</th><th>维度</th>
+                    <th>本期</th>
+                    <th>上期（−1）</th>
+                    <th>环比</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>User Story</td><td>完成数</td>
+                    <td class="cell-stack">计划 43 个<br>实际 35 个<br>完成率 81.4%</td>
+                    <td class="cell-stack">计划 18 个<br>实际 14 个<br>完成率 77.8%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">完成率 ↑ 3.6pp</span>
+                        <span>实际 +21 个（+150%）</span>
+                        <span>计划 +25 个（+138.9%）</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td><td>验收状态</td>
+                    <td class="cell-stack">已验收：33<br>测试中：7<br>待验收：2<br>待提测：1<br>验收偏差 19.6%</td>
+                    <td class="cell-stack">已验收：13<br>待验收：1<br>测试中：4<br>验收偏差 27.8%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">偏差率 ↓ 8.2pp</span>
+                        <span>已验收 +20 个</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Task</td><td>完成数</td>
+                    <td class="cell-stack">计划 17 个<br>实际 14 个<br>完成率 82.4%</td>
+                    <td class="cell-stack">计划 17 个<br>实际 9 个<br>完成率 52.9%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">完成率 ↑ 29.5pp</span>
+                        <span>实际 +5 个（+55.6%）</span>
+                        <span class="flat">计划 持平</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td><td>验收状态</td>
+                    <td class="cell-stack">已验收：14<br>进行中：2<br>待排期：1<br>验收偏差 17.6%</td>
+                    <td class="cell-stack">已验收：0<br>待验收：9<br>进行中：8<br>验收偏差 100%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">偏差率 ↓ 82.4pp</span>
+                        <span>已验收 +14 个</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Tech Improvement</td><td>完成数</td>
+                    <td class="cell-stack">计划 13 个<br>实际 4 个<br>完成率 30.8%</td>
+                    <td class="cell-stack">计划 12 个<br>实际 0 个<br>完成率 0%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">完成率 ↑ 30.8pp</span>
+                        <span>实际 +4 个（上期 0）</span>
+                        <span>计划 +1 个（+8.3%）</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td><td>验收状态</td>
+                    <td class="cell-stack">已验收：4<br>进行中：9<br>验收偏差 69.2%</td>
+                    <td class="cell-stack">已验收：0<br>进行中：12<br>验收偏差 100%</td>
+                    <td>
+                      <div class="mom">
+                        <span class="trend-up">偏差率 ↓ 30.8pp</span>
+                        <span>已验收 +4 个</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+</div>
+
+
+<div class="section">
+  <h2 id="scope-mom">范围稳定性环比</h2>
+  <p class="hint">补充正文「范围变更」：仅本期 vs 上期冻结口径。清单见上方折叠块。</p>
+            <table class="data compact">
+              <thead>
+                <tr>
+                  <th>类型</th>
+                  <th>本期</th>
+                  <th>上期（−1）</th>
+                  <th>环比</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>User Story</td>
+                  <td class="cell-stack">冻结 37 · 移入 12 / 移出 6<br>偏差率 <span class="rate-bad">48.6%</span></td>
+                  <td class="cell-stack">冻结 20 · 移入 5 / 移出 7<br>偏差率 60%</td>
+                  <td>
+                    <div class="mom">
+                      <span class="trend-up">偏差率 ↓ 11.4pp</span>
+                      <span>变更 +6 个（+50%）</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Task</td>
+                  <td class="cell-stack">本期无基线 · N/A</td>
+                  <td class="cell-stack">冻结 2 · 移入 15 / 移出 0<br>偏差率 750%</td>
+                  <td>
+                    <div class="mom">
+                      <span class="flat">本期无口径，环比 N/A</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Tech Improvement</td>
+                  <td class="cell-stack">冻结 34 · 移入 6 / 移出 27<br>偏差率 <span class="rate-bad">97.1%</span></td>
+                  <td class="cell-stack">冻结 12 · 移入 1 / 移出 0<br>偏差率 8.3%</td>
+                  <td>
+                    <div class="mom">
+                      <span class="trend-down">偏差率 ↑ 88.8pp</span>
+                      <span>变更 +32 个</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+</div>
+
+
+<div class="section">
+  <h2 id="type-trend">按类型近四期完成率</h2>
+  <p class="hint">补充正文总趋势图：拆到 US / Task / TI。Task −2 计划与实际均为 0，完成率 N/A，折线断开。</p>
+            <div class="legend"><b class="us"></b>User Story　<b class="task"></b>Task　<b class="ti"></b>Tech Improvement　灰线 = 80%</div>
+            <svg class="line" viewBox="0 0 480 240" role="img" aria-label="近 4 期按类型 Item 完成率趋势">
+              <line x1="44" y1="204" x2="464" y2="204" stroke="#dce6f0" />
+              <line x1="44" y1="16" x2="44" y2="204" stroke="#dce6f0" />
+              <line x1="44" y1="53.6" x2="464" y2="53.6" stroke="#94a3b8" stroke-dasharray="4 4" />
+              <text x="468" y="57" font-size="10" fill="#64748b">80%</text>
+              <text x="36" y="208" font-size="10" fill="#64748b" text-anchor="end">0</text>
+              <text x="36" y="20" font-size="10" fill="#64748b" text-anchor="end">100</text>
+              <text x="44" y="222" font-size="11" fill="#64748b" text-anchor="middle">−3</text>
+              <text x="184" y="222" font-size="11" fill="#64748b" text-anchor="middle">−2</text>
+              <text x="324" y="222" font-size="11" fill="#64748b" text-anchor="middle">−1</text>
+              <text x="464" y="222" font-size="11" fill="#64748b" text-anchor="middle">本期</text>
+              <polyline fill="none" stroke="#d97706" stroke-width="2"
+                points="44,78.6 184,155.9 324,57.7 464,51.0" />
+              <circle cx="44" cy="78.6" r="3.5" fill="#d97706" />
+              <circle cx="184" cy="155.9" r="3.5" fill="#d97706" />
+              <circle cx="324" cy="57.7" r="3.5" fill="#d97706" />
+              <circle cx="464" cy="51.0" r="3.5" fill="#d97706" />
+              <text x="44" y="70" font-size="10" fill="#d97706" text-anchor="middle">66.7%</text>
+              <text x="184" y="170" font-size="10" fill="#d97706" text-anchor="middle">25.6%</text>
+              <text x="310" y="50" font-size="10" fill="#d97706" text-anchor="end">77.8%</text>
+              <text x="400" y="42" font-size="10" fill="#d97706" text-anchor="end">81.4%</text>
+              <circle cx="44" cy="16.0" r="3.5" fill="#3b82f6" />
+              <polyline fill="none" stroke="#3b82f6" stroke-width="2"
+                points="324,104.5 464,49.1" />
+              <circle cx="324" cy="104.5" r="3.5" fill="#3b82f6" />
+              <circle cx="464" cy="49.1" r="3.5" fill="#3b82f6" />
+              <text x="70" y="14" font-size="10" fill="#3b82f6" text-anchor="start">100%</text>
+              <text x="324" y="118" font-size="10" fill="#3b82f6" text-anchor="middle">52.9%</text>
+              <text x="464" y="72" font-size="10" fill="#3b82f6" text-anchor="end">82.4%</text>
+              <polyline fill="none" stroke="#0d9488" stroke-width="2"
+                points="44,47.4 184,141.4 324,204.0 464,146.1" />
+              <circle cx="44" cy="47.4" r="3.5" fill="#0d9488" />
+              <circle cx="184" cy="141.4" r="3.5" fill="#0d9488" />
+              <circle cx="324" cy="204.0" r="3.5" fill="#0d9488" />
+              <circle cx="464" cy="146.1" r="3.5" fill="#0d9488" />
+              <text x="56" y="52" font-size="10" fill="#0d9488" text-anchor="start">83.3%</text>
+              <text x="184" y="133" font-size="10" fill="#0d9488" text-anchor="middle">33.3%</text>
+              <text x="336" y="198" font-size="10" fill="#0d9488" text-anchor="start">0%</text>
+              <text x="454" y="138" font-size="10" fill="#0d9488" text-anchor="end">30.8%</text>
+            </svg>
+            <p class="chart-caption">US / Task 近两期回升；TI 仍低，上期 0% → 本期 30.8%。</p>
+</div>
+
+
+<div class="section">
+  <h2 id="points-split">故事点分列（DEV/QC · 四期）</h2>
+  <p class="hint">补充正文 Point 摘要。完成率 = 完成 Story Point / 计划 Story Point（含 US / TI / Task / 非本期 Bug）。</p>
+            <div class="scroll-x">
+              <table class="data compact wide">
+                <thead>
+                  <tr>
+                    <th>类型</th><th>维度</th>
+                    <th class="num">本期 DEV</th><th class="num">本期 QC</th><th class="num">TOTAL</th><th class="num">完成率</th>
+                    <th class="num">−1 DEV</th><th class="num">−1 QC</th><th class="num">TOTAL</th><th class="num">完成率</th>
+                    <th class="num">−2 DEV</th><th class="num">−2 QC</th><th class="num">TOTAL</th><th class="num">完成率</th>
+                    <th class="num">−3 DEV</th><th class="num">−3 QC</th><th class="num">TOTAL</th><th class="num">完成率</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>User Story</td><td>计划 Story Point</td>
+                    <td class="num">26.9</td><td class="num">36.7</td><td class="num">63.6</td><td class="num">100.00%</td>
+                    <td class="num">27.6</td><td class="num">25.4</td><td class="num">53</td><td class="num">100.00%</td>
+                    <td class="num">83.4</td><td class="num">70</td><td class="num">153.4</td><td class="num">83.9%</td>
+                    <td class="num">61</td><td class="num">37.3</td><td class="num">98.3</td><td class="num">99.49%</td>
+                  </tr>
+                  <tr>
+                    <td></td><td>完成 Story Point</td>
+                    <td class="num">26.9</td><td class="num">36.7</td><td class="num">63.6</td><td class="num"></td>
+                    <td class="num">27.6</td><td class="num">25.4</td><td class="num">53</td><td class="num"></td>
+                    <td class="num">83.4</td><td class="num">45.3</td><td class="num">128.7</td><td class="num"></td>
+                    <td class="num">61</td><td class="num">36.8</td><td class="num">97.8</td><td class="num"></td>
+                  </tr>
+                  <tr>
+                    <td>Tech Improvement</td><td>计划 Story Point</td>
+                    <td class="num">12.5</td><td class="num">0</td><td class="num">12.5</td><td class="num">96.00%</td>
+                    <td class="num">29.5</td><td class="num">0</td><td class="num">29.5</td><td class="num">83.05%</td>
+                    <td class="num">10</td><td class="num">0</td><td class="num">10</td><td class="num">100%</td>
+                    <td class="num">11</td><td class="num">6.5</td><td class="num">17.5</td><td class="num">89.14%</td>
+                  </tr>
+                  <tr>
+                    <td></td><td>完成 Story Point</td>
+                    <td class="num">12</td><td class="num">0</td><td class="num">12</td><td class="num"></td>
+                    <td class="num">24.5</td><td class="num">0</td><td class="num">24.5</td><td class="num"></td>
+                    <td class="num">10</td><td class="num">0</td><td class="num">10</td><td class="num"></td>
+                    <td class="num">11</td><td class="num">4.6</td><td class="num">15.6</td><td class="num"></td>
+                  </tr>
+                  <tr>
+                    <td>Task</td><td>计划 Story Point</td>
+                    <td class="num">19.5</td><td class="num">0</td><td class="num">19.5</td><td class="num">100.00%</td>
+                    <td class="num">9.5</td><td class="num">0</td><td class="num">9.5</td><td class="num">87.37%</td>
+                    <td class="num">0.5</td><td class="num">0</td><td class="num">0.5</td><td class="num">100%</td>
+                    <td class="num">0</td><td class="num">6</td><td class="num">6</td><td class="num">100.00%</td>
+                  </tr>
+                  <tr>
+                    <td></td><td>完成 Story Point</td>
+                    <td class="num">19.5</td><td class="num">0</td><td class="num">19.5</td><td class="num"></td>
+                    <td class="num">8.3</td><td class="num">0</td><td class="num">8.3</td><td class="num"></td>
+                    <td class="num">0.5</td><td class="num">0</td><td class="num">0.5</td><td class="num"></td>
+                    <td class="num">0</td><td class="num">6</td><td class="num">6</td><td class="num"></td>
+                  </tr>
+                  <tr>
+                    <td>Bug</td><td>计划 Story Point</td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">N/A</td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">N/A</td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">N/A</td>
+                    <td class="num">4.5</td><td class="num">0</td><td class="num">4.5</td><td class="num">100.00%</td>
+                  </tr>
+                  <tr>
+                    <td></td><td>完成 Story Point</td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num"></td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num"></td>
+                    <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num"></td>
+                    <td class="num">4.5</td><td class="num">0</td><td class="num">4.5</td><td class="num"></td>
+                  </tr>
+                  <tr>
+                    <td>完成率</td><td></td>
+                    <td colspan="3"><b>95.1/95.6 ≈ 99.48%</b></td><td class="num"></td>
+                    <td colspan="3"><b>93.3%</b></td><td class="num"></td>
+                    <td colspan="3"><b>85%</b></td><td class="num"></td>
+                    <td colspan="3"><b>98.1%</b></td><td class="num"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+</div>
+
+
+<div class="section">
+  <h2 id="personal-bug">个人 Bug 汇总</h2>
+  <p class="hint">原稿原文保留。估分为 0（只修 Bug）时归一化 DQS 为 #DIV/0!，不能当绩效。</p>
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>个人 Bug 汇总</th>
+                  <th class="num">Bug 个数</th>
+                  <th class="num">基础 DQS</th>
+                  <th class="num">已完成 Point</th>
+                  <th class="num">归一化 DQS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>刘园园</td><td class="num">1</td><td class="num">5</td><td class="num">12</td><td class="num">0.42</td></tr>
+                <tr><td>王辉</td><td class="num">18</td><td class="num">32</td><td class="num">10.8</td><td class="num">2.96</td></tr>
+                <tr><td>胡伟</td><td class="num">0</td><td class="num">0</td><td class="num">8.5</td><td class="num">0</td></tr>
+                <tr><td>雷玮祺</td><td class="num">5</td><td class="num">10</td><td class="num">6.7</td><td class="num">1.49</td></tr>
+                <tr><td>吴晋元</td><td class="num">0</td><td class="num">0</td><td class="num">3.5</td><td class="num">0</td></tr>
+                <tr><td>祝文君</td><td class="num">8</td><td class="num">20.5</td><td class="num">3.5</td><td class="num">5.86</td></tr>
+                <tr><td>储伟</td><td class="num">1</td><td class="num">1</td><td class="num">3</td><td class="num">0.33</td></tr>
+                <tr><td>刘梦豪</td><td class="num">0</td><td class="num">0</td><td class="num">2.5</td><td class="num">0</td></tr>
+                <tr><td>邱建益</td><td class="num">0</td><td class="num">0</td><td class="num">2.5</td><td class="num">0</td></tr>
+                <tr><td>李巳晗</td><td class="num">5</td><td class="num">7</td><td class="num">2</td><td class="num">3.5</td></tr>
+                <tr><td>肖金栋</td><td class="num">3</td><td class="num">9</td><td class="num">2</td><td class="num">4.5</td></tr>
+                <tr><td>周进</td><td class="num">6</td><td class="num">14</td><td class="num">1.4</td><td class="num">10</td></tr>
+                <tr><td>夏正刚</td><td class="num">20</td><td class="num">52.5</td><td class="num">0</td><td class="num">#DIV/0!</td></tr>
+                <tr><td>张乾坤</td><td class="num">1</td><td class="num">2</td><td class="num">0</td><td class="num">#DIV/0!</td></tr>
+                <tr><td>戴鑫</td><td class="num">2</td><td class="num">1.5</td><td class="num">0</td><td class="num">#DIV/0!</td></tr>
+                <tr><td>王杰</td><td class="num">14</td><td class="num">28</td><td class="num">0</td><td class="num">#DIV/0!</td></tr>
+                <tr><td>肖伟</td><td class="num">14</td><td class="num">51</td><td class="num">0</td><td class="num">#DIV/0!</td></tr>
+              </tbody>
+            </table>
+</div>
+
+
+<div class="section">
+  <h2 id="personal-points">个人故事点明细（DEV 17 / QC 9）</h2>
+  <h3>人力资源投入 · DEV</h3>
+            <table class="data compact">
+              <thead>
+                <tr>
+                  <th>No</th><th>团队成员</th>
+                  <th class="num">总估分</th><th class="num">已完成</th>
+                  <th class="num">未完成</th><th>备注</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>刘园园</td><td class="num">12</td><td class="num">12</td><td class="num">0</td><td></td></tr>
+                <tr><td>2</td><td>王辉</td><td class="num">10.8</td><td class="num">10.8</td><td class="num">0</td><td></td></tr>
+                <tr><td>3</td><td>胡伟</td><td class="num">8.5</td><td class="num">8.5</td><td class="num">0</td><td></td></tr>
+                <tr><td>4</td><td>雷玮祺</td><td class="num">6.7</td><td class="num">6.7</td><td class="num">0</td><td></td></tr>
+                <tr><td>5</td><td>吴晋元</td><td class="num">3.5</td><td class="num">3.5</td><td class="num">0</td><td></td></tr>
+                <tr><td>6</td><td>祝文君</td><td class="num">3.5</td><td class="num">3.5</td><td class="num">0</td><td></td></tr>
+                <tr><td>7</td><td>储伟</td><td class="num">3</td><td class="num">3</td><td class="num">0</td><td></td></tr>
+                <tr><td>8</td><td>刘梦豪</td><td class="num">3</td><td class="num">2.5</td><td class="num">0.5</td><td></td></tr>
+                <tr><td>9</td><td>邱建益</td><td class="num">2.5</td><td class="num">2.5</td><td class="num">0</td><td></td></tr>
+                <tr><td>10</td><td>李巳晗</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td></td></tr>
+                <tr><td>11</td><td>肖金栋</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td></td></tr>
+                <tr><td>12</td><td>周进</td><td class="num">1.4</td><td class="num">1.4</td><td class="num">0</td><td></td></tr>
+                <tr><td>13</td><td>夏正刚</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>仅修复 Bug</td></tr>
+                <tr><td>14</td><td>张乾坤</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>仅修复 Bug</td></tr>
+                <tr><td>15</td><td>戴鑫</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>仅修复 Bug</td></tr>
+                <tr><td>16</td><td>王杰</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>仅修复 Bug</td></tr>
+                <tr><td>17</td><td>肖伟</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>仅修复 Bug</td></tr>
+                <tr><td></td><td><b>合计</b></td><td class="num"><b>58.9</b></td><td class="num"><b>58.4</b></td><td class="num"><b>0.5</b></td><td></td></tr>
+              </tbody>
+            </table>
+
+        <h3>人力资源投入 · QC</h3>
+        <table class="data">
+          <thead>
+            <tr>
+              <th>No</th><th>团队成员</th>
+              <th class="num">总估分 Point</th><th class="num">已完成 Point</th>
+              <th class="num">未完成 Point</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>梁贤丹</td><td class="num">5.8</td><td class="num">5.8</td><td class="num">0</td></tr>
+            <tr><td>2</td><td>张蒙</td><td class="num">5.2</td><td class="num">5.2</td><td class="num">0</td></tr>
+            <tr><td>3</td><td>张瑞瑞</td><td class="num">4.8</td><td class="num">4.8</td><td class="num">0</td></tr>
+            <tr><td>4</td><td>魏来</td><td class="num">4.5</td><td class="num">4.5</td><td class="num">0</td></tr>
+            <tr><td>5</td><td>Yena Wang</td><td class="num">3.9</td><td class="num">3.9</td><td class="num">0</td></tr>
+            <tr><td>6</td><td>陈彦任</td><td class="num">3.6</td><td class="num">3.6</td><td class="num">0</td></tr>
+            <tr><td>7</td><td>张峰</td><td class="num">3.5</td><td class="num">3.5</td><td class="num">0</td></tr>
+            <tr><td>8</td><td>李向丹</td><td class="num">2.9</td><td class="num">2.9</td><td class="num">0</td></tr>
+            <tr><td>9</td><td>谢茜</td><td class="num">2.5</td><td class="num">2.5</td><td class="num">0</td></tr>
+            <tr><td></td><td><b>合计</b></td><td class="num"><b>36.7</b></td><td class="num"><b>36.7</b></td><td class="num"><b>0</b></td></tr>
+          </tbody>
+        </table>
+</div>
+
+</div>
+</body>
+</html>

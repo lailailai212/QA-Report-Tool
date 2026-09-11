@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>【草稿·待 Review】测试看板 vs 测试日报</title>
+  <style>
+    :root {
+      --text: #0F172A;
+      --muted: #64748B;
+      --line: #9BB7D4;
+      --bg: #F4F7FB;
+      --card: #fff;
+      --accent: #1E4A7A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px 48px;
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 24px; color: var(--accent); }
+    h2 { margin: 28px 0 10px; font-size: 17px; color: var(--accent); }
+    .sub { color: var(--muted); margin-bottom: 16px; }
+    .banner {
+      background: #FFF7ED;
+      border: 1px solid #FDBA74;
+      color: #9A3412;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 16px; color: var(--accent); }
+    .kicker {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1E5A96;
+      background: #E8F0F8;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 8px;
+    }
+    ul { margin: 8px 0 0; padding-left: 18px; }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #DCE6F0;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #1E4A7A; color: #fff; font-weight: 600; }
+    .muted { color: var(--muted); font-size: 12px; }
+    a { color: #1E5A96; }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .pill {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .arrow { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>测试看板 + 测试日报 · 分工草案</h1>
+    <p class="sub">回应老板「计划 vs 实现 / 风险责任人 / 分析应对」：拆成「随时可看的看板」与「按日节点的日报」两套，避免一封邮件既当监控台又当决策纪要。</p>
+
+    <div class="banner">
+      <b>【草稿·待 Review】</b>本文只定产品分工与信息边界；详细 UI 见下方两个预览稿。<br/>
+      看板预览：<a href="./test_dashboard_template_draft.html">test_dashboard_template_draft.html</a>
+      · 日报预览：<a href="./daily_report_v2_template_draft.html">daily_report_v2_template_draft.html</a>
+      · 日报详情：<a href="./daily_report_v2_details_demo.html">daily_report_v2_details_demo.html</a>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="kicker">产品 A · 随时访问</div>
+        <h3>测试看板（建议入口 /dashboard）</h3>
+        <p class="muted">给老板 / PM / Dev / QC 打开即看「现在怎样」，不依赖当天是否发信。</p>
+        <ul>
+          <li><b>测试执行计划</b>：用例设计进度、测试评审日期/结论、测试执行排期（及是否按排期）</li>
+          <li><b>当前测试执行进度</b>：相对排期的完成度、Story/用例执行现状</li>
+          <li><b>Bug 修复进度</b>：未关总量、P0/P1、Fixed Rate、关键未关列表</li>
+          <li><b>测试风险点</b>：带 Owner 的 Open 风险清单（实时维护）</li>
+        </ul>
+        <p class="muted" style="margin-top:10px;">特点：实时/近实时 · 可刷新 · 可深挖明细 · <b>不强制「今日结论」</b></p>
+      </div>
+      <div class="card">
+        <div class="kicker">产品 B · 按日节点发出</div>
+        <h3>测试日报（优化现有 /report）</h3>
+        <p class="muted">给收件人在「当日节点」读「今天相对计划偏了多少、风险申报、怎么拉回来」。</p>
+        <ul>
+          <li><b>当日节点分析</b>：健康灯 + 今日结论 + 需管理层关注</li>
+          <li><b>总进度 vs 测试计划</b>：计划/实际/偏差（快慢）</li>
+          <li><b>风险点申报</b>：当日仍 Open / 新增 / 关闭的风险（含 Owner 与动作）</li>
+          <li><b>分析与应对</b>：为何偏离、如何回归健康、复查点</li>
+          <li>精简进度摘要 + Bug 摘要（详情链到看板）</li>
+        </ul>
+        <p class="muted" style="margin-top:10px;">特点：日切快照 · 强制人工判断 · <b>行动导向</b> · 邮件可读</p>
+      </div>
+    </div>
+
+    <h2>一句话分工</h2>
+    <div class="card">
+      <b>看板 = 现在的状态机；日报 = 今天的决策纪要。</b><br/>
+      <span class="muted">老板随时打开看板看进度与风险；下班读日报看偏差、申报与应对。明细与矩阵优先放看板，日报只保留摘要。</span>
+    </div>
+
+    <h2>数据流（草案）</h2>
+    <div class="flow">
+      <span class="pill">测试计划基线<br/><span class="muted">Sprint 初冻结</span></span>
+      <span class="arrow">→</span>
+      <span class="pill">MS 执行 + 飞书 Story/Bug</span>
+      <span class="arrow">→</span>
+      <span class="pill">风险清单<br/><span class="muted">人工维护 · 双端共用</span></span>
+      <span class="arrow">→</span>
+      <span class="pill">看板（实时读）</span>
+      <span class="arrow">→</span>
+      <span class="pill">日报（日切 + 人工结论）</span>
+    </div>
+
+    <h2>字段归属</h2>
+    <table>
+      <tr>
+        <th style="width:22%">信息</th>
+        <th style="width:28%">测试看板</th>
+        <th style="width:28%">测试日报</th>
+        <th>说明</th>
+      </tr>
+      <tr>
+        <td>测试执行计划</td>
+        <td><b>主阵地</b>：用例设计 / 评审日期 / 执行排期</td>
+        <td>引用计划对比「是否按排期」</td>
+        <td>开发 Ready 节奏可作辅助，计划表以测试侧活动为主</td>
+      </tr>
+      <tr>
+        <td>执行进度（现状）</td>
+        <td><b>主阵地</b>（含明细）</td>
+        <td>摘要 + 异常置顶</td>
+        <td>日报不再堆 13 列全表</td>
+      </tr>
+      <tr>
+        <td>计划 vs 实现偏差</td>
+        <td>可展示 Ahead/Behind</td>
+        <td><b>主阵地</b>（当日节点）</td>
+        <td>回答老板第 1 点</td>
+      </tr>
+      <tr>
+        <td>Bug 修复进度</td>
+        <td><b>主阵地</b>（摘要+列表）</td>
+        <td>一行摘要 + P0/P1</td>
+        <td>矩阵默认只在看板</td>
+      </tr>
+      <tr>
+        <td>风险点</td>
+        <td>全量 Open 清单</td>
+        <td><b>申报视角</b>（新增/仍在/关闭）</td>
+        <td>同一风险库；Blocked≠自动风险</td>
+      </tr>
+      <tr>
+        <td>分析与应对</td>
+        <td>可选「当前应对」</td>
+        <td><b>每日必填</b></td>
+        <td>回答老板第 3 点</td>
+      </tr>
+      <tr>
+        <td>访问方式</td>
+        <td>Web 随时打开</td>
+        <td>邮件 + 预览页</td>
+        <td>看板不替代发信</td>
+      </tr>
+    </table>
+
+    <h2>建议落地顺序</h2>
+    <table>
+      <tr>
+        <th style="width:12%">阶段</th>
+        <th>内容</th>
+      </tr>
+      <tr>
+        <td>v1</td>
+        <td>① 风险清单数据模型（看板/日报共用）② 日报 v2 邮件结构（结论/偏差/申报/应对 + 瘦表）③ 看板只读页：计划摘要、进度、Bug、风险</td>
+      </tr>
+      <tr>
+        <td>v1.1</td>
+        <td>测试计划基线冻结 + 自动算 Ahead/Behind；看板深挖明细；日报链到看板</td>
+      </tr>
+      <tr>
+        <td>不做（先）</td>
+        <td>看板定时推送；用 MS Blocked 自动生成风险；把复盘 Point/DQS 塞进日报</td>
+      </tr>
+    </table>
+
+    <h2>请你拍板</h2>
+    <div class="card">
+      <ol style="margin:0;padding-left:18px;">
+        <li>是否同意「看板实时 + 日报日切」二分法？</li>
+        <li>看板入口命名：<code>/dashboard</code> 还是「测试看板」其它路径？</li>
+        <li>风险清单是否两处共用同一份维护？</li>
+        <li>v1 是否先上「日报结构改造 + 看板只读」，计划基线自动偏差放 v1.1？</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

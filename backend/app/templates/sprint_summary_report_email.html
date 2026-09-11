@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ report.title }} · {{ report.feishuSprint }}</title>
+</head>
+{#
+  飞书等邮件客户端不支持 CSS 变量 / Grid / Flex。
+  仅发信使用本模板：全部 table + 内联 style。
+  明细用 details open 写入正文：可折叠的客户端能点收起；飞书若忽略该标签，表格仍会显示。
+#}
+{% set e = report.exec or {} %}
+{% set m = report.metrics or {} %}
+{% set prev = report.kpiPrev or {} %}
+{% set rt = (report.rolePoints or {}).get('total') or {} %}
+{% set charts = report.charts or {} %}
+{% set captions = report.captions or {} %}
+{% set chart_cids = chart_cids or {} %}
+{% set chart_data_uris = chart_data_uris or {} %}
+{% macro email_chart(key, width, height, empty) -%}
+{%- if chart_data_uris.get(key) -%}
+<img src="data:image/png;base64,{{ chart_data_uris[key] }}" width="{{ width }}" height="{{ height }}" alt="" border="0" style="display:block;border:0;outline:none;text-decoration:none;max-width:100%;height:auto;" />
+{%- elif chart_cids.get(key) -%}
+<img src="cid:{{ chart_cids[key] }}" width="{{ width }}" height="{{ height }}" alt="" border="0" style="display:block;border:0;outline:none;text-decoration:none;max-width:100%;height:auto;" />
+{%- elif charts.get(key) -%}
+{{ charts.get(key) | safe }}
+{%- else -%}
+<div style="font-size:12px;color:#737373;">{{ empty }}</div>
+{%- endif -%}
+{%- endmacro %}
+{% set reopen = report.reopen or {} %}
+{% set overall = e.overallStatus or 'warn' %}
+{% macro tc(tone) -%}
+{%- if tone == 'danger' -%}#dc2626
+{%- elif tone == 'warn' or tone == 'late' -%}#d97706
+{%- elif tone == 'ok' or tone == 'low' -%}#059669
+{%- else -%}#171717
+{%- endif -%}
+{%- endmacro %}
+{% macro goal_status_text(st) -%}
+{%- if st == 'ok' -%}已完成
+{%- elif st == 'late' -%}已完成但晚于计划
+{%- elif st == 'danger' -%}未完成
+{%- else -%}部分完成
+{%- endif -%}
+{%- endmacro %}
+{% macro status(tone, label) -%}
+<span style="font-weight:700;font-size:13px;color:{{ tc(tone) }};white-space:nowrap;">● {{ label }}</span>
+{%- endmacro %}
+{% macro pct(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}%{%- endif -%}
+{%- endmacro %}
+{% macro num(v) -%}
+{%- if v is none or v == '' -%}—{%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% macro kpi_color(cls) -%}
+{%- if cls == 'ok' -%}#059669
+{%- elif cls == 'warn' -%}#d97706
+{%- elif cls == 'danger' -%}#dc2626
+{%- elif cls == 'teal' -%}#0d9488
+{%- else -%}#171717
+{%- endif -%}
+{%- endmacro %}
+{% macro trend_color(cls) -%}
+{%- if cls == 'trend-up' -%}#059669
+{%- elif cls == 'trend-down' -%}#dc2626
+{%- else -%}#737373
+{%- endif -%}
+{%- endmacro %}
+{% set acc_cls = 'ok' if (m.acceptRate or 0) >= 80 else 'warn' %}
+{% set pt_cls = 'ok' if (m.pointRate or 0) >= 95 else 'warn' %}
+{% set bug_cls = 'ok' if (m.bugFixRate or 0) >= 85 else ('warn' if (m.bugFixRate or 0) >= 72 else 'danger') %}
+{% set dqs_cls = 'ok' if m.normDqs is not none and (m.normDqs|float) < 5 else 'warn' %}
+{% set callout_bg = '#fef2f2' if overall == 'danger' else ('#ecfdf5' if overall in ['ok', 'low'] else '#fffbeb') %}
+{% set callout_bd = '#fecaca' if overall == 'danger' else ('#a7f3d0' if overall in ['ok', 'low'] else '#fde68a') %}
+{% set wrap = "width:100%;max-width:1080px;border-collapse:collapse;" %}
+{% set th = "background:#f4f4f5;color:#171717;border:1px solid #e5e5e5;padding:9px 10px;font-size:12px;font-weight:700;text-align:left;" %}
+{% set thn = "background:#f4f4f5;color:#171717;border:1px solid #e5e5e5;padding:9px 10px;font-size:12px;font-weight:700;text-align:right;white-space:nowrap;" %}
+{% set td = "border:1px solid #e5e5e5;padding:9px 10px;font-size:13px;color:#171717;vertical-align:top;" %}
+{% set tdn = "border:1px solid #e5e5e5;padding:9px 10px;font-size:13px;color:#171717;text-align:right;white-space:nowrap;vertical-align:top;" %}
+{% set h2 = "font-size:20px;font-weight:700;letter-spacing:-0.02em;padding:24px 0 10px;color:#171717;" %}
+{% set h3 = "font-size:14px;font-weight:700;padding:14px 0 8px;color:#171717;" %}
+{% set hint = "font-size:12px;color:#737373;padding:0 0 8px;line-height:1.55;" %}
+<body style="margin:0;padding:24px;background:#fafafa;color:#171717;font-family:Arial,'Microsoft YaHei','PingFang SC',sans-serif;line-height:1.55;">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#f4f4f5;">
+  <tr>
+    <td style="padding:10px 12px;border:1px solid #e5e5e5;font-size:12px;color:#737373;line-height:1.6;">
+      <b style="color:#171717;">【Sprint 总结报告】</b>
+      数据来源：{{ report.sourceLabel or report.source or '飞书快照' }}。
+      {% if report.snapshotFetchedAt %}快照 {{ report.snapshotFetchedAt }}。{% endif %}
+      {% if report.planFrozenAt %}Plan 冻结于 {{ report.planFrozenAt }}。{% elif not report.hasPlan %}尚未冻结 Plan，范围偏差无法对比。{% endif %}
+      生成时间 {{ report.generatedAt }}。
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="font-size:24px;font-weight:700;padding:16px 0 6px;color:#171717;">{{ report.title }}</td>
+  </tr>
+  <tr>
+    <td style="font-size:13px;color:#737373;padding:0 0 14px;">{{ report.feishuSprint }}{% if report.sprintWindow %} · {{ report.sprintWindow }}{% endif %}</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <td width="112" style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;">Sprint 周期</td>
+    <td style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;">{{ report.sprintWindow or report.feishuSprint }}</td>
+  </tr>
+  <tr>
+    <td style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;vertical-align:top;">本期亮点</td>
+    <td style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;white-space:pre-wrap;">{% if e.highlight %}{% for line in e.highlight.splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% else %}—{% endif %}</td>
+  </tr>
+  <tr>
+    <td style="background:#f4f4f5;border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;font-weight:700;vertical-align:top;">需要关注</td>
+    <td style="border:1px solid #e5e5e5;padding:9px 12px;font-size:13px;white-space:pre-wrap;">{% if e.concern %}{% for line in e.concern.splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% else %}—{% endif %}</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td bgcolor="{{ callout_bg }}" style="padding:14px 16px;background:{{ callout_bg }};border:1px solid {{ callout_bd }};">
+      <div style="font-size:16px;font-weight:700;margin:0 0 8px;">总体状态　{{ status(overall, e.overallStatusLabel or STATUS_LABEL.get(overall, '待判定')) }}</div>
+      <div style="font-size:14px;font-weight:700;margin:0 0 6px;">一句话总结</div>
+      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap;">{% if e.oneLiner %}{% for line in e.oneLiner.splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% else %}暂无。{% endif %}</div>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}margin-top:16px;">
+  <tr>
+    <td width="25%" valign="top" style="padding:4px 12px 8px 0;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{{ kpi_color(acc_cls) }};">{{ pct(m.acceptRate) }}</div>
+      <div style="font-size:12px;color:#737373;margin-top:2px;">{% if prev.acceptRate is not none %}上期 {{ pct(prev.acceptRate) }}{% else %}上期 —{% endif %}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">验收闭环（{{ m.acceptLabel or '—' }}）</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{{ kpi_color(pt_cls) }};">{{ pct(m.pointRate) }}</div>
+      <div style="font-size:12px;color:#737373;margin-top:2px;">{% if prev.pointRate is not none %}上期 {{ pct(prev.pointRate) }}{% else %}上期 —{% endif %}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">故事点完成（{{ num(m.pointDone) }}/{{ num(m.pointPlan) }}）</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{{ kpi_color(bug_cls) }};">{{ pct(m.bugFixRate) }}</div>
+      <div style="font-size:12px;color:#737373;margin-top:2px;">{% if prev.bugFixRate is not none %}上期 {{ pct(prev.bugFixRate) }}{% else %}上期 —{% endif %}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">缺陷修复率（{{ num(m.bugFixed) }}/{{ num(m.bugTotal) }}）</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 0 8px 12px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{{ kpi_color(dqs_cls) }};">{{ num(m.normDqs) }}</div>
+      <div style="font-size:12px;color:#737373;margin-top:2px;">{% if prev.normDqs is not none %}上期 {{ num(prev.normDqs) }}{% else %}上期 —{% endif %}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">归一化 DQS</div>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h2 }}">1. 风险/问题详情</td></tr>
+</table>
+{% set risk_rows = [] %}
+{% for r in e.risks or [] %}
+  {% if r.title or r.impact or r.action %}
+    {% if risk_rows.append(r) %}{% endif %}
+  {% endif %}
+{% endfor %}
+{% if risk_rows %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">风险/问题</th>
+    <th style="{{ th }}">影响</th>
+    <th style="{{ th }}">等级</th>
+    <th style="{{ th }}">应对</th>
+    <th style="{{ th }}">负责人</th>
+    <th style="{{ th }}">截止</th>
+  </tr>
+  {% for r in risk_rows %}
+  <tr>
+    <td style="{{ td }}">{{ r.title or '—' }}</td>
+    <td style="{{ td }}">{{ r.impact or '—' }}</td>
+    <td style="{{ td }}">{{ status(r.level or 'warn', RISK_STATUS_LABEL.get(r.level, r.level or '中风险')) }}</td>
+    <td style="{{ td }}">{{ r.action or '—' }}</td>
+    <td style="{{ td }}">{{ r.owner or '—' }}</td>
+    <td style="{{ td }}white-space:nowrap;">{{ r.due or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ hint }}">暂无风险申报。</td></tr>
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h2 }}">2. 目标偏离</td></tr>
+</table>
+{% set goal_rows = [] %}
+{% for g in e.goals or [] %}
+  {% if g.goal or g.expected or g.actual %}
+    {% if goal_rows.append(g) %}{% endif %}
+  {% endif %}
+{% endfor %}
+{% if goal_rows %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">目标</th>
+    <th style="{{ th }}">预期结果</th>
+    <th style="{{ th }}">实际结果</th>
+    <th style="{{ th }}">状态</th>
+  </tr>
+  {% for g in goal_rows %}
+  <tr>
+    <td style="{{ td }}">{{ g.goal or '—' }}</td>
+    <td style="{{ td }}">{{ g.expected or '—' }}</td>
+    <td style="{{ td }}">{{ g.actual or '—' }}</td>
+    <td style="{{ td }}">{{ status(g.status or 'warn', goal_status_text(g.status)) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ hint }}">暂无目标偏离记录。</td></tr>
+</table>
+{% endif %}
+
+{% set open_stories = e.incompleteItems or [] %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h3 }}">未完成 Story（{{ open_stories|length }}）</td></tr>
+  <tr><td style="{{ hint }}">状态尚未到达「待验收 / 已验收」的 User Story，不含 Task / 技改。Owner 来自飞书角色：产品经理 / Dev Owner / QC Owner。</td></tr>
+</table>
+{% if open_stories %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">Item ID</th>
+    <th style="{{ th }}">Summary</th>
+    <th style="{{ th }}">状态</th>
+    <th style="{{ th }}">产品 Owner</th>
+    <th style="{{ th }}">开发 Owner</th>
+    <th style="{{ th }}">测试 Owner</th>
+    <th style="{{ thn }}">DEV 点</th>
+    <th style="{{ thn }}">QC 点</th>
+  </tr>
+  {% for r in open_stories %}
+  <tr>
+    <td style="{{ td }}">{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener" style="color:#3b82f6;text-decoration:none;">{{ r.id or '—' }}</a>{% else %}{{ r.id or '—' }}{% endif %}</td>
+    <td style="{{ td }}">{{ r.summary or '—' }}</td>
+    <td style="{{ td }}">{{ r.status or '—' }}</td>
+    <td style="{{ td }}">{{ r.productOwner or '—' }}</td>
+    <td style="{{ td }}">{{ r.devOwner or r.owner or '—' }}</td>
+    <td style="{{ td }}">{{ r.qcOwner or '—' }}</td>
+    <td style="{{ tdn }}">{{ num(r.pointDev) }}</td>
+    <td style="{{ tdn }}">{{ num(r.pointQc) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ hint }}">本期 Story 均已到达待验收 / 已验收。</td></tr>
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h2 }}">3. 项目范围</td></tr>
+  <tr><td style="{{ h3 }}padding-top:0;">本期结论（按类型 Item）</td></tr>
+  <tr><td style="{{ hint }}">类型完成 = 已验收 + 待验收。合计行「验收闭环」= 仅已验收。故事点见主表下摘要。</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">类型</th>
+    <th style="{{ thn }}">计划</th>
+    <th style="{{ thn }}">完成</th>
+    <th style="{{ thn }}">未完成</th>
+    <th style="{{ thn }}">完成率</th>
+    <th style="{{ thn }}">环比</th>
+  </tr>
+  {% for d in report.deliveryRows or [] %}
+  <tr>
+    <td style="{{ td }}{% if d.bold %}font-weight:700;{% endif %}">{{ d.type }}</td>
+    <td style="{{ tdn }}{% if d.bold %}font-weight:700;{% endif %}">{{ num(d.total) }}</td>
+    <td style="{{ tdn }}{% if d.bold %}font-weight:700;{% endif %}">{{ num(d.done) }}</td>
+    <td style="{{ tdn }}{% if d.bold %}font-weight:700;{% endif %}">{{ num(d.unfinished) }}</td>
+    <td style="{{ tdn }}{% if d.bold %}font-weight:700;{% endif %}">{{ d.doneRateLabel or pct(d.doneRate) }}</td>
+    <td style="{{ tdn }}color:{{ trend_color(d.deltaCls) }};">{{ d.delta or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="{{ hint }}padding-top:8px;">
+      故事点摘要：Point <b>{{ num(m.pointDone) }} / {{ num(m.pointPlan) }}</b>
+      （{{ pct(m.pointRate) }}，环比
+      <span style="color:{{ trend_color(report.pointDelta.cls if report.pointDelta else 'flat') }};font-weight:700;">{{ report.pointDelta.text if report.pointDelta else '—' }}</span>）。
+    </td>
+  </tr>
+  <tr><td style="{{ h3 }}">范围变更</td></tr>
+  <tr>
+    <td style="{{ hint }}">偏差率 =（移入 + 移出）÷ 计划会冻结数。&gt; 20% 标红。{% if e.scopeAuto %}已按计划会冻结快照自动计算。{% endif %}</td>
+  </tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">类型</th>
+    <th style="{{ thn }}">移入</th>
+    <th style="{{ thn }}">移出</th>
+    <th style="{{ thn }}">偏差率</th>
+  </tr>
+  {% for typ in ['User Story', 'Task', 'Tech Improvement'] %}
+    {% set ss = (e.scopeSummary or {}).get(typ) or {} %}
+    {% set high = scope_deviation_high(ss.churnRate) %}
+  <tr>
+    <td style="{{ td }}">{{ typ }}</td>
+    <td style="{{ tdn }}">{{ ss.movedIn if ss.movedIn is not none else '—' }}</td>
+    <td style="{{ tdn }}">{{ ss.movedOut if ss.movedOut is not none else '—' }}</td>
+    <td style="{{ tdn }}{% if high %}color:#dc2626;font-weight:700;background:#fef2f2;{% endif %}">{{ ss.churnRate or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% if e.scopePlanNote %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ hint }}padding-top:8px;">{{ e.scopePlanNote }}</td></tr>
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h3 }}">近 4 期交付趋势</td></tr>
+  <tr><td style="{{ hint }}">验收闭环只计已验收；故事点来自飞书当前快照。图例：<span style="color:#d97706;">■</span> Item 验收闭环率　<span style="color:#059669;">■</span> Point 完成率　灰线 = 80%</td></tr>
+  <tr>
+    <td style="padding:0 0 8px;">
+      {{ email_chart('delivery', 480, 240, '近 4 期对比需要至少 2 个 Sprint 的飞书快照。') }}
+      {% if (chart_data_uris.get('delivery') or chart_cids.get('delivery') or charts.get('delivery')) and captions.delivery %}<div style="font-size:12px;color:#737373;margin-top:6px;">{{ captions.delivery }}</div>{% endif %}
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h2 }}">4. 项目质量</td></tr>
+  <tr><td style="{{ h3 }}padding-top:0;">缺陷：发现 vs 修复</td></tr>
+  <tr><td style="{{ hint }}">图例：<span style="color:#3b82f6;">■</span> 发现数　<span style="color:#059669;">■</span> 已修复　<span style="color:#d97706;">■</span> 修复率　左轴计数／右轴百分比</td></tr>
+  <tr>
+    <td style="padding:0 0 8px;">
+      {{ email_chart('bugs', 510, 240, '近 4 期缺陷图需要至少 2 个 Sprint 的数据。') }}
+      {% if (chart_data_uris.get('bugs') or chart_cids.get('bugs') or charts.get('bugs')) and captions.bugs %}<div style="font-size:12px;color:#737373;margin-top:6px;">{{ captions.bugs }}</div>{% endif %}
+    </td>
+  </tr>
+  <tr><td style="{{ h3 }}">缺陷数据统计</td></tr>
+  <tr><td style="{{ hint }}">正文只对比本期 / 上期。Critical / Major 修复率 &lt; 90% 标红。</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">严重等级</th>
+    <th style="{{ thn }}">本期计数</th>
+    <th style="{{ thn }}">已修复</th>
+    <th style="{{ thn }}">修复率</th>
+    <th style="{{ thn }}">上期计数</th>
+    <th style="{{ thn }}">已修复</th>
+    <th style="{{ thn }}">修复率</th>
+  </tr>
+  {% for r in report.severityRows or [] %}
+  <tr>
+    <td style="{{ td }}{% if r.rowClass == 'row-danger' %}color:#dc2626;font-weight:700;{% elif r.rowClass == 'row-warn' %}color:#d97706;font-weight:700;{% endif %}">{{ r.severity }}</td>
+    <td style="{{ tdn }}">{{ r.found }}</td>
+    <td style="{{ tdn }}">{{ r.fixed }}</td>
+    <td style="{{ tdn }}{% if r.alert %}color:#dc2626;font-weight:700;background:#fef2f2;{% endif %}">{{ pct(r.fixRate) }}</td>
+    <td style="{{ tdn }}">{% if r.prevFound is not none %}{{ r.prevFound }}{% else %}—{% endif %}</td>
+    <td style="{{ tdn }}">{% if r.prevFixed is not none %}{{ r.prevFixed }}{% else %}—{% endif %}</td>
+    <td style="{{ tdn }}">{% if r.prevFixRate is not none %}{{ pct(r.prevFixRate) }}{% else %}—{% endif %}</td>
+  </tr>
+  {% endfor %}
+  {% set st = report.severityTotals or {} %}
+  <tr>
+    <td style="{{ td }}font-weight:700;">合计</td>
+    <td style="{{ tdn }}font-weight:700;">{{ st.found }}</td>
+    <td style="{{ tdn }}font-weight:700;">{{ st.fixed }}</td>
+    <td style="{{ tdn }}font-weight:700;">{{ pct(st.fixRate) }}</td>
+    <td style="{{ tdn }}font-weight:700;">{% if st.prevFound is not none %}{{ st.prevFound }}{% else %}—{% endif %}</td>
+    <td style="{{ tdn }}font-weight:700;">{% if st.prevFixed is not none %}{{ st.prevFixed }}{% else %}—{% endif %}</td>
+    <td style="{{ tdn }}font-weight:700;">{% if st.prevFixRate is not none %}{{ pct(st.prevFixRate) }}{% else %}—{% endif %}</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}margin-top:12px;background:#fff;">
+  <tr>
+    <th style="{{ th }}">质量评分</th>
+    <th style="{{ thn }}">有效 Bug</th>
+    <th style="{{ thn }}">基础 DQS</th>
+    <th style="{{ thn }}">DEV 完成点</th>
+    <th style="{{ thn }}">本期归一化</th>
+    <th style="{{ thn }}">上期</th>
+  </tr>
+  <tr>
+    <td style="{{ td }}">OBIS</td>
+    <td style="{{ tdn }}">{{ num(report.validBugs or m.validBugs) }}</td>
+    <td style="{{ tdn }}">{{ num(m.baseDqs) }}</td>
+    <td style="{{ tdn }}">{{ num(rt.doneDev) }}</td>
+    <td style="{{ tdn }}">{{ num(m.normDqs) }}</td>
+    <td style="{{ tdn }}">{{ num(prev.normDqs) }}</td>
+  </tr>
+</table>
+{% if captions.dqs %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ hint }}padding-top:8px;">{{ captions.dqs }}</td></tr>
+</table>
+{% endif %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h3 }}">缺陷根因</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">缺陷根因</th>
+    <th style="{{ thn }}">计数</th>
+    <th style="{{ thn }}">占比</th>
+  </tr>
+  {% for r in report.rootCauseRows or [] %}
+  <tr>
+    <td style="{{ td }}">{{ r.cause }}</td>
+    <td style="{{ tdn }}">{{ r.count }}</td>
+    <td style="{{ tdn }}{% if r.alert %}color:#dc2626;font-weight:700;background:#fef2f2;{% endif %}">{{ pct(r.pct) }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="3" style="{{ td }}color:#737373;">暂无</td></tr>
+  {% endfor %}
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h3 }}">Reopen</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <td style="{{ td }}">
+      本期 <b>{{ reopen.label or '待填' }}</b>
+      {% if reopen.detail %}（{{ reopen.detail }}）{% endif %}
+      {% if reopen.prevRate is not none %}　上期 {{ reopen.prevRate }}%{% endif %}
+      <div style="font-size:12px;color:#737373;margin-top:8px;">口径：Reopen 条数 / Closed+Done Bug。未在日报维护 Reopen 表时显示「待填」。</div>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h2 }}">5. 团队效率</td></tr>
+</table>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td width="25%" valign="top" style="padding:4px 12px 8px 0;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#171717;">{{ num(report.peopleCount) }}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">参与人数（DEV {{ num(report.peopleDev) }} / QC {{ num(report.peopleQc) }} / PM {{ num(report.peoplePm) }}）</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#171717;">{{ num(report.perCapita) }}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">人均故事点</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 12px 8px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:{{ kpi_color(pt_cls) }};">{{ num(m.pointDone) }}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">完成故事点（计划 {{ num(m.pointPlan) }}）</div>
+    </td>
+    <td width="25%" valign="top" style="padding:4px 0 8px 12px;">
+      <div style="font-size:26px;font-weight:700;line-height:1.15;color:#171717;">{{ num(report.unfinishedPoints) }}</div>
+      <div style="font-size:14px;font-weight:650;color:#171717;margin-top:8px;">未完成 Point</div>
+    </td>
+  </tr>
+</table>
+{% if report.pointOutliers %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr>
+    <td style="{{ hint }}">
+      已排除异常估分（单条 &gt; 40，不计入汇总）：
+      {% for o in report.pointOutliers %}{% if not loop.first %}；{% endif %}{{ o.type }} {{ o.summary }}（{{ o.pointDev }}{% if o.pointQc %} / QC {{ o.pointQc }}{% endif %}）{% endfor %}。请在飞书改正后刷新。
+    </td>
+  </tr>
+</table>
+{% endif %}
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}background:#fff;">
+  <tr>
+    <th style="{{ th }}">角色</th>
+    <th style="{{ thn }}">人数</th>
+    <th style="{{ thn }}">总估分 Point</th>
+    <th style="{{ thn }}">已完成 Point</th>
+    <th style="{{ thn }}">未完成 Point</th>
+  </tr>
+  <tr>
+    <td style="{{ td }}">DEV</td>
+    <td style="{{ tdn }}">{{ num(report.peopleDev) }}</td>
+    <td style="{{ tdn }}">{{ num(rt.planDev) }}</td>
+    <td style="{{ tdn }}">{{ num(rt.doneDev) }}</td>
+    <td style="{{ tdn }}">{% if rt.planDev is not none and rt.doneDev is not none %}{{ (rt.planDev - rt.doneDev)|round(1) }}{% else %}—{% endif %}</td>
+  </tr>
+  <tr>
+    <td style="{{ td }}">QC</td>
+    <td style="{{ tdn }}">{{ num(report.peopleQc) }}</td>
+    <td style="{{ tdn }}">{{ num(rt.planQc) }}</td>
+    <td style="{{ tdn }}">{{ num(rt.doneQc) }}</td>
+    <td style="{{ tdn }}">{% if rt.planQc is not none and rt.doneQc is not none %}{{ (rt.planQc - rt.doneQc)|round(1) }}{% else %}—{% endif %}</td>
+  </tr>
+  <tr>
+    <td style="{{ td }}">PM</td>
+    <td style="{{ tdn }}">{{ num(report.peoplePm) }}</td>
+    <td style="{{ tdn }}">—</td>
+    <td style="{{ tdn }}">—</td>
+    <td style="{{ tdn }}">—</td>
+  </tr>
+</table>
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}">
+  <tr><td style="{{ h3 }}">近 4 期完成故事点（DEV / QC）</td></tr>
+  <tr>
+    <td style="{{ hint }}">柱高为各类型完成 Point 加总。{{ captions.points or '' }}　<span style="color:#3b82f6;">■</span> DEV　<span style="color:#059669;">■</span> QC</td>
+  </tr>
+  <tr>
+    <td style="padding:0 0 8px;">
+      {{ email_chart('points', 480, 240, '需要至少 2 期数据。') }}
+    </td>
+  </tr>
+  <tr><td style="{{ h3 }}">近 4 期人均故事点</td></tr>
+  <tr>
+    <td style="{{ hint }}">{{ captions.capita or '' }}　<span style="color:#3b82f6;">■</span> DEV 人均　<span style="color:#059669;">■</span> QC 人均</td>
+  </tr>
+  <tr>
+    <td style="padding:0 0 8px;">
+      {{ email_chart('capita', 480, 240, '需要至少 2 期数据。') }}
+    </td>
+  </tr>
+</table>
+
+{% include "sprint_summary_report_email_details.html" %}
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="{{ wrap }}margin-top:20px;">
+  <tr>
+    <td style="padding-top:10px;border-top:1px solid #e5e5e5;font-size:12px;color:#737373;line-height:1.55;">
+      <div style="font-weight:700;color:#171717;margin-bottom:6px;">口径</div>
+      类型完成 = 已验收 + 待验收；验收闭环合计 = 仅已验收。<br />
+      范围偏差率 =（移入 + 移出）/ 计划会冻结数；&gt; 20% 标红。<br />
+      故事点取飞书 Story Point（DEV/QC）；父项已验收或待验收计完成。Lead 不计入 DEV/QC 估分。Task 的 Owner 若在 QC 名单（Points 页维护）中，计入 QC，不计入 DEV。单条 &gt; 40 视为异常估分，不计入汇总。<br />
+      归一化 DQS = 基础 DQS / DEV 完成点；越低越好。<br />
+      Reopen 率 = 日报 Reopen 条数 / Closed+Done Bug。
+    </td>
+  </tr>
+  <tr>
+    <td style="font-size:12px;color:#737373;padding-top:10px;">状态：绿=正常；黄=中风险；红=高风险 / 未达预期。</td>
+  </tr>
+</table>
+
+</body>
+</html>

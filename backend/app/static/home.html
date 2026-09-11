@@ -45,8 +45,11 @@
     }
     .tools {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 640px) {
       .tools { grid-template-columns: 1fr; }
@@ -125,6 +128,11 @@
       color: var(--ok);
       border-color: #a7f3d0;
     }
+    .badge.draft {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #fdba74;
+    }
     .hint {
       margin-top: 20px;
       font-size: 13px;
@@ -156,7 +164,49 @@
       <a class="tool" href="/report">
         <div class="tool-kicker">日报 <span class="badge ready">可用</span></div>
         <h2>QA 测试执行日报</h2>
-        <p>拉取 MeterSphere 执行数据与飞书 Story/Bug 快照，预览、维护并发送 Sprint 日报。</p>
+        <p>拉取 MeterSphere 与飞书快照，对照计划线预览并发送 Sprint 日报。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/demo/daily-report">
+        <div class="tool-kicker">日报模板 <span class="badge draft">Demo</span></div>
+        <h2>日报 v2 样本（给老板看）</h2>
+        <p>计划 vs 快慢、风险/问题清单（含负责人与分类）。邮件只留摘要，明细点「查看详情」。</p>
+        <div class="tool-foot">打开样本 →</div>
+      </a>
+
+      <a class="tool" href="/demo/sprint-summary">
+        <div class="tool-kicker">总结模板 <span class="badge draft">Demo</span></div>
+        <h2>Sprint 总结报告样本</h2>
+        <p>OBIS-20260810—20260821 管理层总结：看板、交付/质量环比、风险与决策。静态样本，非正式发信。</p>
+        <div class="tool-foot">打开样本 →</div>
+      </a>
+
+      <a class="tool" href="/completion">
+        <div class="tool-kicker">结项 <span class="badge ready">可用</span></div>
+        <h2>Sprint QA 结项总汇报</h2>
+        <p>汇总整 Sprint 用例、Story、Bug 与遗留风险，维护结项结论后预览并手动发送（无定时）。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/sprint-retro">
+        <div class="tool-kicker">复盘 <span class="badge ready">可用</span></div>
+        <h2>Sprint 管理复盘报告</h2>
+        <p>按 Story Point / Severity / 根因汇总完成率与 DQS，支持 Plan 冻结、人力与跨期对比（无定时）。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/sprint-summary">
+        <div class="tool-kicker">总结 <span class="badge ready">可用</span></div>
+        <h2>Sprint 总结报告</h2>
+        <p>用计划会冻结的 Plan 做基线，刷新飞书拉取当前状态后对比生成管理层总结；叙事字段仍可手填。</p>
+        <div class="tool-foot">进入工具 →</div>
+      </a>
+
+      <a class="tool" href="/points">
+        <div class="tool-kicker">产能 <span class="badge ready">可用</span></div>
+        <h2>QC Story Points</h2>
+        <p>按 QC Owner 汇总迭代任务与其他 Task/Tech，手工维护初始 Points，方便组长看剩余产能。</p>
         <div class="tool-foot">进入工具 →</div>
       </a>
     </div>

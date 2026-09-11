@@ -160,10 +160,13 @@ class ScheduleManager:
             return None
         return job.next_run_time.isoformat()
 
-    def run_schedule(self, schedule_id: str) -> dict:
+    def run_schedule(self, schedule_id: str, *, force: bool = False) -> dict:
         item = self.repo.get(schedule_id)
         if not item:
             raise KeyError(schedule_id)
+        if not item.enabled and not force:
+            logger.warning("schedule %s skipped: disabled in db", schedule_id)
+            return {"ok": False, "skipped": True, "reason": "disabled"}
         try:
             report = build_report(
                 mode="scheduled",

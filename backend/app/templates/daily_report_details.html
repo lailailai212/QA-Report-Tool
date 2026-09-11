@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>日报详情 · {{ report.moduleName }}</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #fff;
+      --text: #171717;
+      --muted: #737373;
+      --line: #e5e5e5;
+      --accent: #171717;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --info: #3b82f6;
+      --dot-ok: #86d4a8;
+      --dot-warn: #f0c14b;
+      --dot-danger: #f0a0a0;
+      --fill: #f4f4f5;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: 28px 20px 56px;
+      font-family: ui-sans-serif, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    h2 { margin: 28px 0 12px; font-size: 16px; font-weight: 700; scroll-margin-top: 16px; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+    a { color: #1E5A96; text-decoration: none; }
+    a:hover { color: var(--info); text-decoration: underline; }
+    .back { display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 650; text-decoration: none; }
+    .back:hover { color: var(--info); }
+    .banner {
+      background: var(--fill);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      font-size: 13px;
+      margin: 0 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table.data th, table.data td {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.data th { background: var(--fill); font-weight: 650; }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data .muted { color: var(--muted); }
+    table.data tr.row-warn td { background: #fffbeb; }
+    table.data tr.row-danger td { background: #fef2f2; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; font-size: 13px; }
+    .status i { width: 8px; height: 8px; border-radius: 50%; background: #d4d4d4; display: inline-block; }
+    .status.ok i { background: var(--dot-ok); }
+    .status.warn i { background: var(--dot-warn); }
+    .status.danger i { background: var(--dot-danger); }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .status.danger { color: var(--danger); }
+    .risk-box { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  </style>
+</head>
+<body>
+{% set plan = report.plan or {} %}
+{% set bugs = (report.feishu.bugs if report.feishu else None) %}
+<div class="wrap">
+  <a class="back" href="/report">← 返回日报</a>
+  <h1>日报详情</h1>
+  <p class="sub">{{ report.subtitle or report.moduleName }} · 数据截止 {{ report.generatedAt }}</p>
+  <div class="banner">邮件只保留摘要。本页为完整计划线对照、Story 执行与 Bug 矩阵。</div>
+
+  <h2>风险等级判定（供参考）</h2>
+  <p class="hint">默认由计划线偏差与未关 P0/P1 自动判定；发信人可覆盖。相对计划看快慢，风险等级在此之上再叠加缺陷。</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>等级</th>
+        <th>含义</th>
+        <th>系统如何判定</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status ok"><i></i>正常</span></td>
+        <td>按测试计划推进，收口窗口未被压缩</td>
+        <td>各启用环节达到本日应到，且无未关 P0/P1</td>
+      </tr>
+      <tr>
+        <td><span class="status ok"><i></i>低风险</span></td>
+        <td>还看不清，不等于已经落后</td>
+        <td>计划线未维护完整（缺区间或门槛）</td>
+      </tr>
+      <tr class="row-warn">
+        <td><span class="status warn"><i></i>中风险</span></td>
+        <td>相对计划有偏差，收口窗口可能被压缩，需当日跟进</td>
+        <td>窗口内慢于本日应到，或存在未关 P0/P1</td>
+      </tr>
+      <tr class="row-danger">
+        <td><span class="status danger"><i></i>高风险</span></td>
+        <td>按当前节奏可能无法按期收口，需升级（裁范围 / 加资源 / 改计划）</td>
+        <td>窗口已到期或过窗仍未达标，或验收阶段仍有未关 P0/P1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="risks">1. 风险与应对</h2>
+  {% if report.riskRows %}
+  <table class="data">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>风险</th>
+        <th>应对措施</th>
+        <th>执行人</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in report.riskRows %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.risk or '—' }}</td>
+        <td>{{ r.action or '—' }}</td>
+        <td>{{ r.owner or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="hint">暂无风险申报。</p>
+  {% endif %}
+
+  <h2 id="plan">2. 测试计划线</h2>
+  <p class="hint">区间与状态门槛来自「编辑计划线」。本日应到按工作日线性插值；窗口结束日为硬门槛。</p>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>环节</th>
+        <th>区间</th>
+        <th>门槛</th>
+        <th>本日应到</th>
+        <th>实际</th>
+        <th>判定</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in plan.phases or [] %}
+      <tr class="{% if p.tone == 'danger' %}row-danger{% elif p.tone == 'warn' %}row-warn{% endif %}">
+        <td>{{ loop.index }}</td>
+        <td>{{ p.name }}{% if not p.enabled %} <span class="muted">（停用）</span>{% endif %}</td>
+        <td>{{ p.rangeLabel }}</td>
+        <td>{{ p.gateTypeLabel }}{% if p.gateStatus %} · {{ p.gateStatus }}{% endif %} · {{ p.targetPct }}%</td>
+        <td>{{ p.plannedLabel }}</td>
+        <td>{{ p.actualLabel }}</td>
+        <td><span class="status {{ p.tone }}"><i></i>{{ p.verdictLabel }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 id="exec">3. Story 执行明细</h2>
+  <table class="data">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Story</th>
+        <th style="white-space:nowrap;min-width:160px;">Status</th>
+        <th>Ready</th>
+        <th>计划提测</th>
+        <th>实际提测</th>
+        <th>Pass / Fail / Block / NoRun</th>
+        <th class="num">Exec Pass</th>
+        <th>vs 计划</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in report.rows %}
+      <tr class="{% if row.vsPlanTone == 'danger' %}row-danger{% elif row.vsPlanTone == 'warn' %}row-warn{% endif %}">
+        <td>{{ loop.index }}</td>
+        <td>{% if row.storyUrl %}<a href="{{ row.storyUrl }}" target="_blank" rel="noopener noreferrer">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
+        <td style="color:{{ row.storyStatusColor or '#737373' }};font-weight:600;white-space:nowrap;min-width:160px;">{{ row.storyStatus }}</td>
+        <td>{{ row.readyForTesting }}</td>
+        <td>{{ row.expectedReadyDate or '—' }}</td>
+        <td>{{ row.readyDate or '—' }}</td>
+        <td>{{ row.passed }} / {{ row.failed }} / {{ row.blocked }} / {{ row.noRun }}</td>
+        <td class="num">{{ row.executablePassRate or '—' }}</td>
+        <td><span class="status {{ row.vsPlanTone }}"><i></i>{{ row.vsPlan or '—' }}</span></td>
+        <td>{{ row.vsNote }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="muted">暂无 Story 行。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 id="bugs">4. Bug 明细</h2>
+  {% if bugs and bugs.statusColumns %}
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        {% for col in bugs.statusColumns %}<th class="num">{{ col }}</th>{% endfor %}
+        <th class="num">Total</th>
+        <th class="num">Fixed Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in bugs.matrixRows %}
+      <tr>
+        <td>{{ r.priority }}</td>
+        {% for col in bugs.statusColumns %}<td class="num">{{ r.counts[col] }}</td>{% endfor %}
+        <td class="num">{{ r.total }}</td>
+        <td class="num">{{ r.fixedRate }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if bugs.p0p1Rows %}
+  <p class="hint">未关 P0/P1</p>
+  <table class="data">
+    <thead>
+      <tr><th>#</th><th>Priority</th><th>Status</th><th>Summary</th></tr>
+    </thead>
+    <tbody>
+      {% for b in bugs.p0p1Rows %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ b.priority }}</td>
+        <td>{{ b.status }}</td>
+        <td>{% if b.url %}<a href="{{ b.url }}" target="_blank" rel="noopener noreferrer">{{ b.summary or b.name }}</a>{% else %}{{ b.summary or b.name }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% else %}
+  <p class="hint">{% if report.feishu and report.feishu.warning %}{{ report.feishu.warning }}{% else %}暂无 Bug 数据。{% endif %}</p>
+  {% endif %}
+</div>
+</body>
+</html>

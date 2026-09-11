@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>【草稿·待 Review】测试看板</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #1E4A7A;
+      --ok: #059669;
+      --warn: #D97706;
+      --danger: #DC2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: var(--accent); }
+    h2 { margin: 0 0 10px; font-size: 16px; color: var(--accent); }
+    .sub { color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+    .banner {
+      background: #FFF7ED; border: 1px solid #FDBA74; color: #9A3412;
+      padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; margin-bottom: 16px;
+    }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    select, button {
+      font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
+    }
+    button {
+      background: #2563eb; color: #fff; border: none; font-weight: 600; cursor: pointer;
+    }
+    button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    .meta { font-size: 12px; color: var(--muted); margin-left: auto; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 900px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+    .kpi {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px; box-shadow: 0 8px 24px rgba(15,23,42,.04);
+    }
+    .kpi .label { font-size: 12px; color: var(--muted); }
+    .kpi .value { font-size: 22px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .kpi .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.danger .value { color: var(--danger); }
+    .kpi.ok .value { color: var(--ok); }
+    .panel {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(15,23,42,.04);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #E8F0F8; color: var(--accent); font-weight: 600; }
+    .tag {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px; border: 1px solid #dbe3ee;
+      background: #f8fafc; color: var(--accent);
+    }
+    .tag.behind { background: #FEF3C7; border-color: #FCD34D; color: #92400E; }
+    .tag.open { background: #FEE2E2; border-color: #FECACA; color: #991B1B; }
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 800px) { .timeline { grid-template-columns: 1fr 1fr; } }
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #f8fafc;
+      position: relative;
+    }
+    .node.ok { background: #ECFDF5; border-color: #A7F3D0; }
+    .node.warn { background: #FFFBEB; border-color: #FCD34D; }
+    .node .phase { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .node .range { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .node .status { font-size: 12px; margin-top: 6px; }
+    .accordion-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      width: 100%; text-align: left; background: #E8F0F8; color: var(--accent);
+      border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      font-weight: 700; cursor: pointer;
+    }
+    .accordion-head:hover { background: #dbeafe; }
+    .accordion-head .chevron { transition: transform .15s; font-size: 12px; }
+    .accordion-head[aria-expanded="true"] .chevron { transform: rotate(90deg); }
+    .accordion-body {
+      display: none; margin-top: 10px;
+    }
+    .accordion-body.open { display: block; }
+    .bar {
+      height: 10px; background: #e5eef7; border-radius: 999px; overflow: hidden; margin-top: 6px;
+      display: flex;
+    }
+    .bar > span { display: block; height: 100%; background: #1E5A96; flex: 0 0 auto; }
+    .bar.stack { height: 12px; }
+    .bar .seg-pass { background: #059669; }
+    .bar .seg-fail { background: #DC2626; }
+    .bar .seg-block { background: #7C3AED; }
+    .bar .seg-norun { background: #CBD5E1; }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 10px 14px;
+      margin-top: 8px; font-size: 12px; color: var(--muted);
+    }
+    .legend i {
+      display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+      margin-right: 4px; vertical-align: -1px;
+    }
+    .muted { color: var(--muted); font-size: 12px; }
+    a { color: #1E5A96; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>测试看板</h1>
+    <p class="sub">随时访问的进度与风险总览（示例数据）。与「测试日报」分工：看板看现状，日报做当日节点分析与风险申报。</p>
+
+      <div class="banner">
+      <b>【草稿·待 Review】</b>建议入口 <code>/dashboard</code>。本页模拟「打开即看」的 Web 看板，不发邮件。<br/>
+      必含四块：①测试执行计划（用例设计 / 评审 / 执行排期）②当前测试执行进度 ③Bug 修复进度 ④测试风险点。<br/>
+      总览说明见 <a href="./test_board_vs_daily_overview.html">test_board_vs_daily_overview.html</a>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label>Sprint</label>
+        <select>
+          <option>OBIS-20260811-20260822</option>
+        </select>
+      </div>
+      <button type="button">刷新数据</button>
+      <button type="button" class="secondary">维护风险</button>
+      <button type="button" class="secondary">冻结/查看计划基线</button>
+      <div class="meta">数据更新：2026-08-14 17:05 · 飞书快照 16:20 · MS 实时</div>
+    </div>
+
+    <!-- KPI -->
+    <div class="cards">
+      <div class="kpi warn">
+        <div class="label">相对计划</div>
+        <div class="value">Behind</div>
+        <div class="hint">落后约 2 天 · Ready 8/12（应到）</div>
+      </div>
+      <div class="kpi">
+        <div class="label">测试执行</div>
+        <div class="value">91.2%</div>
+        <div class="hint">Exec Pass · 420/460</div>
+      </div>
+      <div class="kpi danger">
+        <div class="label">未关 P0 / P1</div>
+        <div class="value">0 / 1</div>
+        <div class="hint">未关 Bug 24 · Fixed 81%</div>
+      </div>
+      <div class="kpi warn">
+        <div class="label">Open 风险</div>
+        <div class="value">3</div>
+        <div class="hint">含 1 条需管理层确认</div>
+      </div>
+    </div>
+
+    <!-- 1. 测试执行计划 -->
+    <div class="panel">
+      <h2>1. 测试执行计划</h2>
+      <p class="muted" style="margin-top:-4px;margin-bottom:12px;">
+        分两层：① Sprint 级测试计划时间节点（用例设计 → 用例评审 → 用例执行 → 验收）；
+        ② 各 Story 计划明细（默认收起，点击展开）。
+      </p>
+
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;">1.1 测试计划时间节点</div>
+      <div class="timeline">
+        <div class="node ok">
+          <div class="phase">① 用例设计</div>
+          <div class="range">08-06 ~ 08-12</div>
+          <div class="status">已完成 452 / 计划 480（94%）</div>
+          <div class="bar"><span style="width:94%;background:#059669;"></span></div>
+        </div>
+        <div class="node warn">
+          <div class="phase">② 用例评审</div>
+          <div class="range">08-09 ~ 08-13</div>
+          <div class="status">已通过 16 / 18 Story · 2 待评</div>
+          <div class="bar"><span style="width:89%;background:#D97706;"></span></div>
+        </div>
+        <div class="node warn">
+          <div class="phase">③ 用例执行排期</div>
+          <div class="range">08-11 ~ 08-20</div>
+          <div class="status">窗口进行中 · 相对排期 Behind</div>
+          <div class="bar"><span style="width:55%;background:#D97706;"></span></div>
+        </div>
+        <div class="node">
+          <div class="phase">④ 验收</div>
+          <div class="range">08-18 ~ 08-22</div>
+          <div class="status">未开始 · 目标结项 08-22</div>
+          <div class="bar"><span style="width:8%;"></span></div>
+        </div>
+      </div>
+      <p class="muted" style="margin:0 0 14px;">
+        节点含义：设计=用例编写窗口；评审=用例评审通过节奏；执行=按排期开测/收测；验收=Story 待验收→已验收收口。
+        日期为 Sprint 级计划窗口（可人工维护）。
+      </p>
+
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;">1.2 Story 计划明细</div>
+      <button type="button" class="accordion-head" id="btnStoryPlan" aria-expanded="false" aria-controls="storyPlanBody">
+        <span>查看各 Story 计划明细（默认收起）· 共 18 条，下方示例 4 条</span>
+        <span><span class="muted" style="font-weight:500;margin-right:8px;">点击展开 / 收起</span><span class="chevron">▶</span></span>
+      </button>
+      <div class="accordion-body" id="storyPlanBody">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th>Story / 范围</th>
+              <th>用例设计<br/><span class="muted" style="font-weight:500;">计划数 / 已完成</span></th>
+              <th>测试评审日期</th>
+              <th>评审结论</th>
+              <th>执行排期<br/><span class="muted" style="font-weight:500;">开始 ~ 结束</span></th>
+              <th>排期状态</th>
+              <th>Owner(QC)</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>PKI-Cert-S40 Validation Services</td>
+              <td>45 / 45</td>
+              <td>08-11</td>
+              <td>通过</td>
+              <td>08-12 ~ 08-15</td>
+              <td><span class="tag behind">执行中·偏慢</span></td>
+              <td>张蒙</td>
+              <td>核心路径</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>【体验优化P2】Product（Batch）</td>
+              <td>40 / 28</td>
+              <td>08-13</td>
+              <td>待评审</td>
+              <td>08-14 ~ 08-16</td>
+              <td><span class="tag behind">设计未完成</span></td>
+              <td>李向丹</td>
+              <td>用例设计落后，影响开测</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>[SEMS] E1-S06 使用情况 Tab</td>
+              <td>53 / 53</td>
+              <td>08-10</td>
+              <td>通过</td>
+              <td>08-11 ~ 08-14</td>
+              <td><span class="tag">按排期</span></td>
+              <td>魏来</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>【自注册】002-01 Demo 数据预设</td>
+              <td>28 / 28</td>
+              <td>08-09</td>
+              <td>通过</td>
+              <td>08-10 ~ 08-13</td>
+              <td><span class="tag" style="background:#D1FAE5;border-color:#A7F3D0;color:#065F46;">已完成</span></td>
+              <td>张瑞瑞</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="9" class="muted">
+                数据来源草案：用例设计数可来自 MS；评审日期 / 执行排期 / 验收窗口 v1 人工维护或导入。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. 当前测试执行进度 -->
+    <div class="panel">
+      <h2>2. 当前测试执行进度</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <div class="muted">Ready 进度（相对计划本日应到 12）</div>
+          <div style="font-weight:700;margin-top:4px;">8 / 18 已 Ready　<span class="tag behind">应到 12 · 落后 4</span></div>
+          <div class="bar"><span style="width:44%;"></span></div>
+        </div>
+        <div>
+          <div class="muted">用例执行 Progress</div>
+          <div style="font-weight:700;margin-top:4px;">Pass 420 · Fail 7 · Block 5 · NoRun 48（合计 480）</div>
+          <!-- 比例：420/480=87.5%, 7/480≈1.5%, 5/480≈1.0%, 48/480=10% -->
+          <div class="bar stack" title="Pass 87.5% · Fail 1.5% · Blocked 1.0% · NoRun 10%">
+            <span class="seg-pass" style="width:87.5%;"></span>
+            <span class="seg-fail" style="width:1.5%;"></span>
+            <span class="seg-block" style="width:1%;"></span>
+            <span class="seg-norun" style="width:10%;"></span>
+          </div>
+          <div class="legend">
+            <span><i style="background:#059669;"></i>Pass 420</span>
+            <span><i style="background:#DC2626;"></i>Fail 7</span>
+            <span><i style="background:#7C3AED;"></i>Blocked 5</span>
+            <span><i style="background:#CBD5E1;"></i>NoRun 48</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="accordion-head" id="btnExecDetail" aria-expanded="false" aria-controls="execDetailBody">
+        <span>查看 Story 执行明细（默认收起）· 异常优先，示例 4 条</span>
+        <span><span class="muted" style="font-weight:500;margin-right:8px;">点击展开 / 收起</span><span class="chevron">▶</span></span>
+      </button>
+      <div class="accordion-body" id="execDetailBody">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Story</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Exec Pass</th>
+            <th>vs 计划</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#FEF3C7;">
+            <td>1</td>
+            <td><a href="#">PKI-Cert-S40…</a></td>
+            <td>测试中</td>
+            <td>32/5/0/8</td>
+            <td>80%</td>
+            <td><span class="tag behind">Ready Delay</span></td>
+            <td>计划 08-12 Ready</td>
+          </tr>
+          <tr style="background:#FEF3C7;">
+            <td>2</td>
+            <td><a href="#">Product（Batch）</a></td>
+            <td>待测试</td>
+            <td>0/0/0/40</td>
+            <td>—</td>
+            <td><span class="tag behind">Behind</span></td>
+            <td>今日提测</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><a href="#">SEMS E1-S06</a></td>
+            <td>测试中</td>
+            <td>50/2/1/0</td>
+            <td>96%</td>
+            <td><span class="tag">On track</span></td>
+            <td>Block×1=环境，非交付阻塞</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><a href="#">自注册 002-01</a></td>
+            <td>待验收</td>
+            <td>28/0/0/0</td>
+            <td>100%</td>
+            <td><span class="tag" style="background:#D1FAE5;border-color:#A7F3D0;color:#065F46;">Ahead</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin:8px 0 0;">看板可保留较完整明细；邮件日报只摘异常行 + Total。</p>
+      </div>
+    </div>
+
+    <!-- 3. Bug 修复进度 -->
+    <div class="panel">
+      <h2>3. Bug 修复进度</h2>
+      <div class="cards" style="margin-bottom:12px;">
+        <div class="kpi"><div class="label">Bug 总计</div><div class="value">128</div></div>
+        <div class="kpi"><div class="label">未关闭</div><div class="value">24</div></div>
+        <div class="kpi ok"><div class="label">Fixed Rate</div><div class="value">81%</div></div>
+        <div class="kpi danger"><div class="label">未关 P0/P1</div><div class="value">0/1</div></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Summary</th>
+            <th>Dev Owner</th>
+            <th>停留</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--danger);font-weight:700;">P1</td>
+            <td>Fixing</td>
+            <td><a href="#">【GPCA】证书重名提示位置错误</a></td>
+            <td>邱建益</td>
+            <td>2 天</td>
+          </tr>
+          <tr>
+            <td colspan="5" class="muted">P2/P3 未关列表可分页；完整 Priority×Status 矩阵仅看板展示，不进日报邮件。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 4. 测试风险点 -->
+    <div class="panel">
+      <h2>4. 测试风险点</h2>
+      <p class="muted" style="margin-top:-4px;margin-bottom:10px;">
+        与日报共用风险库。看板展示全量 Open；日报做「当日申报」（新增/仍在/关闭）。
+        <b>MS Blocked 不自动进本表</b>。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>类型</th>
+            <th>描述</th>
+            <th>影响</th>
+            <th>Owner</th>
+            <th>需要动作</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>范围/工时</td>
+            <td>协作烧录客户端性能测试</td>
+            <td>挤占 QC 约 1 人日</td>
+            <td><b>海洋 / 张三</b></td>
+            <td>确认是否纳入本 Sprint</td>
+            <td><span class="tag open">Open</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>提测延迟</td>
+            <td>PKI S40 晚于计划 Ready 2 天</td>
+            <td>压缩回归窗口</td>
+            <td><b>王辉</b></td>
+            <td>今日提测；QC 冒烟优先</td>
+            <td><span class="tag behind">Mitigating</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>缺陷</td>
+            <td>未关 P1 阻塞验收</td>
+            <td>对应 Story 无法验收</td>
+            <td><b>邱建益</b></td>
+            <td>今日修复并提验</td>
+            <td><span class="tag open">Open</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Review 点</h2>
+      <div class="muted">
+        □ 时间节点四段（设计 / 评审 / 执行 / 验收）是否合适？要不要合并或增加「冒烟」？<br/>
+        □ Story 明细默认收起是否符合预期？要不要支持「仅展开 Behind」？<br/>
+        □ 计划基线在看板维护是否合适？<br/>
+        □ 风险是否只在看板维护、日报只读申报视图？
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      function bindToggle(btnId, bodyId) {
+        var btn = document.getElementById(btnId);
+        var body = document.getElementById(bodyId);
+        if (!btn || !body) return;
+        btn.addEventListener("click", function () {
+          var open = body.classList.toggle("open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
+      bindToggle("btnStoryPlan", "storyPlanBody");
+      bindToggle("btnExecDetail", "execDetailBody");
+    })();
+  </script>
+</body>
+</html>

@@ -30,16 +30,24 @@ STORY_MQL = (
     "SELECT `Item Id`, `Summary`, `Status`, status_time('待测试'), "
     "get_node_attribute('开发','__排期_结束时间') "
     f"FROM `{SPACE_NAME}`.`User Story` "
-    "WHERE `Sprint` = '{sprint}'"
+    "WHERE array_contains(`Sprint`, '{sprint}')"
 )
 BUG_MQL = (
     "SELECT `Item Id`, `Summary`, `Status`, `Priority` "
     f"FROM `{SPACE_NAME}`.`Bug` "
-    "WHERE `Sprint` = '{sprint}'"
+    "WHERE array_contains(`Sprint`, '{sprint}')"
 )
 
 SNAPSHOT_RULES = {
-    "readyYesStatuses": ["待测试", "测试中", "待验收"],
+    "readyYesStatuses": [
+        "待测试",
+        "测试中",
+        "待验收",
+        "已验收",
+        "待闭环",
+        "已完成",
+        "已关闭",
+    ],
     "readyDateFrom": "status_enter_待测试",
     "expectedReadyDateFrom": "开发节点排期结束日_max",
     "delayComment": "提测Delay",

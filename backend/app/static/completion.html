@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint QA 结项总汇报</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .page-head .titles { flex: 1; min-width: 240px; }
+    .sub { color: var(--muted); margin-bottom: 0; line-height: 1.5; }
+    .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .help-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .help-link.nav-home { color: var(--text); font-weight: 500; }
+    .help-link:hover { background: #eff6ff; border-color: #93c5fd; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      margin-bottom: 16px;
+    }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .preview-head h2 { margin: 0; font-size: 16px; }
+    .preview-title-row { display: flex; align-items: center; gap: 8px; }
+    .preview-meta { font-size: 13px; color: var(--muted); }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .toolbar .field { flex: 1; min-width: 220px; }
+    .toolbar .field-with-action {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      flex: 1;
+      min-width: 220px;
+    }
+    .toolbar .field-with-action .field { flex: 1; min-width: 0; }
+    .toolbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    .toolbar label { margin-top: 0; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font: inherit;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    button.secondary { background: #e5e7eb; color: #111; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      padding: 2px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #e5e7eb; }
+    .icon-btn img { width: 22px; height: 22px; display: block; object-fit: contain; }
+    .preview {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 520px;
+      overflow: auto;
+      background: #fff;
+    }
+    .preview-placeholder {
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+    .env-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      min-height: 44px;
+    }
+    .env-picker .env-chip {
+      appearance: none;
+      border: 1px solid #9BB7D4;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #F8FAFC;
+      color: #64748B;
+      cursor: pointer;
+    }
+    .env-picker .env-chip.selected {
+      background: #E8F0F8;
+      color: #1E4A7A;
+      border-color: #1E4A7A;
+      box-shadow: inset 0 0 0 1px #1E4A7A;
+    }
+    table.edit {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    table.edit th, table.edit td {
+      border: 1px solid var(--line);
+      padding: 6px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    table.edit th { background: #eff6ff; color: #1e3a8a; font-weight: 600; }
+    table.edit input, table.edit select { width: 100%; padding: 4px 6px; font-size: 12px; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(640px, 100%);
+      max-height: min(88vh, 900px);
+      overflow: auto;
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+      padding: 18px;
+    }
+    .modal.wide { width: min(920px, 100%); }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .modal-head h2 { margin: 0; font-size: 17px; }
+    .modal-close { background: #e5e7eb; color: #111; padding: 6px 10px; }
+    .lock-hint {
+      display: none;
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+      font-size: 13px;
+    }
+    .lock-hint.show { display: block; }
+    .result-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .result-options label {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .result-options input { width: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-head">
+      <div class="titles">
+        <h1>Sprint QA 结项总汇报</h1>
+        <div class="sub">
+          针对整个 Sprint 的测试完成情况总汇报。支持预览与手动发信；不接定时任务。
+          Overall Result / Exit Criteria / Owner / Window 等结项字段按 Sprint 保存。
+        </div>
+      </div>
+      <div class="page-head-actions">
+        <a class="help-link nav-home" href="/">← Home</a>
+        <a class="help-link" href="/report">日报</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="preview-head">
+        <div class="preview-title-row">
+          <h2>结项维护</h2>
+          <button id="btnOpenCompletion" type="button" class="secondary">编辑结项字段</button>
+          <button id="btnOpenMeta" type="button" class="secondary">编辑 ENV / Risk</button>
+        </div>
+        <div id="overrideMeta" class="preview-meta">未加载</div>
+      </div>
+      <div class="hint">
+        Overall Result 默认按 Exit Criteria 自动建议（ExecPass≥阈值 且 未关闭 P0/P1≤阈值 → 再结合遗留 Bug/Risk 判定 Pass / Pass with Risk / Fail），也可人工选择覆盖。
+        Reopen 请在日报页维护。
+      </div>
+      <div id="completionSummary" class="hint" style="margin-top:10px;color:#1E4A7A;font-weight:600;"></div>
+      <div id="overrideMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="preview-head">
+        <div class="preview-title-row">
+          <h2>结项预览</h2>
+          <button id="btnFeishuSnapshot" class="icon-btn" type="button" aria-label="飞书快照" title="飞书快照">
+            <img src="/static/img/feishu-logo.png" alt="" width="22" height="22" />
+          </button>
+        </div>
+        <div id="previewMeta" class="preview-meta">准备加载…</div>
+      </div>
+      <div class="toolbar">
+        <div class="field-with-action">
+          <div class="field">
+            <label>Module</label>
+            <select id="moduleSelect"></select>
+          </div>
+          <button id="btnRefreshModules" class="icon-btn" type="button" title="刷新 Module 列表" aria-label="刷新 Module">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+              <path d="M21 3v6h-6" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="actions">
+          <button id="btnPreview" class="secondary">刷新预览</button>
+          <button id="btnOpenSend">手动发送</button>
+          <button id="btnOpenRecipients" class="secondary">收件人</button>
+        </div>
+      </div>
+      <div id="previewMsg" class="msg" style="margin-top:0;margin-bottom:8px;"></div>
+      <div id="preview" class="preview">
+        <div class="preview-placeholder">正在加载模块…</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="completionModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal wide">
+      <div class="modal-head">
+        <h2>编辑结项字段</h2>
+        <button type="button" class="modal-close" data-close="completionModal">关闭</button>
+      </div>
+      <div id="completionLockHint" class="lock-hint" role="status"></div>
+      <div class="hint">打开弹窗会拉最新维护数据。保存只写结项字段，不影响 Ready / Reopen。</div>
+
+      <label>Overall Result</label>
+      <div class="result-options" id="overallResultOptions">
+        <label><input type="radio" name="overallResult" value="" checked />自动建议</label>
+        <label><input type="radio" name="overallResult" value="Pass" />Pass</label>
+        <label><input type="radio" name="overallResult" value="Pass with Risk" />Pass with Risk</label>
+        <label><input type="radio" name="overallResult" value="Fail" />Fail</label>
+      </div>
+      <div id="overallSuggestedHint" class="hint"></div>
+
+      <div class="grid-2">
+        <div>
+          <label>Exit Criteria · Executable Pass Rate ≥ (%)</label>
+          <input id="execPassMin" type="number" min="0" max="100" value="95" />
+        </div>
+        <div>
+          <label>Exit Criteria · 未关闭 P0/P1 ≤</label>
+          <input id="p0p1OpenMax" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label>Test Owner</label>
+          <input id="testOwner" placeholder="测试负责人" />
+        </div>
+        <div>
+          <label>Test Window 开始</label>
+          <input id="testWindowStart" type="date" />
+        </div>
+        <div>
+          <label>Test Window 结束</label>
+          <input id="testWindowEnd" type="date" />
+        </div>
+      </div>
+
+      <label>Conclusion（一句话，可留空用自动生成）</label>
+      <textarea id="summaryOneLiner" rows="3" placeholder="留空则预览时按指标自动生成"></textarea>
+
+      <label>Deferred Items</label>
+      <textarea id="deferredItems" rows="3" placeholder="延期/不测项"></textarea>
+
+      <label>Recommendations</label>
+      <textarea id="recommendations" rows="3" placeholder="上线建议 / 回归建议"></textarea>
+
+      <div class="section-title" style="margin-top:14px;font-size:14px;font-weight:600;">Sign-off</div>
+      <div style="overflow:auto;">
+        <table class="edit">
+          <thead>
+            <tr>
+              <th style="width:120px;">Role</th>
+              <th>Name</th>
+              <th style="width:140px;">Result</th>
+              <th style="width:140px;">Date</th>
+            </tr>
+          </thead>
+          <tbody id="signOffBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title" style="margin-top:14px;font-size:14px;font-weight:600;">Open Bugs · Impact / Mitigation</div>
+      <div class="hint">需先刷新预览以加载未关闭 Bug；备注按 Bug Id 保存。</div>
+      <div style="overflow:auto;max-height:280px;">
+        <table class="edit">
+          <thead>
+            <tr>
+              <th style="width:60px;">Pri</th>
+              <th style="width:90px;">Status</th>
+              <th>Summary</th>
+              <th style="width:220px;">Impact / Mitigation</th>
+            </tr>
+          </thead>
+          <tbody id="openBugNotesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="row">
+        <button type="button" id="btnSaveCompletion">保存结项字段</button>
+      </div>
+      <div id="completionMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="metaModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Test ENV / Risk</h2>
+        <button type="button" class="modal-close" data-close="metaModal">关闭</button>
+      </div>
+      <div id="metaLockHint" class="lock-hint" role="status"></div>
+      <div class="hint">与日报共用同一 Sprint 维护数据。</div>
+      <label>Test ENV（多选）</label>
+      <div id="testEnvPicker" class="env-picker" role="group" aria-label="Test ENV"></div>
+      <label>Risk / Block</label>
+      <textarea id="riskBlock" rows="4" placeholder="结项时仍未关闭的风险"></textarea>
+      <div class="row">
+        <button type="button" id="btnSaveMeta">保存 ENV/Risk</button>
+      </div>
+      <div id="metaMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="sendModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>手动发送结项报告</h2>
+        <button type="button" class="modal-close" data-close="sendModal">关闭</button>
+      </div>
+      <div class="hint">发信前会再拉取维护数据与 MS / 飞书快照生成结项报告。</div>
+      <label>To（逗号分隔）</label>
+      <textarea id="toEmails" rows="2"></textarea>
+      <label>CC（逗号分隔）</label>
+      <textarea id="ccEmails" rows="2"></textarea>
+      <label>Subject</label>
+      <input id="subject" placeholder="默认自动生成" />
+      <div class="row">
+        <button id="btnSend">确认发送</button>
+      </div>
+      <div id="manualMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="recipientsModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>收件人设置</h2>
+        <button type="button" class="modal-close" data-close="recipientsModal">关闭</button>
+      </div>
+      <div class="hint">本机 localStorage，与日报共用。</div>
+      <label>默认 To</label>
+      <textarea id="rcpTo" rows="3"></textarea>
+      <label>默认 CC</label>
+      <textarea id="rcpCc" rows="3"></textarea>
+      <div class="row">
+        <button id="btnSaveRecipients">保存</button>
+      </div>
+      <div id="rcpMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="feishuRefreshModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>飞书快照</h2>
+        <button type="button" class="modal-close" data-close="feishuRefreshModal">关闭</button>
+      </div>
+      <div class="hint">MCP 有限流，勿连续点击。</div>
+      <label>当前 Sprint</label>
+      <input id="feishuSprint" readonly />
+      <div id="feishuStatus" class="hint" style="margin-top:10px;">加载状态…</div>
+      <div class="row">
+        <button id="btnFeishuRefresh" type="button">刷新飞书快照</button>
+      </div>
+      <div id="feishuMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const RECIPIENTS_KEY = "qa-report-tool.recipients.v1";
+    const EDITOR_KEY = "qa-report-tool.editorName.v1";
+    const BUILTIN_RECIPIENTS = {
+      to: ["future.wei@snowballtech.com"],
+      cc: ["qian.xie@snowballtech.com", "yanren.chen@snowballtech.com"],
+    };
+    const TEST_ENV_OPTIONS = ["SIT", "UAT1", "UAT2", "PRE1", "PRE2", "PROD"];
+    const DEFAULT_SIGN_OFF = [
+      { role: "QA Owner", name: "", result: "", date: "" },
+      { role: "Dev Owner", name: "", result: "", date: "" },
+      { role: "PM", name: "", result: "", date: "" },
+    ];
+
+    let modules = [];
+    let lastOverride = null;
+    let lastReport = null;
+    let previewSeq = 0;
+    const locks = { meta: null, completion: null };
+    const heartbeats = { meta: null, completion: null };
+
+    function parseEmails(text) {
+      return String(text || "")
+        .split(/[,;\n，；]+/)
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+    function joinEmails(list) { return (list || []).join(", "); }
+    function setMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok ? "ok" : "err");
+    }
+    function loadRecipients() {
+      try {
+        const raw = localStorage.getItem(RECIPIENTS_KEY);
+        if (!raw) return { ...BUILTIN_RECIPIENTS };
+        const data = JSON.parse(raw);
+        return {
+          to: Array.isArray(data.to) ? data.to : BUILTIN_RECIPIENTS.to,
+          cc: Array.isArray(data.cc) ? data.cc : BUILTIN_RECIPIENTS.cc,
+        };
+      } catch (_) {
+        return { ...BUILTIN_RECIPIENTS };
+      }
+    }
+    function saveRecipients(to, cc) {
+      localStorage.setItem(RECIPIENTS_KEY, JSON.stringify({ to, cc }));
+    }
+    function openModal(id) { $(id).classList.add("open"); }
+    function closeModal(id) { $(id).classList.remove("open"); }
+    function ensureEditorName() {
+      let name = "";
+      try { name = (localStorage.getItem(EDITOR_KEY) || "").trim(); } catch (_) {}
+      if (!name) {
+        name = prompt("请输入你的名字（用于编辑锁提示）", "") || "anonymous";
+        try { localStorage.setItem(EDITOR_KEY, name); } catch (_) {}
+      }
+      return name;
+    }
+    function currentRev() {
+      const rev = (lastOverride && lastOverride.rev) || {};
+      return {
+        meta: Number(rev.meta || 0),
+        completion: Number(rev.completion || 0),
+      };
+    }
+    function setLockHint(section, text) {
+      const el = $(section === "meta" ? "metaLockHint" : "completionLockHint");
+      if (!text) {
+        el.textContent = "";
+        el.classList.remove("show");
+        return;
+      }
+      el.textContent = text;
+      el.classList.add("show");
+    }
+    function stopLockHeartbeat(section) {
+      if (heartbeats[section]) {
+        clearInterval(heartbeats[section]);
+        heartbeats[section] = null;
+      }
+    }
+    async function releaseSectionLock(section) {
+      stopLockHeartbeat(section);
+      const token = locks[section] && locks[section].token;
+      locks[section] = null;
+      if (!token) return;
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      try {
+        await fetch(`/api/overrides/${encodeURIComponent(m.name)}/locks/release`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section, token, editor: ensureEditorName() }),
+        });
+      } catch (_) {}
+    }
+    async function acquireSectionLock(section) {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return false;
+      const editor = ensureEditorName();
+      const res = await fetch(`/api/overrides/${encodeURIComponent(m.name)}/locks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, editor, token: locks[section] && locks[section].token }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLockHint(section, data.detail || "无法获取编辑锁");
+        return false;
+      }
+      if (data.lock && data.lock.token) {
+        locks[section] = data.lock;
+        setLockHint(section, "");
+        stopLockHeartbeat(section);
+        heartbeats[section] = setInterval(() => heartbeatSectionLock(section), 20000);
+        return true;
+      }
+      if (data.holder) {
+        setLockHint(section, `${data.holder.editor || "他人"} 正在编辑此区块`);
+      }
+      return false;
+    }
+    async function heartbeatSectionLock(section) {
+      const token = locks[section] && locks[section].token;
+      const m = selectedModule($("moduleSelect"));
+      if (!token || !m) return;
+      try {
+        await fetch(`/api/overrides/${encodeURIComponent(m.name)}/locks/heartbeat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section, token }),
+        });
+      } catch (_) {}
+    }
+    function formatApiDetail(detail) {
+      if (typeof detail === "string") return detail;
+      if (detail && detail.message) return detail.message;
+      return JSON.stringify(detail);
+    }
+    async function putOverride(sprint, body) {
+      const res = await fetch(`/api/overrides/${encodeURIComponent(sprint)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const err = new Error(formatApiDetail(data.detail || data));
+        err.status = res.status;
+        err.detail = data.detail;
+        throw err;
+      }
+      return data;
+    }
+    function selectedModule(selectEl) {
+      const id = selectEl.value;
+      return modules.find((m) => m.id === id) || null;
+    }
+    function moduleRecencyKey(name) {
+      const m = String(name || "").match(/(\d{8}).*?(\d{8})/);
+      if (!m) return 0;
+      return Number(m[2] || m[1] || 0);
+    }
+    function pickLatestModule(list) {
+      if (!list.length) return null;
+      return [...list].sort((a, b) => moduleRecencyKey(b.name) - moduleRecencyKey(a.name))[0];
+    }
+    function fillModuleSelects(preferredId) {
+      const sel = $("moduleSelect");
+      sel.innerHTML = modules.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+      const preferred = preferredId && modules.some((m) => m.id === preferredId)
+        ? preferredId
+        : (pickLatestModule(modules) || {}).id;
+      if (preferred) sel.value = preferred;
+    }
+    function setPreviewPlaceholder(text) {
+      $("preview").innerHTML = `<div class="preview-placeholder">${text}</div>`;
+    }
+    function parseTestEnvTags(text) {
+      const parts = String(text || "").split(/[,，、;/|\s]+/).map((x) => x.trim()).filter(Boolean);
+      const known = new Set(TEST_ENV_OPTIONS.map((x) => x.toUpperCase()));
+      const found = new Set();
+      const unknowns = [];
+      for (const p of parts) {
+        const up = p.toUpperCase();
+        if (known.has(up)) found.add(TEST_ENV_OPTIONS.find((x) => x.toUpperCase() === up));
+        else if (!unknowns.includes(p)) unknowns.push(p);
+      }
+      return TEST_ENV_OPTIONS.filter((o) => found.has(o)).concat(unknowns);
+    }
+    function formatTestEnv(tags) { return (tags || []).join(", "); }
+    function selectedTestEnvTags() {
+      return [...document.querySelectorAll("#testEnvPicker .env-chip.selected")].map((x) => x.dataset.env);
+    }
+    function renderTestEnvPicker(selected) {
+      const set = new Set(parseTestEnvTags((selected || []).join(", ")));
+      $("testEnvPicker").innerHTML = TEST_ENV_OPTIONS.map((opt) => {
+        const sel = set.has(opt) ? " selected" : "";
+        return `<button type="button" class="env-chip${sel}" data-env="${opt}">${opt}</button>`;
+      }).join("");
+    }
+    function emptyCompletion() {
+      return {
+        overallResult: "",
+        testOwner: "",
+        testWindowStart: "",
+        testWindowEnd: "",
+        exitCriteria: { execPassMin: 95, p0p1OpenMax: 0 },
+        summaryOneLiner: "",
+        deferredItems: "",
+        recommendations: "",
+        signOff: DEFAULT_SIGN_OFF.map((x) => ({ ...x })),
+        openBugNotes: {},
+      };
+    }
+    function fillCompletionForm(comp) {
+      const c = Object.assign(emptyCompletion(), comp || {});
+      const criteria = c.exitCriteria || {};
+      const overall = c.overallResult || "";
+      document.querySelectorAll('input[name="overallResult"]').forEach((el) => {
+        el.checked = el.value === overall;
+      });
+      if (!overall) {
+        document.querySelector('input[name="overallResult"][value=""]').checked = true;
+      }
+      $("execPassMin").value = criteria.execPassMin ?? 95;
+      $("p0p1OpenMax").value = criteria.p0p1OpenMax ?? 0;
+      $("testOwner").value = c.testOwner || "";
+      $("testWindowStart").value = c.testWindowStart || "";
+      $("testWindowEnd").value = c.testWindowEnd || "";
+      $("summaryOneLiner").value = c.summaryOneLiner || "";
+      $("deferredItems").value = c.deferredItems || "";
+      $("recommendations").value = c.recommendations || "";
+      renderSignOff(c.signOff);
+      renderOpenBugNotes(c.openBugNotes || {});
+      updateCompletionSummary(c);
+    }
+    function updateCompletionSummary(c) {
+      const overall = c.overallResult || "自动建议";
+      const owner = c.testOwner || "—";
+      const win = (c.testWindowStart || c.testWindowEnd)
+        ? `${c.testWindowStart || "?"} ~ ${c.testWindowEnd || "?"}`
+        : "—";
+      const ec = c.exitCriteria || {};
+      $("completionSummary").textContent =
+        `Overall: ${overall} · Owner: ${owner} · Window: ${win} · Criteria: ExecPass≥${ec.execPassMin ?? 95}%, P0/P1≤${ec.p0p1OpenMax ?? 0}`;
+    }
+    function renderSignOff(rows) {
+      const list = (rows && rows.length) ? rows : DEFAULT_SIGN_OFF;
+      $("signOffBody").innerHTML = list.map((r, i) => `
+        <tr data-idx="${i}">
+          <td><input class="so-role" value="${escapeAttr(r.role || "")}" /></td>
+          <td><input class="so-name" value="${escapeAttr(r.name || "")}" /></td>
+          <td><input class="so-result" value="${escapeAttr(r.result || "")}" /></td>
+          <td><input class="so-date" type="date" value="${escapeAttr(r.date || "")}" /></td>
+        </tr>
+      `).join("");
+    }
+    function escapeAttr(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+    function renderOpenBugNotes(notes) {
+      const openBugs = (lastReport && lastReport.openBugs) || [];
+      if (!openBugs.length) {
+        $("openBugNotesBody").innerHTML =
+          `<tr><td colspan="4" style="color:#64748B;text-align:center;">暂无未关闭 Bug（请先刷新预览）</td></tr>`;
+        return;
+      }
+      $("openBugNotesBody").innerHTML = openBugs.map((b) => {
+        const key = b.id || b.summary || "";
+        const note = notes[key] || notes[b.summary] || b.impact || "";
+        return `
+          <tr data-bug-id="${escapeAttr(b.id || "")}" data-summary="${escapeAttr(b.summary || "")}">
+            <td>${escapeAttr(b.priority || "")}</td>
+            <td>${escapeAttr(b.status || "")}</td>
+            <td>${escapeAttr(b.summary || "")}</td>
+            <td><input class="bug-note" value="${escapeAttr(note)}" /></td>
+          </tr>
+        `;
+      }).join("");
+    }
+    function collectCompletion() {
+      const overallEl = document.querySelector('input[name="overallResult"]:checked');
+      const signOff = [...$("signOffBody").querySelectorAll("tr")].map((tr) => ({
+        role: tr.querySelector(".so-role").value.trim(),
+        name: tr.querySelector(".so-name").value.trim(),
+        result: tr.querySelector(".so-result").value.trim(),
+        date: tr.querySelector(".so-date").value.trim(),
+      })).filter((r) => r.role);
+      const openBugNotes = {};
+      [...$("openBugNotesBody").querySelectorAll("tr[data-bug-id], tr[data-summary]")].forEach((tr) => {
+        const note = (tr.querySelector(".bug-note") && tr.querySelector(".bug-note").value.trim()) || "";
+        if (!note) return;
+        const id = tr.dataset.bugId || "";
+        const summary = tr.dataset.summary || "";
+        if (id) openBugNotes[id] = note;
+        else if (summary) openBugNotes[summary] = note;
+      });
+      return {
+        overallResult: overallEl ? overallEl.value : "",
+        testOwner: $("testOwner").value.trim(),
+        testWindowStart: $("testWindowStart").value.trim(),
+        testWindowEnd: $("testWindowEnd").value.trim(),
+        exitCriteria: {
+          execPassMin: Number($("execPassMin").value || 95),
+          p0p1OpenMax: Number($("p0p1OpenMax").value || 0),
+        },
+        summaryOneLiner: $("summaryOneLiner").value.trim(),
+        deferredItems: $("deferredItems").value,
+        recommendations: $("recommendations").value,
+        signOff,
+        openBugNotes,
+      };
+    }
+    async function loadOverrideForSprint(sprint) {
+      const res = await fetch(`/api/overrides/${encodeURIComponent(sprint)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      lastOverride = data;
+      fillCompletionForm(data.completion || emptyCompletion());
+      renderTestEnvPicker(parseTestEnvTags(data.testEnv || ""));
+      $("riskBlock").value = (() => {
+        const risk = (data.riskBlock || "").trim();
+        const action = (data.riskAction || "").trim();
+        if (risk && action) return `风险：${risk}\n应对措施：${action}`;
+        if (action) return `应对措施：${action}`;
+        return risk;
+      })();
+      $("overrideMeta").textContent = data.updatedAt
+        ? `维护更新于 ${data.updatedAt}`
+        : "尚无维护数据";
+      return data;
+    }
+    async function loadModules(preferredId) {
+      const res = await fetch("/api/modules");
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      modules = Array.isArray(data) ? data : [];
+      fillModuleSelects(preferredId);
+    }
+    async function preview() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) {
+        setPreviewPlaceholder("暂无可用模块");
+        return;
+      }
+      const seq = ++previewSeq;
+      setMsg($("previewMsg"), "正在拉取预览…", true);
+      $("previewMeta").textContent = `${m.name} · 拉取中…`;
+      setPreviewPlaceholder("正在生成结项报告…");
+      $("btnPreview").disabled = true;
+      try {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+        const res = await fetch("/api/reports/completion/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            module_id: m.id,
+            module_name: m.name,
+            test_env: (lastOverride && lastOverride.testEnv) || "",
+            risk_block: (lastOverride && lastOverride.riskBlock) || "",
+          }),
+        });
+        const data = await res.json();
+        if (seq !== previewSeq) return;
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        lastReport = data.report;
+        $("preview").innerHTML = data.html;
+        const q = data.report.qualitySnapshot || {};
+        $("previewMeta").textContent =
+          `${m.name} · ${data.report.overallResult} · ExecPass ${q.executablePassRate || "-"} · OpenBugs ${q.openBugs || 0}`;
+        $("overallSuggestedHint").textContent =
+          `当前自动建议：${data.report.overallResultSuggested}（来源：${data.report.overallResultSource}）`;
+        if ($("completionModal").classList.contains("open")) {
+          const notes = (lastOverride && lastOverride.completion && lastOverride.completion.openBugNotes) || {};
+          renderOpenBugNotes(notes);
+        }
+        setMsg($("previewMsg"), `预览已更新 · ${data.report.rows.length} Story 行`, true);
+      } catch (e) {
+        if (seq !== previewSeq) return;
+        setPreviewPlaceholder("预览失败，请重试");
+        setMsg($("previewMsg"), String(e.message || e), false);
+      } finally {
+        if (seq === previewSeq) $("btnPreview").disabled = false;
+      }
+    }
+    async function send() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      const to = parseEmails($("toEmails").value);
+      if (!to.length) {
+        setMsg($("manualMsg"), "请填写 To", false);
+        return;
+      }
+      const cc = parseEmails($("ccEmails").value);
+      setMsg($("manualMsg"), "发送中...", true);
+      $("btnSend").disabled = true;
+      try {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+        const res = await fetch("/api/reports/completion/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            module_id: m.id,
+            module_name: m.name,
+            test_env: (lastOverride && lastOverride.testEnv) || "",
+            risk_block: (lastOverride && lastOverride.riskBlock) || "",
+            to,
+            cc,
+            subject: $("subject").value || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg($("manualMsg"), `已发送：${data.subject}`, true);
+      } catch (e) {
+        setMsg($("manualMsg"), String(e.message || e), false);
+      } finally {
+        $("btnSend").disabled = false;
+      }
+    }
+    async function saveCompletion() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      setMsg($("completionMsg"), "保存中…", true);
+      $("btnSaveCompletion").disabled = true;
+      try {
+        const saved = await putOverride(m.name, {
+          completion: collectCompletion(),
+          expectedRev: { completion: currentRev().completion },
+        });
+        lastOverride = saved;
+        fillCompletionForm(saved.completion || emptyCompletion());
+        await releaseSectionLock("completion");
+        closeModal("completionModal");
+        setMsg($("overrideMsg"), "结项字段已保存", true);
+        setMsg($("completionMsg"), "", true);
+        await preview();
+      } catch (e) {
+        if (e.status === 409) {
+          try { await loadOverrideForSprint(m.name); } catch (_) {}
+          setMsg($("completionMsg"), "版本冲突，已重新加载最新数据，请再改后保存", false);
+          return;
+        }
+        setMsg($("completionMsg"), String(e.message || e), false);
+      } finally {
+        $("btnSaveCompletion").disabled = false;
+      }
+    }
+    async function saveMeta() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      setMsg($("metaMsg"), "保存中…", true);
+      try {
+        const saved = await putOverride(m.name, {
+          testEnv: formatTestEnv(selectedTestEnvTags()),
+          riskBlock: $("riskBlock").value,
+          expectedRev: { meta: currentRev().meta },
+        });
+        lastOverride = saved;
+        setMsg($("metaMsg"), "ENV/Risk 已保存", true);
+        await preview();
+      } catch (e) {
+        if (e.status === 409) {
+          try { await loadOverrideForSprint(m.name); } catch (_) {}
+          setMsg($("metaMsg"), "版本冲突，已重新加载最新数据", false);
+          return;
+        }
+        setMsg($("metaMsg"), String(e.message || e), false);
+      }
+    }
+    async function loadFeishuStatus() {
+      const res = await fetch("/api/feishu/snapshot/status");
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      const parts = [];
+      if (data.ok === true) {
+        parts.push(
+          `上次成功：${data.finishedAt || "-"} · ${data.sprint || "-"} · Stories ${data.stories ?? "-"} / Bugs ${data.bugs ?? "-"}`
+        );
+      } else if (data.ok === false) {
+        parts.push(`上次失败：${data.finishedAt || "-"} · ${data.message || "unknown"}`);
+      } else {
+        parts.push(data.message || "尚无刷新记录");
+      }
+      if (data.nextRunTime) parts.push(`下次定时：${data.nextRunTime}`);
+      $("feishuStatus").textContent = parts.join(" · ");
+      return data;
+    }
+    async function refreshFeishu() {
+      const sprint = $("feishuSprint").value.trim();
+      if (!sprint) return;
+      setMsg($("feishuMsg"), "刷新中，可能需要数十秒…", true);
+      $("btnFeishuRefresh").disabled = true;
+      try {
+        const res = await fetch("/api/feishu/snapshot/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg($("feishuMsg"), "飞书快照已刷新", true);
+        await loadFeishuStatus();
+        await preview();
+      } catch (e) {
+        setMsg($("feishuMsg"), String(e.message || e), false);
+        try { await loadFeishuStatus(); } catch (_) {}
+      } finally {
+        $("btnFeishuRefresh").disabled = false;
+      }
+    }
+
+    document.querySelectorAll("[data-close]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-close");
+        if (id === "completionModal") await releaseSectionLock("completion");
+        if (id === "metaModal") await releaseSectionLock("meta");
+        closeModal(id);
+      });
+    });
+    $("testEnvPicker").addEventListener("click", (e) => {
+      const chip = e.target.closest(".env-chip");
+      if (!chip) return;
+      chip.classList.toggle("selected");
+    });
+    $("btnOpenCompletion").addEventListener("click", async () => {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      try { await loadOverrideForSprint(m.name); } catch (_) {}
+      await acquireSectionLock("completion");
+      if (lastReport) {
+        $("overallSuggestedHint").textContent =
+          `当前自动建议：${lastReport.overallResultSuggested || "—"}`;
+      }
+      openModal("completionModal");
+    });
+    $("btnOpenMeta").addEventListener("click", async () => {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      try { await loadOverrideForSprint(m.name); } catch (_) {}
+      await acquireSectionLock("meta");
+      openModal("metaModal");
+    });
+    $("btnSaveCompletion").addEventListener("click", saveCompletion);
+    $("btnSaveMeta").addEventListener("click", saveMeta);
+    $("btnPreview").addEventListener("click", preview);
+    $("btnOpenSend").addEventListener("click", () => {
+      const r = loadRecipients();
+      $("toEmails").value = joinEmails(r.to);
+      $("ccEmails").value = joinEmails(r.cc);
+      openModal("sendModal");
+    });
+    $("btnSend").addEventListener("click", send);
+    $("btnOpenRecipients").addEventListener("click", () => {
+      const r = loadRecipients();
+      $("rcpTo").value = joinEmails(r.to);
+      $("rcpCc").value = joinEmails(r.cc);
+      openModal("recipientsModal");
+    });
+    $("btnSaveRecipients").addEventListener("click", () => {
+      saveRecipients(parseEmails($("rcpTo").value), parseEmails($("rcpCc").value));
+      setMsg($("rcpMsg"), "已保存到本机", true);
+    });
+    $("btnRefreshModules").addEventListener("click", async () => {
+      const cur = selectedModule($("moduleSelect"));
+      await loadModules(cur && cur.id);
+      await preview();
+    });
+    $("moduleSelect").addEventListener("change", async () => {
+      const m = selectedModule($("moduleSelect"));
+      if (m) {
+        try { await loadOverrideForSprint(m.name); } catch (_) {}
+      }
+      await preview();
+    });
+    $("btnFeishuSnapshot").addEventListener("click", async () => {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      $("feishuSprint").value = m.name;
+      try { await loadFeishuStatus(); } catch (e) {
+        $("feishuStatus").textContent = String(e.message || e);
+      }
+      openModal("feishuRefreshModal");
+    });
+    $("btnFeishuRefresh").addEventListener("click", refreshFeishu);
+
+    (async function init() {
+      try {
+        await loadModules();
+        const m = selectedModule($("moduleSelect"));
+        if (m) {
+          try { await loadOverrideForSprint(m.name); } catch (_) {}
+        }
+        await preview();
+      } catch (e) {
+        setPreviewPlaceholder("加载失败：" + (e.message || e));
+        setMsg($("previewMsg"), String(e.message || e), false);
+      }
+    })();
+  </script>
+</body>
+</html>

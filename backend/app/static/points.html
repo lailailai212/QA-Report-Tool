@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QC Story Points · QA Tools</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #1E5A96;
+      --accent-soft: #E8F0F8;
+      --danger: #dc2626;
+      --ok: #059669;
+      --warn: #d97706;
+      --grid: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { margin: 0 0 6px; font-size: 24px; color: #1E4A7A; }
+    h2 { margin: 0; font-size: 16px; color: #1E4A7A; }
+    .page-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .sub { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+    .nav-link {
+      display: inline-flex; align-items: center;
+      padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+      background: #fff; color: var(--text); text-decoration: none;
+      font-size: 13px; font-weight: 500;
+    }
+    .nav-link:hover { background: #eff6ff; border-color: #93c5fd; }
+    .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      margin-bottom: 16px;
+    }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .field { flex: 1; min-width: 240px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    select, input[type="text"], input[type="number"] {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+      border-radius: 8px; font: inherit; background: #fff;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 0; border-radius: 8px; padding: 9px 14px;
+      font: inherit; font-weight: 600; cursor: pointer;
+      background: var(--accent); color: #fff;
+    }
+    button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.55; margin-top: 10px; }
+    .msg { margin-top: 8px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 800px) { .kpis { grid-template-columns: 1fr 1fr; } }
+    .kpi {
+      background: var(--accent-soft);
+      border: 1px solid #c5d6ea;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .kpi .v { font-size: 22px; font-weight: 700; color: #1E4A7A; }
+    .kpi .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .banner {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      font-size: 13px;
+    }
+    .banner.show { display: block; }
+    .sheet-wrap { overflow: auto; }
+    table.sheet {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 960px;
+      font-size: 13px;
+      background: #fff;
+    }
+    table.sheet th, table.sheet td {
+      border: 1px solid var(--grid);
+      padding: 6px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    table.sheet thead th {
+      background: #e8eef7;
+      font-weight: 700;
+      color: #1E4A7A;
+    }
+    table.sheet thead th.sprint-title {
+      background: #1E5A96;
+      color: #fff;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+    }
+    table.sheet td.name {
+      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
+      background: #f8fafc;
+    }
+    table.sheet tfoot td {
+      font-weight: 700;
+      background: #f1f5f9;
+    }
+    table.sheet input.cell {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font: inherit;
+      text-align: center;
+      background: transparent;
+    }
+    table.sheet input.cell:hover, table.sheet input.cell:focus {
+      border-color: #93c5fd;
+      background: #fff;
+      outline: none;
+    }
+    table.sheet input.cell.note { text-align: left; }
+    table.sheet .linkish {
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      background: none;
+      padding: 0;
+      border: 0;
+    }
+    table.sheet .linkish:hover { text-decoration: underline; }
+    .remain.neg { color: var(--danger); font-weight: 700; }
+    .remain.low { color: var(--warn); font-weight: 700; }
+    .name-tools {
+      display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: middle;
+    }
+    .name-tools button {
+      padding: 0 5px; font-size: 11px; font-weight: 600;
+      background: #fff; color: var(--muted); border: 1px solid var(--line);
+      border-radius: 4px; line-height: 18px;
+    }
+    .manual-flag {
+      display: inline-block; margin-left: 4px;
+      font-size: 10px; color: var(--warn); font-weight: 600;
+      background: none; border: 0; padding: 0; cursor: pointer;
+    }
+    .add-row {
+      display: flex; gap: 8px; align-items: center;
+      margin-top: 12px; flex-wrap: wrap;
+    }
+    .add-row input { max-width: 220px; }
+    .drawer-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.4); z-index: 40;
+    }
+    .drawer-backdrop.open { display: block; }
+    .drawer {
+      position: fixed; top: 0; right: 0; height: 100%;
+      width: min(460px, 100%); background: #fff; z-index: 41;
+      box-shadow: -12px 0 32px rgba(15, 23, 42, 0.16);
+      padding: 18px 18px 32px; overflow: auto; display: none;
+    }
+    .drawer.open { display: block; }
+    .drawer h3 { margin: 0 0 8px; font-size: 16px; color: #1E4A7A; }
+    .item-list { list-style: none; padding: 0; margin: 12px 0 0; }
+    .item-list li {
+      border: 1px solid var(--line); border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 8px;
+    }
+    .item-list a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .item-list a:hover { text-decoration: underline; }
+    .item-meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>QC Story Points</h1>
+        <p class="sub">
+          按 QC Owner 汇总本迭代 Story Point，方便组长看人力与剩余产能。
+          初始 Points 手工维护；迭代任务来自飞书 User Story 的 QC points；
+          其他 Task&amp;Tech 来自 Task / Tech Improvement（可改）。
+        </p>
+      </div>
+      <div class="page-head-actions">
+        <a class="nav-link" href="/">← Home</a>
+        <a class="nav-link" href="/sprint-retro">复盘</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label>飞书 Sprint</label>
+          <select id="sprintSelect"></select>
+        </div>
+        <div class="actions">
+          <button id="btnRefreshSprints" class="secondary" type="button">刷新列表</button>
+          <button id="btnRefreshSnapshot" type="button">刷新飞书数据</button>
+          <button id="btnSave" type="button">保存手工字段</button>
+        </div>
+      </div>
+      <div id="snapStatus" class="hint">尚未加载</div>
+      <div id="toolbarMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <div id="emptyBanner" class="banner">
+        尚无本地复盘快照，迭代任务 / 其他 Task 会显示为空。请先点「刷新飞书数据」（与复盘页共用快照，可能需数十秒）。
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kpiInitial">—</div><div class="l">初始 Points</div></div>
+        <div class="kpi"><div class="v" id="kpiSprint">—</div><div class="l">迭代任务（Story QC）</div></div>
+        <div class="kpi"><div class="v" id="kpiOther">—</div><div class="l">其他预计 Points</div></div>
+        <div class="kpi"><div class="v" id="kpiRemain">—</div><div class="l">剩余 Points</div></div>
+      </div>
+      <div class="sheet-wrap">
+        <table class="sheet" id="sheet">
+          <thead>
+            <tr>
+              <th rowspan="3">人力安排</th>
+              <th class="sprint-title" id="sprintTitle" colspan="7">迭代</th>
+            </tr>
+            <tr>
+              <th rowspan="2">初始 Points</th>
+              <th rowspan="2">迭代任务</th>
+              <th colspan="4">其他</th>
+              <th rowspan="2">剩余Points</th>
+            </tr>
+            <tr>
+              <th>其他Task&amp;Tech</th>
+              <th>预计 Points</th>
+              <th>回归</th>
+              <th>回滚演练</th>
+            </tr>
+          </thead>
+          <tbody id="sheetBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>总计 Points</td>
+              <td id="sumInitial"></td>
+              <td id="sumSprint"></td>
+              <td></td>
+              <td id="sumOther"></td>
+              <td id="sumReg"></td>
+              <td id="sumRb"></td>
+              <td id="sumRemain"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="add-row">
+        <input id="newName" type="text" placeholder="新增人员姓名" />
+        <button id="btnAdd" class="secondary" type="button">加人</button>
+        <span class="hint" style="margin:0;">剩余 = 初始 − 迭代任务 − 其他预计 − 回归 − 回滚演练。多 QC Owner 时 QC points 均分。</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <h3 id="drawerTitle">明细</h3>
+      <button type="button" class="secondary" id="btnCloseDrawer">关闭</button>
+    </div>
+    <div id="drawerBody" class="hint"></div>
+  </aside>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let board = null;
+    let people = [];
+    let dirty = false;
+
+    function setMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok === true ? "ok" : ok === false ? "err" : "");
+    }
+
+    function formatApiDetail(detail) {
+      if (!detail) return "请求失败";
+      if (typeof detail === "string") return detail;
+      if (detail.message) return detail.message;
+      try { return JSON.stringify(detail); } catch { return String(detail); }
+    }
+
+    function currentSprint() {
+      return ($("sprintSelect").value || "").trim();
+    }
+
+    function fmt(n) {
+      if (n == null || n === "") return "";
+      const x = Number(n);
+      if (Number.isNaN(x)) return "";
+      const r = Math.round((x + 1e-9) * 100) / 100;
+      return String(r);
+    }
+
+    function fmtEmptyZero(n) {
+      const x = Number(n || 0);
+      if (!x) return "";
+      return fmt(x);
+    }
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function remainingOf(p) {
+      return Math.round((
+        Number(p.initialPoints || 0)
+        - Number(p.sprintTasks || 0)
+        - Number(p.otherPoints || 0)
+        - Number(p.regression || 0)
+        - Number(p.rollback || 0)
+        + 1e-9
+      ) * 100) / 100;
+    }
+
+    function remainClass(n) {
+      if (n < 0) return "remain neg";
+      if (n <= 1) return "remain low";
+      return "remain";
+    }
+
+    function renderKpis() {
+      const t = { initial: 0, sprint: 0, other: 0, reg: 0, rb: 0, remain: 0 };
+      people.forEach((p) => {
+        t.initial += Number(p.initialPoints || 0);
+        t.sprint += Number(p.sprintTasks || 0);
+        t.other += Number(p.otherPoints || 0);
+        t.reg += Number(p.regression || 0);
+        t.rb += Number(p.rollback || 0);
+        t.remain += remainingOf(p);
+      });
+      const r = (n) => fmt(Math.round((n + 1e-9) * 100) / 100);
+      $("kpiInitial").textContent = r(t.initial);
+      $("kpiSprint").textContent = r(t.sprint);
+      $("kpiOther").textContent = r(t.other);
+      $("kpiRemain").textContent = r(t.remain);
+      $("sumInitial").textContent = r(t.initial);
+      $("sumSprint").textContent = r(t.sprint);
+      $("sumOther").textContent = r(t.other);
+      $("sumReg").textContent = fmtEmptyZero(t.reg);
+      $("sumRb").textContent = fmtEmptyZero(t.rb);
+      $("sumRemain").textContent = r(t.remain);
+      $("sumRemain").className = remainClass(t.remain);
+    }
+
+    function renderSheet() {
+      const tb = $("sheetBody");
+      tb.innerHTML = "";
+      people.forEach((p, idx) => {
+        const tr = document.createElement("tr");
+        const remain = remainingOf(p);
+        const sprintLabel = fmtEmptyZero(p.sprintTasks) || "—";
+        const otherFlag = p.otherNoteManual || p.otherPointsManual
+          ? '<button type="button" class="manual-flag" data-act="reset-other" title="恢复为飞书自动值">手改·点此还原</button>'
+          : ((p.otherItems || []).length
+            ? '<button type="button" class="linkish" data-act="other" style="font-size:12px;margin-left:4px;">明细</button>'
+            : "");
+        tr.innerHTML = `
+          <td class="name">
+            ${esc(p.name)}
+            <span class="name-tools">
+              <button type="button" data-act="up" title="上移">↑</button>
+              <button type="button" data-act="down" title="下移">↓</button>
+              <button type="button" data-act="del" title="移除">×</button>
+            </span>
+          </td>
+          <td><input class="cell" data-k="initialPoints" type="number" step="0.1" value="${esc(fmt(p.initialPoints))}" /></td>
+          <td>
+            <button type="button" class="linkish" data-act="stories">${esc(sprintLabel)}</button>
+          </td>
+          <td>
+            <input class="cell note" data-k="otherNote" value="${esc(p.otherNote || "")}" />
+            ${otherFlag}
+          </td>
+          <td><input class="cell" data-k="otherPoints" type="number" step="0.1" value="${esc(fmtEmptyZero(p.otherPoints))}" /></td>
+          <td><input class="cell" data-k="regression" type="number" step="0.1" value="${esc(fmtEmptyZero(p.regression))}" /></td>
+          <td><input class="cell" data-k="rollback" type="number" step="0.1" value="${esc(fmtEmptyZero(p.rollback))}" /></td>
+          <td class="${remainClass(remain)}">${esc(fmt(remain))}</td>`;
+        tr.querySelectorAll("[data-act]").forEach((btn) => {
+          btn.onclick = () => onRowAction(idx, btn.getAttribute("data-act"));
+        });
+        tr.querySelectorAll("input.cell").forEach((inp) => {
+          inp.onchange = () => onCellChange(idx, inp);
+          inp.oninput = () => onCellChange(idx, inp, true);
+        });
+        tb.appendChild(tr);
+      });
+      renderKpis();
+    }
+
+    function onCellChange(idx, inp, live) {
+      const p = people[idx];
+      const key = inp.getAttribute("data-k");
+      if (key === "otherNote") {
+        p.otherNote = inp.value;
+        p.otherNoteManual = true;
+      } else if (key === "otherPoints") {
+        p.otherPoints = inp.value === "" ? 0 : Number(inp.value || 0);
+        p.otherPointsManual = true;
+      } else if (key === "initialPoints") {
+        p.initialPoints = inp.value === "" ? 0 : Number(inp.value || 0);
+      } else if (key === "regression") {
+        p.regression = inp.value === "" ? 0 : Number(inp.value || 0);
+      } else if (key === "rollback") {
+        p.rollback = inp.value === "" ? 0 : Number(inp.value || 0);
+      }
+      dirty = true;
+      if (live) {
+        const tr = inp.closest("tr");
+        const remain = remainingOf(p);
+        const cell = tr.lastElementChild;
+        cell.textContent = fmt(remain);
+        cell.className = remainClass(remain);
+        renderKpis();
+      } else {
+        renderSheet();
+      }
+    }
+
+    function onRowAction(idx, act) {
+      if (act === "up" && idx > 0) {
+        const tmp = people[idx - 1];
+        people[idx - 1] = people[idx];
+        people[idx] = tmp;
+        dirty = true;
+        renderSheet();
+      } else if (act === "down" && idx < people.length - 1) {
+        const tmp = people[idx + 1];
+        people[idx + 1] = people[idx];
+        people[idx] = tmp;
+        dirty = true;
+        renderSheet();
+      } else if (act === "del") {
+        if (!confirm("从本表移除「" + people[idx].name + "」？保存后下一 Sprint 花名册也不再带上此人。")) return;
+        people.splice(idx, 1);
+        dirty = true;
+        renderSheet();
+      } else if (act === "stories") {
+        openDrawer(people[idx], "stories");
+      } else if (act === "other") {
+        openDrawer(people[idx], "other");
+      } else if (act === "reset-other") {
+        const p = people[idx];
+        p.otherNote = p.otherNoteAuto || "";
+        p.otherPoints = p.otherPointsAuto || 0;
+        p.otherNoteManual = false;
+        p.otherPointsManual = false;
+        dirty = true;
+        renderSheet();
+      }
+    }
+
+    function openDrawer(p, kind) {
+      $("drawerTitle").textContent = p.name + (kind === "stories" ? " · 迭代任务" : " · 其他 Task&Tech");
+      const items = kind === "stories" ? (p.stories || []) : (p.otherItems || []);
+      if (!items.length) {
+        $("drawerBody").innerHTML = "<p>暂无飞书明细。其他 Task 也可在表格里手工填写。</p>";
+      } else {
+        const lis = items.map((it) => {
+          const title = it.url
+            ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.summary || it.id)}</a>`
+            : esc(it.summary || it.id);
+          return `<li>
+            ${title}
+            <div class="item-meta">${esc(it.type || "")} · ${esc(it.status || "—")} · QC/Points ${esc(fmt(it.points))}</div>
+          </li>`;
+        }).join("");
+        $("drawerBody").innerHTML = `<ul class="item-list">${lis}</ul>`;
+      }
+      $("drawer").classList.add("open");
+      $("drawerBackdrop").classList.add("open");
+      $("drawer").setAttribute("aria-hidden", "false");
+    }
+
+    function closeDrawer() {
+      $("drawer").classList.remove("open");
+      $("drawerBackdrop").classList.remove("open");
+      $("drawer").setAttribute("aria-hidden", "true");
+    }
+
+    async function loadSprints() {
+      const res = await fetch("/api/bug/sprints");
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      const sel = $("sprintSelect");
+      const prev = sel.value;
+      sel.innerHTML = "";
+      const list = data.sprints || [];
+      list.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+      if (prev && [...sel.options].some((o) => o.value === prev)) {
+        sel.value = prev;
+        return;
+      }
+      if (!list.length) return;
+      const names = list.map((s) => s.name);
+      const now = new Date();
+      const ymd = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+      const current = names.find((n) => {
+        const ds = n.match(/(\d{8})/g) || [];
+        if (ds.length < 2) return false;
+        const a = Number(ds[0]);
+        const b = Number(ds[ds.length - 1]);
+        return ymd >= Math.min(a, b) && ymd <= Math.max(a, b);
+      });
+      if (current) {
+        sel.value = current;
+        return;
+      }
+      const dated = names.filter((n) => /\d{8}/.test(n));
+      if (!dated.length) return;
+      dated.sort((a, b) => {
+        const ka = (a.match(/(\d{8})/g) || []).pop() || "";
+        const kb = (b.match(/(\d{8})/g) || []).pop() || "";
+        return kb.localeCompare(ka);
+      });
+      sel.value = dated[0];
+    }
+
+    async function loadBoard() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      const res = await fetch("/api/points/" + encodeURIComponent(sprint));
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      board = data;
+      people = (data.people || []).map((p) => ({ ...p }));
+      dirty = false;
+      $("sprintTitle").textContent = data.title || sprint;
+      $("emptyBanner").classList.toggle("show", !data.snapshotExists);
+      $("snapStatus").textContent = data.snapshotExists
+        ? `快照已有 · fetchedAt ${data.fetchedAt || "—"} · Story ${data.stories ?? "—"} · Task ${data.tasks ?? "—"} · TI ${data.techImprovements ?? "—"}`
+        : "尚无本地复盘快照（请先刷新飞书数据）";
+      renderSheet();
+    }
+
+    function collectPeople() {
+      return people.map((p) => ({
+        name: p.name,
+        initialPoints: Number(p.initialPoints || 0),
+        otherNote: p.otherNote || "",
+        otherNoteManual: !!p.otherNoteManual,
+        otherPoints: Number(p.otherPoints || 0),
+        otherPointsManual: !!p.otherPointsManual,
+        regression: Number(p.regression || 0),
+        rollback: Number(p.rollback || 0),
+        hidden: false,
+      }));
+    }
+
+    $("btnRefreshSprints").onclick = async () => {
+      try {
+        await loadSprints();
+        await loadBoard();
+        setMsg($("toolbarMsg"), "Sprint 列表已刷新", true);
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnRefreshSnapshot").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      if (dirty && !confirm("有未保存的手工修改。刷新飞书不会覆盖已保存的初始 Points，但会重算迭代任务。继续？")) return;
+      setMsg($("toolbarMsg"), "刷新飞书数据中（可能需数十秒）…", true);
+      $("btnRefreshSnapshot").disabled = true;
+      try {
+        const res = await fetch("/api/retro/snapshot/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        await loadBoard();
+        setMsg(
+          $("toolbarMsg"),
+          `已刷新：Story ${data.stories} · Task ${data.tasks} · TI ${data.techImprovements}`,
+          true
+        );
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      } finally {
+        $("btnRefreshSnapshot").disabled = false;
+      }
+    };
+
+    $("btnSave").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      setMsg($("toolbarMsg"), "保存中…", true);
+      try {
+        const res = await fetch("/api/points/" + encodeURIComponent(sprint), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            people: collectPeople(),
+            expectedRev: board ? Number(board.rev || 0) : 0,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        board = data;
+        people = (data.people || []).map((p) => ({ ...p }));
+        dirty = false;
+        $("sprintTitle").textContent = data.title || sprint;
+        renderSheet();
+        setMsg($("toolbarMsg"), "已保存（初始 Points 会带到下一 Sprint 花名册）", true);
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnAdd").onclick = () => {
+      const name = ($("newName").value || "").trim();
+      if (!name) return;
+      if (people.some((p) => p.name === name)) {
+        setMsg($("toolbarMsg"), "已有同名人员", false);
+        return;
+      }
+      people.push({
+        name,
+        initialPoints: 7,
+        sprintTasks: 0,
+        otherNote: "",
+        otherNoteManual: false,
+        otherPoints: 0,
+        otherPointsManual: false,
+        regression: 0,
+        rollback: 0,
+        remaining: 7,
+        stories: [],
+        otherItems: [],
+      });
+      $("newName").value = "";
+      dirty = true;
+      renderSheet();
+    };
+
+    $("sprintSelect").onchange = async () => {
+      if (dirty && !confirm("有未保存修改，切换 Sprint 将丢弃。继续？")) {
+        if (board && board.sprint) $("sprintSelect").value = board.sprint;
+        return;
+      }
+      try {
+        await loadBoard();
+        setMsg($("toolbarMsg"), "", true);
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnCloseDrawer").onclick = closeDrawer;
+    $("drawerBackdrop").onclick = closeDrawer;
+
+    (async function init() {
+      $("snapStatus").textContent = "正在加载 Sprint 列表…";
+      try {
+        await loadSprints();
+        await loadBoard();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    })();
+  </script>
+</body>
+</html>

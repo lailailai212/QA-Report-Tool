@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 管理复盘报告</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --line: #d8dee6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #e8eef7 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    h2 { margin: 0; font-size: 16px; }
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .sub { color: var(--muted); line-height: 1.5; }
+    .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .help-link {
+      display: inline-flex; align-items: center;
+      padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+      background: #fff; color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 600;
+    }
+    .help-link.nav-home { color: var(--text); font-weight: 500; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      margin-bottom: 16px;
+    }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    .field { flex: 1; min-width: 240px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    select, input, textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+      font: inherit; background: #fff;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: none; border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 600;
+      cursor: pointer; background: var(--accent); color: #fff;
+    }
+    button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
+    .msg { margin-top: 8px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .preview {
+      border: 1px solid var(--line); border-radius: 8px; background: #fff;
+      min-height: 320px; overflow: auto; max-height: 70vh;
+    }
+    .preview-placeholder { padding: 24px; color: var(--muted); }
+    .preview-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+      align-items: center; justify-content: center; padding: 16px; z-index: 40;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(720px, 100%); max-height: 90vh; overflow: auto;
+      background: #fff; border-radius: 12px; padding: 16px; border: 1px solid var(--line);
+    }
+    .modal.wide { width: min(960px, 100%); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-close { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+    .row-tools { display: flex; gap: 8px; margin: 8px 0; }
+    table.edit { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.edit th, table.edit td { border: 1px solid var(--line); padding: 6px; }
+    table.edit input { width: 100%; padding: 4px 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>Sprint 管理复盘报告</h1>
+        <div class="sub">
+          计划 vs 实际、Story Point、Severity / 根因 / DQS、范围稳定性与人力汇总。独立于 QA 结项报告；无定时任务。
+          Point 口径：Story Point 字段 × 父 Item「已验收/待验收」。
+        </div>
+      </div>
+      <div class="page-head-actions">
+        <a class="help-link nav-home" href="/">← Home</a>
+        <a class="help-link" href="/completion">结项</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label>飞书 Sprint</label>
+          <select id="sprintSelect"></select>
+        </div>
+        <div class="actions">
+          <button id="btnRefreshSprints" class="secondary" type="button">刷新列表</button>
+          <button id="btnRefreshSnapshot" type="button">刷新复盘快照</button>
+          <button id="btnFreezePlan" class="secondary" type="button">冻结当前范围为 Plan</button>
+          <button id="btnOpenRetro" class="secondary" type="button">编辑人工字段</button>
+        </div>
+      </div>
+      <div id="snapStatus" class="preview-meta">尚未加载快照状态</div>
+      <div id="planStatus" class="preview-meta"></div>
+      <div id="toolbarMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;">
+        <h2>复盘预览</h2>
+        <div class="actions">
+          <button id="btnPreview" class="secondary" type="button">刷新预览</button>
+          <button id="btnOpenSend" type="button">手动发送</button>
+        </div>
+      </div>
+      <div id="previewMeta" class="preview-meta">选择 Sprint 后预览</div>
+      <div id="previewMsg" class="msg"></div>
+      <div id="preview" class="preview">
+        <div class="preview-placeholder">请选择 Sprint 并刷新快照 / 预览</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="retroModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal wide">
+      <div class="modal-head">
+        <h2>编辑复盘人工字段</h2>
+        <button type="button" class="modal-close" data-close="retroModal">关闭</button>
+      </div>
+      <div class="hint">亮点 / 关注 / 下阶段、需求变更备注、Reopen 名单、周期与工作日。保存写入 override.retro。</div>
+      <div class="grid-2" style="margin-top:12px;">
+        <div>
+          <label>周期开始</label>
+          <input id="winStart" type="date" />
+        </div>
+        <div>
+          <label>周期结束</label>
+          <input id="winEnd" type="date" />
+        </div>
+        <div>
+          <label>工作日数</label>
+          <input id="workdays" type="number" min="0" placeholder="可选" />
+        </div>
+        <div>
+          <label>参与成员说明</label>
+          <input id="membersNote" placeholder="如 DEV：16人 | QC：9人" />
+        </div>
+      </div>
+      <label style="margin-top:12px;">本期亮点</label>
+      <textarea id="highlights"></textarea>
+      <label>需要关注</label>
+      <textarea id="concerns"></textarea>
+      <label>下阶段重点</label>
+      <textarea id="nextFocus"></textarea>
+
+      <h2 style="margin:16px 0 8px;">需求变更（人工）</h2>
+      <div class="row-tools">
+        <button type="button" class="secondary" id="btnAddScope">加一行</button>
+      </div>
+      <table class="edit" id="scopeTable">
+        <thead><tr><th>操作</th><th>类型</th><th>Summary</th><th>备注</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h2 style="margin:16px 0 8px;">Reopen（人工）</h2>
+      <div class="row-tools">
+        <button type="button" class="secondary" id="btnAddReopen">加一行</button>
+      </div>
+      <table class="edit" id="reopenTable">
+        <thead><tr><th>Priority</th><th>Summary</th><th>Times</th><th>URL</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="actions" style="margin-top:16px;">
+        <button type="button" id="btnSaveRetro">保存</button>
+        <button type="button" class="secondary" data-close="retroModal">取消</button>
+      </div>
+      <div id="retroMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="sendModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>发送复盘报告</h2>
+        <button type="button" class="modal-close" data-close="sendModal">关闭</button>
+      </div>
+      <label>收件人（逗号分隔）</label>
+      <input id="sendTo" />
+      <label style="margin-top:8px;">抄送（可选）</label>
+      <input id="sendCc" />
+      <label style="margin-top:8px;">主题（可选）</label>
+      <input id="sendSubject" />
+      <div class="actions" style="margin-top:16px;">
+        <button type="button" id="btnSend">发送</button>
+        <button type="button" class="secondary" data-close="sendModal">取消</button>
+      </div>
+      <div id="sendMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let lastOverride = null;
+    let lastRev = { retro: 0 };
+
+    function setMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok === true ? "ok" : ok === false ? "err" : "");
+    }
+
+    function formatApiDetail(detail) {
+      if (!detail) return "请求失败";
+      if (typeof detail === "string") return detail;
+      try { return JSON.stringify(detail); } catch { return String(detail); }
+    }
+
+    function splitEmails(raw) {
+      return String(raw || "").split(/[,;，；\s]+/).map((s) => s.trim()).filter(Boolean);
+    }
+
+    function currentSprint() {
+      return ($("sprintSelect").value || "").trim();
+    }
+
+    function openModal(id) { $(id).classList.add("open"); }
+    function closeModal(id) { $(id).classList.remove("open"); }
+
+    document.querySelectorAll("[data-close]").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+    });
+
+    async function loadSprints() {
+      const res = await fetch("/api/bug/sprints");
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      const sel = $("sprintSelect");
+      const prev = sel.value;
+      sel.innerHTML = "";
+      const list = data.sprints || [];
+      list.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+      if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+      else if (list.length) {
+        // prefer latest OBIS dated sprint
+        const dated = list
+          .map((s) => s.name)
+          .filter((n) => /\d{8}/.test(n));
+        if (dated.length) {
+          dated.sort((a, b) => {
+            const ka = (a.match(/(\d{8})/g) || []).pop() || "";
+            const kb = (b.match(/(\d{8})/g) || []).pop() || "";
+            return kb.localeCompare(ka);
+          });
+          sel.value = dated[0];
+        }
+      }
+    }
+
+    async function loadStatuses() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      const [snapRes, planRes] = await Promise.all([
+        fetch("/api/retro/snapshot/status?sprint=" + encodeURIComponent(sprint)),
+        fetch("/api/retro/plan/status?sprint=" + encodeURIComponent(sprint)),
+      ]);
+      const snap = await snapRes.json();
+      const plan = await planRes.json();
+      if (snapRes.ok) {
+        $("snapStatus").textContent = snap.exists
+          ? `快照已有 · fetchedAt ${snap.fetchedAt || "—"} · Story ${snap.stories ?? "—"} · Task ${snap.tasks ?? "—"} · TI ${snap.techImprovements ?? "—"} · Bug ${snap.bugs ?? "—"}`
+          : "尚无本地复盘快照（请先刷新）";
+      }
+      if (planRes.ok) {
+        $("planStatus").textContent = plan.exists
+          ? `Plan 已冻结 · ${plan.frozenAt || "—"} · Story ${plan.stories} · Task ${plan.tasks} · TI ${plan.techImprovements}`
+          : "尚未冻结 Plan 基线";
+      }
+    }
+
+    function emptyRetro() {
+      return {
+        highlights: "", concerns: "", nextFocus: "",
+        scopeChangeNotes: [], reopenRows: [],
+        workdays: null, membersNote: "",
+        sprintWindowStart: "", sprintWindowEnd: "",
+      };
+    }
+
+    function fillRetroForm(r) {
+      const retro = r || emptyRetro();
+      $("highlights").value = retro.highlights || "";
+      $("concerns").value = retro.concerns || "";
+      $("nextFocus").value = retro.nextFocus || "";
+      $("membersNote").value = retro.membersNote || "";
+      $("winStart").value = retro.sprintWindowStart || "";
+      $("winEnd").value = retro.sprintWindowEnd || "";
+      $("workdays").value = retro.workdays == null ? "" : String(retro.workdays);
+      renderScopeRows(retro.scopeChangeNotes || []);
+      renderReopenRows(retro.reopenRows || []);
+    }
+
+    function renderScopeRows(rows) {
+      const tb = $("scopeTable").querySelector("tbody");
+      tb.innerHTML = "";
+      (rows.length ? rows : [{ op: "需求变更", type: "User Story", summary: "", remark: "" }]).forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input data-k="op" value="${esc(row.op || "需求变更")}" /></td>
+          <td><input data-k="type" value="${esc(row.type || "")}" /></td>
+          <td><input data-k="summary" value="${esc(row.summary || "")}" /></td>
+          <td><input data-k="remark" value="${esc(row.remark || "")}" /></td>
+          <td><button type="button" class="secondary btn-del">删</button></td>`;
+        tr.querySelector(".btn-del").onclick = () => tr.remove();
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderReopenRows(rows) {
+      const tb = $("reopenTable").querySelector("tbody");
+      tb.innerHTML = "";
+      (rows.length ? rows : [{ priority: "P2", summary: "", reopenTimes: 1, url: "" }]).forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input data-k="priority" value="${esc(row.priority || "")}" /></td>
+          <td><input data-k="summary" value="${esc(row.summary || "")}" /></td>
+          <td><input data-k="reopenTimes" type="number" value="${esc(String(row.reopenTimes ?? 1))}" /></td>
+          <td><input data-k="url" value="${esc(row.url || "")}" /></td>
+          <td><button type="button" class="secondary btn-del">删</button></td>`;
+        tr.querySelector(".btn-del").onclick = () => tr.remove();
+        tb.appendChild(tr);
+      });
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    function collectTable(tableId, keys) {
+      const rows = [];
+      $("" + tableId).querySelectorAll("tbody tr").forEach((tr) => {
+        const obj = {};
+        keys.forEach((k) => {
+          const inp = tr.querySelector(`[data-k="${k}"]`);
+          obj[k] = inp ? inp.value.trim() : "";
+        });
+        rows.push(obj);
+      });
+      return rows;
+    }
+
+    function collectRetro() {
+      const workRaw = $("workdays").value.trim();
+      let workdays = null;
+      if (workRaw !== "") {
+        const n = Number(workRaw);
+        if (!Number.isNaN(n)) workdays = n;
+      }
+      const scopeChangeNotes = collectTable("scopeTable", ["op", "type", "summary", "remark"])
+        .filter((r) => r.summary);
+      const reopenRows = collectTable("reopenTable", ["priority", "summary", "reopenTimes", "url"])
+        .filter((r) => r.summary)
+        .map((r) => ({
+          ...r,
+          reopenTimes: Number(r.reopenTimes || 0) || 0,
+        }));
+      return {
+        highlights: $("highlights").value,
+        concerns: $("concerns").value,
+        nextFocus: $("nextFocus").value,
+        membersNote: $("membersNote").value.trim(),
+        sprintWindowStart: $("winStart").value,
+        sprintWindowEnd: $("winEnd").value,
+        workdays,
+        scopeChangeNotes,
+        reopenRows,
+      };
+    }
+
+    async function loadOverride() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      const res = await fetch("/api/overrides/" + encodeURIComponent(sprint));
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      lastOverride = data;
+      lastRev = data.rev || { retro: 0 };
+      fillRetroForm(data.retro || emptyRetro());
+    }
+
+    async function preview() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      setMsg($("previewMsg"), "加载中…", true);
+      $("preview").innerHTML = '<div class="preview-placeholder">生成中…</div>';
+      try {
+        const res = await fetch("/api/reports/retro/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        $("preview").innerHTML = data.html || "";
+        const r = data.report || {};
+        const o = r.overview || {};
+        $("previewMeta").textContent =
+          `${r.title || ""} · Item ${o.itemDone}/${o.itemTotal} · Point ${o.doneTotal}/${o.planTotal} · Bug ${o.bugTotal} · DQS ${o.baseDqs}`;
+        setMsg($("previewMsg"), "预览已更新", true);
+      } catch (e) {
+        setMsg($("previewMsg"), e.message || String(e), false);
+        $("preview").innerHTML = `<div class="preview-placeholder">${esc(e.message || String(e))}</div>`;
+      }
+    }
+
+    $("btnRefreshSprints").onclick = async () => {
+      try {
+        await loadSprints();
+        await loadStatuses();
+        setMsg($("toolbarMsg"), "Sprint 列表已刷新", true);
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnRefreshSnapshot").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      setMsg($("toolbarMsg"), "刷新复盘快照中（可能需数十秒）…", true);
+      $("btnRefreshSnapshot").disabled = true;
+      try {
+        const res = await fetch("/api/retro/snapshot/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg(
+          $("toolbarMsg"),
+          `快照完成：Story ${data.stories} · Task ${data.tasks} · TI ${data.techImprovements} · Bug ${data.bugs}`,
+          true
+        );
+        await loadStatuses();
+        await preview();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      } finally {
+        $("btnRefreshSnapshot").disabled = false;
+      }
+    };
+
+    $("btnFreezePlan").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      if (!confirm("将当前快照中的 Story/Task/TI 冻结为 Plan 基线，用于范围稳定性对比。继续？")) return;
+      try {
+        const res = await fetch("/api/retro/plan/freeze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg($("toolbarMsg"), `Plan 已冻结（${data.frozenAt}）`, true);
+        await loadStatuses();
+        await preview();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnOpenRetro").onclick = async () => {
+      try {
+        await loadOverride();
+        setMsg($("retroMsg"), "", true);
+        openModal("retroModal");
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnAddScope").onclick = () => {
+      const rows = collectTable("scopeTable", ["op", "type", "summary", "remark"]);
+      rows.push({ op: "需求变更", type: "User Story", summary: "", remark: "" });
+      renderScopeRows(rows);
+    };
+    $("btnAddReopen").onclick = () => {
+      const rows = collectTable("reopenTable", ["priority", "summary", "reopenTimes", "url"]);
+      rows.push({ priority: "P2", summary: "", reopenTimes: 1, url: "" });
+      renderReopenRows(rows);
+    };
+
+    $("btnSaveRetro").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      setMsg($("retroMsg"), "保存中…", true);
+      try {
+        const res = await fetch("/api/overrides/" + encodeURIComponent(sprint), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            retro: collectRetro(),
+            expectedRev: { retro: Number(lastRev.retro || 0) },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        lastOverride = data;
+        lastRev = data.rev || lastRev;
+        fillRetroForm(data.retro || emptyRetro());
+        setMsg($("retroMsg"), "已保存", true);
+        closeModal("retroModal");
+        await preview();
+      } catch (e) {
+        setMsg($("retroMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnPreview").onclick = () => preview();
+    $("sprintSelect").onchange = async () => {
+      await loadStatuses();
+      await preview();
+    };
+
+    $("btnOpenSend").onclick = () => {
+      $("sendSubject").value = "";
+      setMsg($("sendMsg"), "", true);
+      openModal("sendModal");
+    };
+
+    $("btnSend").onclick = async () => {
+      const sprint = currentSprint();
+      const to = splitEmails($("sendTo").value);
+      if (!to.length) {
+        setMsg($("sendMsg"), "请填写收件人", false);
+        return;
+      }
+      setMsg($("sendMsg"), "发送中…", true);
+      try {
+        const res = await fetch("/api/reports/retro/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sprint,
+            to,
+            cc: splitEmails($("sendCc").value),
+            subject: $("sendSubject").value.trim() || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg($("sendMsg"), "已发送：" + (data.subject || ""), true);
+      } catch (e) {
+        setMsg($("sendMsg"), e.message || String(e), false);
+      }
+    };
+
+    (async function init() {
+      try {
+        await loadSprints();
+        await loadStatuses();
+        await preview();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    })();
+  </script>
+</body>
+</html>

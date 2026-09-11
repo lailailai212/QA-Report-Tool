@@ -58,5 +58,38 @@ class Settings:
     feishu_snapshot_time: str = os.environ.get("FEISHU_SNAPSHOT_TIME", "20:20")
     feishu_snapshot_sprint: str = os.environ.get("FEISHU_SNAPSHOT_SPRINT", "").strip()
 
+    # OpenAI-compatible LLM (Bug Description)；默认 DeepSeek
+    ai_api_key: str = (
+        os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        or os.environ.get("AI_API_KEY", "").strip()
+    )
+    ai_base_url: str = os.environ.get(
+        "AI_BASE_URL",
+        "https://api.deepseek.com",
+    ).rstrip("/")
+    ai_model: str = (
+        os.environ.get("AI_MODEL", "deepseek-chat").strip() or "deepseek-chat"
+    )
+
+    # Genbu Component Versions（Beast 登录 → dragonUser 换票 → 查版本）
+    beast_base_url: str = os.environ.get(
+        "BEAST_BASE_URL", "https://beast.snowballtech.com"
+    ).rstrip("/")
+    beast_username: str = os.environ.get("BEAST_USERNAME", "").strip()
+    beast_password: str = os.environ.get("BEAST_PASSWORD", "").strip()
+    genbu_base_url: str = os.environ.get(
+        "GENBU_BASE_URL", "https://genbu.snowballtech.com"
+    ).rstrip("/")
+    genbu_product_line: str = (
+        os.environ.get("GENBU_PRODUCT_LINE", "IOT").strip() or "IOT"
+    )
+    genbu_app_id: str = os.environ.get("GENBU_APP_ID", "778").strip() or "778"
+    genbu_system_code: str = (
+        os.environ.get("GENBU_SYSTEM_CODE", "IOT").strip() or "IOT"
+    )
+
+    # Sprint 总结报告：默认飞书导出 xlsx 目录（5 个文件）
+    sprint_summary_xlsx_dir: str = os.environ.get("SPRINT_SUMMARY_XLSX_DIR", "").strip()
+
 
 settings = Settings()

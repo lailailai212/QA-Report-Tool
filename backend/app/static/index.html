@@ -74,6 +74,17 @@
       margin-bottom: 12px;
     }
     .toolbar .field { flex: 1; min-width: 220px; }
+    .toolbar .field-with-action {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .toolbar .field-with-action .field { flex: 1; min-width: 0; }
+    .toolbar .field-with-action .icon-btn {
+      width: 38px;
+      height: 38px;
+      margin-bottom: 0;
+    }
     .toolbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
     .toolbar label { margin-top: 0; }
@@ -215,10 +226,17 @@
       vertical-align: middle;
     }
     table.edit th { background: #eff6ff; color: #1e3a8a; font-weight: 600; }
-    table.edit input, table.edit select {
+    table.edit input, table.edit select, table.edit textarea {
       width: 100%;
       padding: 4px 6px;
       font-size: 12px;
+      box-sizing: border-box;
+    }
+    table.edit textarea {
+      min-height: 56px;
+      resize: vertical;
+      font-family: inherit;
+      line-height: 1.45;
     }
     table.edit .story-name { max-width: 280px; word-break: break-all; }
     .section-title { margin: 14px 0 4px; font-size: 14px; font-weight: 600; }
@@ -261,8 +279,15 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       min-height: 520px;
-      overflow: auto;
+      overflow: hidden;
       background: #fff;
+    }
+    .preview-frame {
+      width: 100%;
+      min-height: 780px;
+      height: 82vh;
+      border: 0;
+      background: #fafafa;
     }
     .preview-placeholder {
       min-height: 520px;
@@ -317,6 +342,7 @@
       padding: 18px 18px 16px;
     }
     .modal.wide { width: min(860px, 100%); }
+    .modal.xl { width: min(1080px, 100%); }
     .modal-head {
       display: flex;
       justify-content: space-between;
@@ -349,7 +375,7 @@
     <div class="page-head">
       <div class="titles">
         <h1>测试执行日报</h1>
-        <div class="sub">打开页面即拉取并展示当前模块预览。Test ENV / Risk / Ready / Bug Reopen 可按 Sprint 维护并持久化，预览、发信与定时共用。</div>
+        <div class="sub">打开页面即拉取并展示当前模块预览。计划线、Test ENV / Risk / Ready / Bug Reopen 可按 Sprint 维护，预览、发信与定时共用。</div>
       </div>
       <div class="page-head-actions">
         <a class="help-link nav-home" href="/">← Home</a>
@@ -371,13 +397,18 @@
           <td id="summaryTestEnv" class="env-cell"><span class="env-tag-empty">—</span></td>
         </tr>
         <tr>
-          <th>Risk/Block</th>
-          <td id="summaryRiskBlock">—</td>
+          <th>风险与应对</th>
+          <td id="summaryRiskRows" style="white-space:pre-wrap;">—</td>
+        </tr>
+        <tr>
+          <th>计划线</th>
+          <td id="summaryPlanLine">未设置</td>
         </tr>
       </table>
       <div class="maintain-edit-row">
         <span class="edit-label">按区块维护：</span>
         <button id="btnOpenMeta" type="button" class="secondary">编辑 Test ENV / Risk</button>
+        <button id="btnOpenPlan" type="button" class="secondary">编辑计划线</button>
         <button id="btnOpenReady" type="button" class="secondary">编辑 Ready for Test</button>
         <button id="btnOpenReopen" type="button" class="secondary">编辑 Bug Reopen</button>
       </div>
@@ -396,9 +427,23 @@
         <div id="previewMeta" class="preview-meta">准备加载…</div>
       </div>
       <div class="toolbar">
-        <div class="field">
-          <label>Module</label>
-          <select id="moduleSelect"></select>
+        <div class="field-with-action" style="flex:1;min-width:220px;">
+          <div class="field">
+            <label>Module</label>
+            <select id="moduleSelect"></select>
+          </div>
+          <button
+            id="btnRefreshModules"
+            class="icon-btn"
+            type="button"
+            aria-label="刷新 Module"
+            title="从 MeterSphere 重新拉取 Module 列表"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+              <path d="M21 3v6h-6" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <div class="actions">
           <button id="btnPreview" class="secondary">刷新预览</button>
@@ -458,23 +503,106 @@
 
   <!-- Test ENV / Risk 维护 -->
   <div id="metaModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="metaTitle">
-    <div class="modal">
+    <div class="modal xl">
       <div class="modal-head">
         <h2 id="metaTitle">Test ENV / Risk 维护</h2>
         <button type="button" class="modal-close" data-close="metaModal">关闭</button>
       </div>
-      <div class="hint">打开本弹窗时会重新拉取服务端最新数据。仅保存 ENV/Risk，不会改动 Ready / Reopen。</div>
+      <div class="hint">打开本弹窗时会重新拉取服务端最新数据。仅保存 ENV / Risk / 今日结论，不会改动计划线、Ready / Reopen。</div>
       <div id="metaLockHint" class="lock-hint" role="status"></div>
       <label>Test ENV（多选）</label>
       <div id="testEnvPicker" class="env-picker" role="group" aria-label="Test ENV"></div>
       <input type="hidden" id="testEnv" value="" />
       <div class="hint" style="margin-top:6px;">可选：SIT / UAT1 / UAT2 / PRE1 / PRE2 / PROD，点击标签切换选中。</div>
-      <label>Risk / Block</label>
-      <textarea id="riskBlock" placeholder="风险与阻塞说明（可选）" rows="4"></textarea>
+      <label>风险等级（可覆盖自动判定）</label>
+      <select id="riskLevel">
+        <option value="">自动（按计划线）</option>
+        <option value="ok">正常</option>
+        <option value="low">低风险</option>
+        <option value="warn">中风险</option>
+        <option value="danger">高风险</option>
+      </select>
+      <div class="hint">默认按计划线与未关 P0/P1 自动判定，必要时可手选覆盖。<br/>
+        <strong>正常</strong>：各环节按计划，无未关 P0/P1。<br/>
+        <strong>低风险</strong>：计划线未维护完整（区间/门槛缺失），不等于已经落后。<br/>
+        <strong>中风险</strong>：相对计划偏慢，或有未关 P0/P1；收口窗口可能被压缩，需当日跟进。<br/>
+        <strong>高风险</strong>：窗口已到期/过窗仍未达标，或验收阶段仍有未关 P0/P1；按当前节奏可能无法按期收口，需升级。</div>
+      <label>今日结论</label>
+      <textarea id="dailyConclusion" placeholder="留空则按计划线偏差自动起草" rows="3"></textarea>
+      <label>需关注（可选）</label>
+      <textarea id="attention" placeholder="需要管理层当日确认的事项" rows="2"></textarea>
+      <div class="section-title">风险与应对措施</div>
+      <div class="hint">一行一项。可同时存在多条风险，每条对应措施和执行人。</div>
+      <div style="overflow:auto;max-height:280px;">
+        <table class="edit" id="riskRowTable">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th>风险</th>
+              <th>应对措施</th>
+              <th style="width:120px;">执行人</th>
+              <th style="width:52px;"></th>
+            </tr>
+          </thead>
+          <tbody id="riskRowBody"></tbody>
+        </table>
+      </div>
       <div class="row" style="margin-top:8px;">
+        <button type="button" class="secondary" id="btnAddRiskRow">添加风险行</button>
         <button type="button" id="btnSaveMeta">保存 ENV/Risk</button>
       </div>
       <div id="metaMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- 计划线维护 -->
+  <div id="planModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="planTitle">
+    <div class="modal xl">
+      <div class="modal-head">
+        <h2 id="planTitle">计划线维护</h2>
+        <button type="button" class="modal-close" data-close="planModal">关闭</button>
+      </div>
+      <div class="hint">每个环节填区间 + 状态门槛。保存后，预览/发信/定时会按工作日自动算「本日应到 / 快慢」。窗口结束日必须达标。</div>
+      <div id="planLockHint" class="lock-hint" role="status"></div>
+      <div class="row" style="margin-top:4px;">
+        <button type="button" class="secondary" id="btnSuggestPlan">按 Sprint 窗口预填区间</button>
+      </div>
+      <div style="overflow:auto;max-height:360px;margin-top:8px;">
+        <table class="edit" id="planPhaseTable">
+          <thead>
+            <tr>
+              <th style="width:44px;">启用</th>
+              <th style="min-width:110px;">环节</th>
+              <th style="width:128px;">开始</th>
+              <th style="width:128px;">结束</th>
+              <th style="min-width:140px;">门槛类型</th>
+              <th style="min-width:120px;">状态要求</th>
+              <th style="width:88px;">目标%</th>
+              <th style="width:88px;">目标数</th>
+            </tr>
+          </thead>
+          <tbody id="planPhaseBody"></tbody>
+        </table>
+      </div>
+      <div class="section-title">用例评审结论（可选，供「用例评审」门槛使用）</div>
+      <div class="hint">不填则该环节显示「未维护」，不判落后。通过 / 不通过。</div>
+      <div style="overflow:auto;max-height:220px;">
+        <table class="edit">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th>
+              <th>Story</th>
+              <th style="width:120px;">评审结论</th>
+              <th style="width:140px;">评审日</th>
+            </tr>
+          </thead>
+          <tbody id="planReviewBody"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button type="button" id="btnSavePlan">保存计划线</button>
+      </div>
+      <div id="planMsg" class="msg"></div>
     </div>
   </div>
 
@@ -547,14 +675,14 @@
         <h2 id="schTitle">定时任务</h2>
         <button type="button" class="modal-close" data-close="scheduleModal">关闭</button>
       </div>
-      <div class="hint" style="margin-bottom:8px;">定时发送会读取该模块已保存的 Test ENV / Risk / Ready / Reopen 维护数据，并合并飞书快照与 MS 执行数据。</div>
+      <div class="hint" style="margin-bottom:8px;">定时发送会读取该模块已保存的计划线、Test ENV / Risk / Ready / Reopen 维护数据，并合并飞书快照与 MS 执行数据。</div>
       <label>任务名称</label>
       <input id="schName" placeholder="OBIS 工作日日报" />
       <label>Module</label>
       <select id="schModule"></select>
       <label>To</label>
       <textarea id="schTo" rows="2"></textarea>
-      <div class="hint">创建任务时写入该任务本身；不会更新「收件人设置」默认值。</div>
+      <div class="hint">创建/编辑任务时写入该任务本身；不会更新「收件人设置」默认值。列表点「编辑」可改名称、模块、收件人、时刻与星期。</div>
       <label>CC</label>
       <textarea id="schCc" rows="2"></textarea>
       <label>时刻（HH:MM）</label>
@@ -571,6 +699,7 @@
       </div>
       <div class="row">
         <button id="btnCreateSch">创建定时任务</button>
+        <button class="secondary" id="btnCancelSchEdit" hidden>取消编辑</button>
         <button class="secondary" id="btnReloadSch">刷新列表</button>
       </div>
       <div id="schMsg" class="msg"></div>
@@ -619,17 +748,28 @@
       to: ["future.wei@snowballtech.com"],
       cc: ["qian.xie@snowballtech.com", "yanren.chen@snowballtech.com"],
     };
-    const SECTION_LABEL = { meta: "ENV/Risk", stories: "Ready", reopen: "Reopen" };
+    const SECTION_LABEL = { meta: "ENV/Risk", stories: "Ready", reopen: "Reopen", plan: "计划线" };
     const MODAL_SECTION = {
       metaModal: "meta",
       readyModal: "stories",
       reopenModal: "reopen",
+      planModal: "plan",
     };
     const SECTION_LOCK_HINT = {
       meta: "metaLockHint",
       stories: "readyLockHint",
       reopen: "reopenLockHint",
+      plan: "planLockHint",
     };
+    const GATE_TYPES = [
+      ["status_min", "Story 状态达到"],
+      ["ready_count", "Ready 条数"],
+      ["exec_pct", "用例执行进度"],
+      ["case_ready", "已有用例的 Story"],
+      ["review", "评审通过"],
+      ["accept", "验收完成"],
+    ];
+    const GATE_STATUSES = ["待产品设计评审", "产品设计中", "开发中", "联调中", "待提测", "待测试", "测试中", "待验收", "已完成"];
     const LOCK_HEARTBEAT_MS = 60 * 1000;
 
     let modules = [];
@@ -715,6 +855,7 @@
         meta: Number(rev.meta || 0),
         stories: Number(rev.stories || 0),
         reopen: Number(rev.reopen || 0),
+        plan: Number(rev.plan || 0),
       };
     }
 
@@ -865,6 +1006,7 @@
       if (section === "meta") fillMetaFields(lastOverride);
       if (section === "stories") renderReadyEditor();
       if (section === "reopen") renderReopenEditor();
+      if (section === "plan") renderPlanEditor();
       const msg = (detail && detail.message)
         || `「${SECTION_LABEL[section] || section}」已被他人更新，已重新加载，请核对后再保存。`;
       setMsg(msgEl, msg, false);
@@ -897,18 +1039,45 @@
       return obis.length ? obis[obis.length - 1] : list[0];
     }
 
-    function fillModuleSelects() {
+    function fillModuleSelects(preferredId) {
       const opts = modules.map((m) => `<option value="${m.id}">${m.fullPath || m.name}</option>`).join("");
       $("moduleSelect").innerHTML = opts;
       $("schModule").innerHTML = opts;
+      const keep = preferredId && modules.some((m) => m.id === preferredId)
+        ? preferredId
+        : null;
+      if (keep) {
+        $("moduleSelect").value = keep;
+        $("schModule").value = keep;
+        return;
+      }
       const prefer = pickLatestModule(modules);
       if (prefer) {
         $("moduleSelect").value = prefer.id;
         $("schModule").value = prefer.id;
       }
     }
+
     function setPreviewPlaceholder(text) {
       $("preview").innerHTML = `<div class="preview-placeholder">${text}</div>`;
+    }
+
+    function renderPreviewHtml(html) {
+      const origin = `${window.location.origin}/`;
+      let doc = String(html || "");
+      if (/<base\s/i.test(doc)) {
+        doc = doc.replace(/<base\s[^>]*>/i, `<base href="${origin}">`);
+      } else if (/<head[^>]*>/i.test(doc)) {
+        doc = doc.replace(/<head[^>]*>/i, (m) => `${m}\n  <base href="${origin}">`);
+      } else {
+        doc = `<base href="${origin}">${doc}`;
+      }
+      const frame = document.createElement("iframe");
+      frame.className = "preview-frame";
+      frame.setAttribute("title", "日报预览");
+      $("preview").innerHTML = "";
+      $("preview").appendChild(frame);
+      frame.srcdoc = doc;
     }
 
     const TEST_ENV_OPTIONS = ["SIT", "UAT1", "UAT2", "PRE1", "PRE2", "PROD"];
@@ -962,23 +1131,140 @@
       syncTestEnvHidden();
     }
 
+    function splitRiskFields(block, action) {
+      const explicit = String(action || "").trim();
+      const raw = String(block || "").trim();
+      const marker = /(?:^|\n)\s*应对措施\s*[：:]\s*/;
+      let parsedRisk = raw;
+      let parsedAction = "";
+      const m = raw.match(marker);
+      if (m) {
+        const idx = raw.search(marker);
+        parsedRisk = raw.slice(0, idx).replace(/^\s*风险\s*[：:]\s*/, "").trim();
+        parsedAction = raw.slice(idx).replace(marker, "").trim();
+      } else {
+        parsedRisk = raw.replace(/^\s*风险\s*[：:]\s*/, "").trim();
+      }
+      return { risk: parsedRisk, action: explicit || parsedAction };
+    }
+
+    function composeRiskBlock(risk, action) {
+      const r = String(risk || "").trim();
+      const a = String(action || "").trim();
+      const parts = [];
+      if (r) parts.push(/^风险\s*[：:]/.test(r) ? r : `风险：${r}`);
+      if (a) parts.push(/^应对措施\s*[：:]/.test(a) ? a : `应对措施：${a}`);
+      return parts.join("\n");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function normalizeRiskRows(raw, fallbackRisk, fallbackAction) {
+      const rows = [];
+      if (Array.isArray(raw)) {
+        raw.forEach((item) => {
+          if (!item || typeof item !== "object") return;
+          const risk = String(item.risk || "").trim();
+          const action = String(item.action || "").trim();
+          const owner = String(item.owner || "").trim();
+          if (risk || action || owner) rows.push({ risk, action, owner });
+        });
+      }
+      if (rows.length) return rows;
+      const risk = String(fallbackRisk || "").trim();
+      const action = String(fallbackAction || "").trim();
+      if (risk || action) return [{ risk, action, owner: "" }];
+      return [];
+    }
+
+    function riskRowHtml(row, index) {
+      const r = row || { risk: "", action: "", owner: "" };
+      return `<tr>
+        <td class="risk-idx">${index + 1}</td>
+        <td><textarea class="rk-risk" rows="2" placeholder="当日仍 Open / 新增的风险">${escapeHtml(r.risk)}</textarea></td>
+        <td><textarea class="rk-action" rows="2" placeholder="跟进与应对措施">${escapeHtml(r.action)}</textarea></td>
+        <td><input class="rk-owner" placeholder="执行人" value="${escapeHtml(r.owner)}" /></td>
+        <td><button type="button" class="danger rk-del">删</button></td>
+      </tr>`;
+    }
+
+    function renumberRiskRows() {
+      document.querySelectorAll("#riskRowBody tr").forEach((tr, i) => {
+        const cell = tr.querySelector(".risk-idx");
+        if (cell) cell.textContent = String(i + 1);
+      });
+    }
+
+    function renderRiskRows(rows) {
+      const list = Array.isArray(rows) && rows.length ? rows : [{ risk: "", action: "", owner: "" }];
+      $("riskRowBody").innerHTML = list.map((row, i) => riskRowHtml(row, i)).join("");
+    }
+
+    function collectRiskRows() {
+      const rows = [];
+      document.querySelectorAll("#riskRowBody tr").forEach((tr) => {
+        const risk = tr.querySelector(".rk-risk").value.trim();
+        const action = tr.querySelector(".rk-action").value.trim();
+        const owner = tr.querySelector(".rk-owner").value.trim();
+        if (risk || action || owner) rows.push({ risk, action, owner });
+      });
+      return rows;
+    }
+
+    function formatRiskSummary(rows) {
+      const filled = (rows || []).filter((r) => r.risk || r.action || r.owner);
+      if (!filled.length) return "—";
+      return filled.map((r, i) => {
+        const bits = [r.risk || "（未填风险）"];
+        if (r.action) bits.push("措施：" + r.action);
+        if (r.owner) bits.push("执行人：" + r.owner);
+        return `${i + 1}. ${bits.join(" · ")}`;
+      }).join("\n");
+    }
+
     function fillMetaFields(data) {
       const env = (data && data.testEnv) || "";
-      const risk = (data && data.riskBlock) || "";
+      const split = splitRiskFields(
+        (data && data.riskBlock) || "",
+        (data && data.riskAction) || ""
+      );
+      const rows = normalizeRiskRows(
+        data && data.riskRows,
+        split.risk,
+        split.action
+      );
       renderTestEnvPicker(env);
-      $("riskBlock").value = risk;
+      renderRiskRows(rows);
+      $("dailyConclusion").value = (data && data.dailyConclusion) || "";
+      $("attention").value = (data && data.attention) || "";
+      $("riskLevel").value = (data && data.riskLevel) || "";
       $("summaryTestEnv").innerHTML = renderEnvTagsHtml(env);
-      $("summaryRiskBlock").textContent = risk.trim() || "—";
+      $("summaryRiskRows").textContent = formatRiskSummary(rows);
+      const phases = (data && data.plan && data.plan.phases) || [];
+      const dated = phases.filter((p) => p && p.enabled !== false && (p.start || p.end));
+      $("summaryPlanLine").textContent = dated.length
+        ? `已设 ${dated.length} 个环节`
+        : "未设置";
     }
 
     function currentMetaValues() {
       if (lastOverride) {
+        const split = splitRiskFields(lastOverride.riskBlock || "", lastOverride.riskAction || "");
+        const rows = normalizeRiskRows(lastOverride.riskRows, split.risk, split.action);
         return {
           testEnv: lastOverride.testEnv || "",
-          riskBlock: lastOverride.riskBlock || "",
+          riskBlock: split.risk,
+          riskAction: split.action,
+          riskRows: rows,
         };
       }
-      return { testEnv: "", riskBlock: "" };
+      return { testEnv: "", riskBlock: "", riskAction: "", riskRows: [] };
     }
 
     async function loadOverrideForSprint(sprint) {
@@ -1002,6 +1288,7 @@
         "rev M" + Number(rev.meta || 0)
           + "/R" + Number(rev.stories || 0)
           + "/B" + Number(rev.reopen || 0)
+          + "/P" + Number(rev.plan || 0)
       );
       const sc = Object.keys(data.stories || {}).length;
       if (sc) parts.push("Ready 覆盖 " + sc + " 行");
@@ -1110,6 +1397,144 @@
       $("reopenBody").innerHTML = rows.map(reopenRowHtml).join("") || reopenRowHtml();
     }
 
+    function optionList(pairs, selected) {
+      return pairs.map(([value, label]) => {
+        const sel = String(value) === String(selected) ? " selected" : "";
+        return `<option value="${String(value).replace(/"/g, "&quot;")}"${sel}>${label}</option>`;
+      }).join("");
+    }
+
+    function defaultPlanPhases() {
+      return [
+        { id: "feature_design", name: "功能设计", enabled: true, start: "", end: "", gateType: "status_min", gateStatus: "开发中", targetPct: 100, targetCount: "" },
+        { id: "case_design", name: "用例设计", enabled: true, start: "", end: "", gateType: "case_ready", gateStatus: "", targetPct: 100, targetCount: "" },
+        { id: "case_review", name: "用例评审", enabled: true, start: "", end: "", gateType: "review", gateStatus: "", targetPct: 100, targetCount: "" },
+        { id: "ready", name: "开发提测", enabled: true, start: "", end: "", gateType: "ready_count", gateStatus: "", targetPct: 100, targetCount: "" },
+        { id: "exec", name: "用例执行", enabled: true, start: "", end: "", gateType: "exec_pct", gateStatus: "", targetPct: 100, targetCount: "" },
+        { id: "accept", name: "验收收口", enabled: true, start: "", end: "", gateType: "accept", gateStatus: "", targetPct: 100, targetCount: "" },
+      ];
+    }
+
+    function currentPlanPhases() {
+      const saved = lastOverride && lastOverride.plan && Array.isArray(lastOverride.plan.phases)
+        ? lastOverride.plan.phases
+        : [];
+      const byId = Object.fromEntries(saved.filter((p) => p && p.id).map((p) => [p.id, p]));
+      const base = defaultPlanPhases().map((row) => Object.assign({}, row, byId[row.id] || {}));
+      saved.forEach((p) => {
+        if (p && p.id && !base.some((x) => x.id === p.id)) base.push(p);
+      });
+      return base;
+    }
+
+    function renderPlanEditor(phases) {
+      const rows = phases || currentPlanPhases();
+      const statusOpts = [""].concat(GATE_STATUSES);
+      $("planPhaseBody").innerHTML = rows.map((p) => {
+        const checked = p.enabled === false ? "" : " checked";
+        const count = p.targetCount == null ? "" : p.targetCount;
+        return `<tr data-id="${String(p.id || "").replace(/"/g, "&quot;")}">
+          <td><input class="pl-on" type="checkbox"${checked} /></td>
+          <td><input class="pl-name" value="${String(p.name || "").replace(/"/g, "&quot;")}" /></td>
+          <td><input class="pl-start" type="date" value="${String(p.start || "").replace(/"/g, "&quot;")}" /></td>
+          <td><input class="pl-end" type="date" value="${String(p.end || "").replace(/"/g, "&quot;")}" /></td>
+          <td><select class="pl-gate">${optionList(GATE_TYPES, p.gateType || "status_min")}</select></td>
+          <td><select class="pl-status">${optionList(statusOpts.map((s) => [s, s || "—"]), p.gateStatus || "")}</select></td>
+          <td><input class="pl-pct" type="number" min="1" max="100" value="${Number(p.targetPct || 100)}" /></td>
+          <td><input class="pl-count" type="number" min="0" placeholder="默认全部" value="${count}" /></td>
+        </tr>`;
+      }).join("");
+      const reviews = (lastOverride && lastOverride.plan && lastOverride.plan.reviews) || {};
+      const stories = ((lastReport && lastReport.rows) || []).map((r) => r.story);
+      $("planReviewBody").innerHTML = stories.map((name, i) => {
+        const rv = reviews[name] || {};
+        const esc = String(name).replace(/"/g, "&quot;").replace(/</g, "&lt;");
+        return `<tr data-story="${String(name).replace(/"/g, "&quot;")}">
+          <td>${i + 1}</td>
+          <td class="story-name">${esc}</td>
+          <td><select class="pl-rev">
+            <option value="">—</option>
+            <option value="通过"${rv.reviewResult === "通过" ? " selected" : ""}>通过</option>
+            <option value="不通过"${rv.reviewResult === "不通过" ? " selected" : ""}>不通过</option>
+            <option value="待评审"${rv.reviewResult === "待评审" ? " selected" : ""}>待评审</option>
+          </select></td>
+          <td><input class="pl-revdate" type="date" value="${String(rv.reviewDate || "").replace(/"/g, "&quot;")}" /></td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="4" style="color:#6b7280;text-align:center;">请先刷新预览以加载 Story</td></tr>`;
+    }
+
+    function collectPlan() {
+      const phases = [];
+      document.querySelectorAll("#planPhaseBody tr").forEach((tr) => {
+        const countRaw = tr.querySelector(".pl-count").value.trim();
+        phases.push({
+          id: tr.getAttribute("data-id") || "",
+          name: tr.querySelector(".pl-name").value.trim(),
+          enabled: tr.querySelector(".pl-on").checked,
+          start: tr.querySelector(".pl-start").value,
+          end: tr.querySelector(".pl-end").value,
+          gateType: tr.querySelector(".pl-gate").value,
+          gateStatus: tr.querySelector(".pl-status").value,
+          targetPct: Number(tr.querySelector(".pl-pct").value || 100),
+          targetCount: countRaw === "" ? null : Number(countRaw),
+        });
+      });
+      const reviews = {};
+      document.querySelectorAll("#planReviewBody tr[data-story]").forEach((tr) => {
+        const name = tr.getAttribute("data-story");
+        const reviewResult = tr.querySelector(".pl-rev").value.trim();
+        const reviewDate = tr.querySelector(".pl-revdate").value.trim();
+        if (name && (reviewResult || reviewDate)) {
+          reviews[name] = { reviewResult, reviewDate };
+        }
+      });
+      return { phases, reviews };
+    }
+
+    function applySuggestedPlanDates() {
+      const suggest = lastReport && lastReport.plan && Array.isArray(lastReport.plan.suggest)
+        ? lastReport.plan.suggest
+        : [];
+      if (!suggest.length) {
+        setMsg($("planMsg"), "当前 Sprint 名无法解析日期窗口，请手工填写区间", false);
+        return;
+      }
+      const byId = Object.fromEntries(suggest.filter((p) => p && p.id).map((p) => [p.id, p]));
+      document.querySelectorAll("#planPhaseBody tr").forEach((tr) => {
+        const hit = byId[tr.getAttribute("data-id")];
+        if (!hit) return;
+        if (hit.start) tr.querySelector(".pl-start").value = hit.start;
+        if (hit.end) tr.querySelector(".pl-end").value = hit.end;
+      });
+      setMsg($("planMsg"), "已按 Sprint 窗口预填区间，确认后请保存", true);
+    }
+
+    async function savePlan() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) return;
+      setMsg($("planMsg"), "正在保存计划线…", true);
+      try {
+        const rev = currentRev();
+        const result = await putOverride(m.name, {
+          plan: collectPlan(),
+          expectedRev: { plan: rev.plan },
+        });
+        if (result.conflict) {
+          await applyConflictReload("plan", result.detail, $("planMsg"));
+          return;
+        }
+        lastOverride = result.data;
+        await loadOverrideForSprint(m.name);
+        renderPlanEditor();
+        setMsg($("planMsg"), "计划线已保存，正在刷新预览…", true);
+        await preview();
+        setMsg($("planMsg"), "计划线已保存并刷新预览", true);
+        setMsg($("overrideMsg"), "计划线已保存", true);
+      } catch (e) {
+        setMsg($("planMsg"), String(e.message || e), false);
+      }
+    }
+
     async function saveMeta() {
       const m = selectedModule($("moduleSelect"));
       if (!m) return;
@@ -1118,9 +1543,13 @@
       try {
         syncTestEnvHidden();
         const rev = currentRev();
+        const rows = collectRiskRows();
         const result = await putOverride(m.name, {
           testEnv: formatTestEnv(selectedTestEnvTags()),
-          riskBlock: $("riskBlock").value,
+          riskRows: rows,
+          dailyConclusion: $("dailyConclusion").value,
+          attention: $("attention").value,
+          riskLevel: $("riskLevel").value,
           expectedRev: { meta: rev.meta },
         });
         if (result.conflict) {
@@ -1219,11 +1648,29 @@
       }
     }
 
-    async function loadModules() {
+    async function loadModules(preferredId) {
       const res = await fetch("/api/modules");
       if (!res.ok) throw new Error(await res.text());
       modules = await res.json();
-      fillModuleSelects();
+      fillModuleSelects(preferredId);
+    }
+
+    async function refreshModules() {
+      const btn = $("btnRefreshModules");
+      const prevId = $("moduleSelect").value;
+      btn.disabled = true;
+      try {
+        setMsg($("previewMsg"), "正在刷新 Module 列表…", true);
+        await loadModules(prevId);
+        const m = selectedModule($("moduleSelect"));
+        if (m) $("schModule").value = m.id;
+        await preview();
+        setMsg($("previewMsg"), "Module 列表已刷新", true);
+      } catch (e) {
+        setMsg($("previewMsg"), "刷新 Module 失败: " + (e.message || e), false);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     async function preview() {
@@ -1248,7 +1695,8 @@
             module_id: m.id,
             module_name: m.name,
             test_env: meta.testEnv,
-            risk_block: meta.riskBlock,
+            risk_block: composeRiskBlock(meta.riskBlock, meta.riskAction),
+            risk_action: meta.riskAction,
             mode: "manual",
           }),
         });
@@ -1256,7 +1704,7 @@
         if (seq !== previewSeq) return;
         if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
         lastReport = data.report;
-        $("preview").innerHTML = data.html;
+        renderPreviewHtml(data.html);
         const feishu = data.report.feishu && data.report.feishu.loaded ? "飞书已合并" : "无飞书快照";
         const ov = data.report.override && data.report.override.loaded ? "含维护数据" : "无维护数据";
         $("previewMeta").textContent = `${m.name} · ${data.report.rows.length} 行 · ${feishu} · ${ov}`;
@@ -1292,7 +1740,8 @@
             module_id: m.id,
             module_name: m.name,
             test_env: meta.testEnv,
-            risk_block: meta.riskBlock,
+            risk_block: composeRiskBlock(meta.riskBlock, meta.riskAction),
+            risk_action: meta.riskAction,
             to,
             cc,
             subject: $("subject").value || null,
@@ -1308,20 +1757,66 @@
       }
     }
 
+    let scheduleList = [];
+    let editingScheduleId = null;
+
     function selectedWeekdays() {
       return [...document.querySelectorAll("#schWeekdays input:checked")].map((x) => Number(x.value));
+    }
+
+    function setWeekdays(days) {
+      const set = new Set((days || []).map(Number));
+      document.querySelectorAll("#schWeekdays input").forEach((input) => {
+        input.checked = set.has(Number(input.value));
+      });
+    }
+
+    function syncScheduleFormMode() {
+      const editing = !!editingScheduleId;
+      $("btnCreateSch").textContent = editing ? "保存修改" : "创建定时任务";
+      $("btnCancelSchEdit").hidden = !editing;
+      $("schTitle").textContent = editing ? "定时任务 · 编辑" : "定时任务";
+    }
+
+    function resetScheduleForm({ keepModule = true } = {}) {
+      editingScheduleId = null;
+      $("schName").value = "";
+      $("schTime").value = "18:00";
+      setWeekdays([1, 2, 3, 4, 5]);
+      const r = loadRecipients();
+      $("schTo").value = joinEmails(r.to);
+      $("schCc").value = joinEmails(r.cc);
+      if (!keepModule) {
+        const m = selectedModule($("moduleSelect"));
+        if (m) $("schModule").value = m.id;
+      }
+      syncScheduleFormMode();
+    }
+
+    function ensureSchModuleOption(id, name) {
+      const sel = $("schModule");
+      if (!id) return;
+      if (![...sel.options].some((o) => o.value === String(id))) {
+        const opt = document.createElement("option");
+        opt.value = String(id);
+        opt.textContent = name || String(id);
+        sel.appendChild(opt);
+      }
+      sel.value = String(id);
     }
 
     async function loadSchedules() {
       const res = await fetch("/api/schedules");
       const list = await res.json();
-      $("schBody").innerHTML = list.map((s) => `
+      scheduleList = Array.isArray(list) ? list : [];
+      $("schBody").innerHTML = scheduleList.map((s) => `
         <tr>
           <td>${s.name}</td>
           <td>${s.module_name}</td>
           <td>${(s.weekdays || []).join(",")} @ ${s.time}<br/><span style="color:#6b7280">下次：${s.next_run_time || "-"}</span></td>
           <td>${s.enabled ? "启用" : "停用"}<br/>${s.last_status || ""}</td>
           <td>
+            <button class="secondary" onclick="editSch('${s.id}')">编辑</button>
             <button class="secondary" onclick="toggleSch('${s.id}', ${s.enabled ? "false" : "true"})">${s.enabled ? "停用" : "启用"}</button>
             <button class="secondary" onclick="runSch('${s.id}')">试跑</button>
             <button class="danger" onclick="delSch('${s.id}')">删除</button>
@@ -1330,36 +1825,77 @@
       `).join("");
     }
 
-    async function createSchedule() {
+    function collectSchedulePayload() {
       const m = selectedModule($("schModule"));
       const to = parseEmails($("schTo").value);
+      const weekdays = selectedWeekdays();
       if (!m || !to.length) {
-        setMsg($("schMsg"), "请选择模块并填写 To", false);
-        return;
+        throw new Error("请选择模块并填写 To");
       }
-      const cc = parseEmails($("schCc").value);
-      const res = await fetch("/api/schedules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: $("schName").value || `${m.name} 定时日报`,
-          module_id: m.id,
-          module_name: m.name,
-          to_emails: to,
-          cc_emails: cc,
-          weekdays: selectedWeekdays(),
-          time: $("schTime").value || "18:00",
-          enabled: true,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg($("schMsg"), data.detail || JSON.stringify(data), false);
-        return;
+      if (!weekdays.length) {
+        throw new Error("请至少选择一个星期");
       }
-      setMsg($("schMsg"), "已创建定时任务", true);
-      await loadSchedules();
+      const time = ($("schTime").value || "18:00").trim();
+      if (!/^\d{1,2}:\d{2}$/.test(time)) {
+        throw new Error("时刻格式应为 HH:MM");
+      }
+      return {
+        name: ($("schName").value || "").trim() || `${m.name} 定时日报`,
+        module_id: m.id,
+        module_name: m.name,
+        to_emails: to,
+        cc_emails: parseEmails($("schCc").value),
+        weekdays,
+        time,
+      };
     }
+
+    async function saveSchedule() {
+      $("btnCreateSch").disabled = true;
+      try {
+        const payload = collectSchedulePayload();
+        const editing = !!editingScheduleId;
+        const res = await fetch(
+          editing ? `/api/schedules/${encodeURIComponent(editingScheduleId)}` : "/api/schedules",
+          {
+            method: editing ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(editing ? payload : { ...payload, enabled: true }),
+          }
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          setMsg($("schMsg"), data.detail || JSON.stringify(data), false);
+          return;
+        }
+        setMsg($("schMsg"), editing ? "已保存定时任务修改" : "已创建定时任务", true);
+        resetScheduleForm({ keepModule: true });
+        ensureSchModuleOption(payload.module_id, payload.module_name);
+        await loadSchedules();
+      } catch (e) {
+        setMsg($("schMsg"), String(e.message || e), false);
+      } finally {
+        $("btnCreateSch").disabled = false;
+      }
+    }
+
+    window.editSch = (id) => {
+      const s = scheduleList.find((x) => x.id === id);
+      if (!s) {
+        setMsg($("schMsg"), "未找到该任务，请先刷新列表", false);
+        return;
+      }
+      editingScheduleId = s.id;
+      $("schName").value = s.name || "";
+      ensureSchModuleOption(s.module_id, s.module_name);
+      $("schTo").value = (s.to_emails || []).join(", ");
+      $("schCc").value = (s.cc_emails || []).join(", ");
+      $("schTime").value = s.time || "18:00";
+      setWeekdays(s.weekdays && s.weekdays.length ? s.weekdays : [1, 2, 3, 4, 5]);
+      syncScheduleFormMode();
+      setMsg($("schMsg"), `正在编辑：${s.name || s.id}`, true);
+      $("schName").focus();
+    };
 
     window.toggleSch = async (id, enabled) => {
       await fetch(`/api/schedules/${id}`, {
@@ -1383,14 +1919,35 @@
     window.delSch = async (id) => {
       if (!confirm("确认删除该定时任务？")) return;
       await fetch(`/api/schedules/${id}`, { method: "DELETE" });
+      if (editingScheduleId === id) {
+        resetScheduleForm({ keepModule: true });
+      }
       await loadSchedules();
     };
 
     $("btnPreview").onclick = preview;
     $("btnSend").onclick = send;
-    $("btnCreateSch").onclick = createSchedule;
+    $("btnCreateSch").onclick = saveSchedule;
+    $("btnCancelSchEdit").onclick = () => {
+      resetScheduleForm({ keepModule: true });
+      setMsg($("schMsg"), "已取消编辑", true);
+    };
     $("btnReloadSch").onclick = loadSchedules;
     $("btnSaveMeta").onclick = saveMeta;
+    $("btnAddRiskRow").onclick = () => {
+      $("riskRowBody").insertAdjacentHTML("beforeend", riskRowHtml({ risk: "", action: "", owner: "" }, $("riskRowBody").children.length));
+    };
+    $("riskRowBody").onclick = (e) => {
+      const btn = e.target.closest(".rk-del");
+      if (!btn || !$("riskRowBody").contains(btn)) return;
+      const tr = btn.closest("tr");
+      if (tr) tr.remove();
+      if (!$("riskRowBody").children.length) {
+        $("riskRowBody").innerHTML = riskRowHtml({ risk: "", action: "", owner: "" }, 0);
+      } else {
+        renumberRiskRows();
+      }
+    };
     $("testEnvPicker").onclick = (e) => {
       const btn = e.target.closest(".env-chip");
       if (!btn || !$("testEnvPicker").contains(btn)) return;
@@ -1465,6 +2022,29 @@
     $("btnOpenMeta").onclick = openMetaModal;
     $("btnOpenReady").onclick = openReadyModal;
     $("btnOpenReopen").onclick = openReopenModal;
+    $("btnSavePlan").onclick = savePlan;
+    $("btnSuggestPlan").onclick = applySuggestedPlanDates;
+
+    async function openPlanModal() {
+      const m = selectedModule($("moduleSelect"));
+      if (!m) {
+        setMsg($("overrideMsg"), "请先选择 Module", false);
+        return;
+      }
+      setMsg($("overrideMsg"), "正在加载计划线…", true);
+      try {
+        await loadOverrideForSprint(m.name);
+      } catch (e) {
+        setMsg($("overrideMsg"), String(e.message || e), false);
+        return;
+      }
+      renderPlanEditor();
+      setMsg($("overrideMsg"), "", true);
+      setMsg($("planMsg"), "", true);
+      openModal("planModal");
+      await acquireSectionLock("plan");
+    }
+    $("btnOpenPlan").onclick = openPlanModal;
 
     async function refreshOverrideAndPreview() {
       const m = selectedModule($("moduleSelect"));
@@ -1571,7 +2151,7 @@
     };
 
     $("btnOpenSchedule").onclick = async () => {
-      applyRecipientsToForms();
+      resetScheduleForm({ keepModule: false });
       const m = selectedModule($("moduleSelect"));
       if (m) $("schModule").value = m.id;
       setMsg($("schMsg"), "", true);
@@ -1613,6 +2193,7 @@
       if (m) $("schModule").value = m.id;
       preview();
     };
+    $("btnRefreshModules").onclick = refreshModules;
 
     (async () => {
       try {

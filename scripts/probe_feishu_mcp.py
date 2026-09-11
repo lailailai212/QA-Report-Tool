@@ -55,7 +55,7 @@ async def main() -> int:
     mql = (
         "SELECT `Item Id`, `Summary`, `Status` "
         "FROM `OBIS`.`User Story` "
-        "WHERE `Sprint` = 'OBIS-20260706-20260717' "
+        "WHERE array_contains(`Sprint`, 'OBIS-20260706-20260717') "
         "LIMIT 3"
     )
     async with stdio_client(params) as (read, write):

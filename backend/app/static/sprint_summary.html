@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sprint 总结报告</title>
+  <style>
+    :root {
+      --bg: #f4f6f8; --card: #fff; --line: #d8dee6; --text: #1f2937;
+      --muted: #6b7280; --accent: #2563eb; --danger: #dc2626; --ok: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: #fafafa; color: var(--text);
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 0 20px 56px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    h2 { margin: 0; font-size: 16px; }
+    .page-head {
+      padding: 24px 0 12px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .sub { color: var(--muted); line-height: 1.5; max-width: 720px; }
+    .page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .help-link {
+      display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid var(--line);
+      border-radius: 8px; background: #fff; color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 600;
+    }
+    .help-link.nav-home { color: var(--text); font-weight: 500; }
+    .top-bar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(250, 250, 250, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 0; margin: 0 -20px 20px; padding-left: 20px; padding-right: 20px;
+    }
+    .top-bar-inner {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+    }
+    .report-shell {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .report-board {
+      flex: 1;
+      min-width: 0;
+      min-height: 240px;
+    }
+    .report-nav {
+      width: 152px;
+      flex-shrink: 0;
+      position: sticky;
+      top: var(--report-nav-top, 12px);
+      align-self: flex-start;
+      z-index: 15;
+      max-height: calc(100vh - var(--report-nav-top, 12px) - 16px);
+      overflow-y: auto;
+      padding: 4px 0 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      background: rgba(250, 250, 250, 0.96);
+    }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    select, input, textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button {
+      border: none; border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 600;
+      cursor: pointer; background: var(--accent); color: #fff;
+    }
+    button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 8px; }
+    .msg { margin-top: 6px; font-size: 13px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .status-line { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    .field { flex: 1; min-width: 200px; max-width: 320px; }
+    .report-nav-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .report-nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-left: 1px solid var(--line);
+    }
+    .report-nav a {
+      display: block;
+      padding: 5px 8px 5px 11px;
+      color: var(--muted);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      margin-left: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .report-nav a:hover { color: var(--accent); }
+    .report-nav a.active {
+      color: var(--accent);
+      font-weight: 600;
+      border-left-color: var(--accent);
+    }
+    .report-board [id^="sec-"] { scroll-margin-top: calc(var(--report-nav-top, 12px) + 8px); }
+    .report-board .wrap {
+      max-width: none;
+      margin: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .preview-placeholder { padding: 48px 24px; color: var(--muted); text-align: center; }
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+      align-items: center; justify-content: center; padding: 16px; z-index: 40;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(720px, 100%); max-height: 92vh; overflow: auto;
+      background: #fff; border-radius: 12px; padding: 16px; border: 1px solid var(--line);
+    }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-close { background: #fff; color: var(--text); border: 1px solid var(--line); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>Sprint 总结报告</h1>
+        <div class="sub">
+          用计划会冻结的 Plan 做基线，每次「刷新飞书」拉取当前状态后对比生成。数字来自飞书；<b>灰框总结</b>、带铅笔图标的字段、表格待填项、状态灯可直接点击编辑，失焦自动保存。浅色小字为固定提示，不可编辑。Plan 在<a href="/sprint-retro">复盘页</a>冻结。
+        </div>
+      </div>
+      <div class="page-head-actions">
+        <a class="help-link nav-home" href="/">← Home</a>
+        <a class="help-link" href="/sprint-retro">复盘</a>
+      </div>
+    </div>
+
+    <div class="top-bar">
+      <div class="top-bar-inner">
+        <div class="field">
+          <label>Sprint</label>
+          <select id="sprintSelect"></select>
+        </div>
+        <div class="actions">
+          <button id="btnRefreshList" class="secondary" type="button">刷新列表</button>
+          <button id="btnRefreshSnapshot" type="button">刷新飞书</button>
+          <button id="btnPreview" class="secondary" type="button">刷新报告</button>
+          <button id="btnPublish" class="secondary" type="button">发布</button>
+          <button id="btnOpenSend" type="button">手动发送</button>
+        </div>
+      </div>
+      <div id="dataStatus" class="status-line">尚未加载数据状态</div>
+      <div id="previewMeta" class="status-line">选择 Sprint · 刷新飞书拉取当前状态 · 对比冻结 Plan 生成报告</div>
+      <div id="toolbarMsg" class="msg"></div>
+      <div id="previewMsg" class="msg"></div>
+    </div>
+
+    <div class="report-shell">
+      <nav id="reportNav" class="report-nav" aria-label="报告目录" hidden></nav>
+      <div id="preview" class="report-board">
+        <div class="preview-placeholder">选择 Sprint 后自动加载。请先冻结 Plan，再刷新飞书拉取当前状态。</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sendModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>发送 Sprint 总结报告</h2>
+        <button type="button" class="modal-close" data-close="sendModal">关闭</button>
+      </div>
+      <label>收件人（逗号分隔）</label><input id="sendTo" />
+      <label style="margin-top:8px;">抄送（可选）</label><input id="sendCc" />
+      <label style="margin-top:8px;">主题（可选）</label><input id="sendSubject" />
+      <div class="actions" style="margin-top:16px;">
+        <button type="button" id="btnSend">发送</button>
+        <button type="button" class="secondary" data-close="sendModal">取消</button>
+      </div>
+      <div id="sendMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="publishModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>发布 Sprint 总结报告</h2>
+        <button type="button" class="modal-close" data-close="publishModal">关闭</button>
+      </div>
+      <p class="hint" style="margin:0 0 10px;">将按当前页面内容（含已保存编辑）生成只读 HTML，任何人可通过链接查看。</p>
+      <label>分享链接</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="publishUrl" type="text" readonly style="flex:1;" />
+        <button type="button" id="btnCopyPublishUrl" class="secondary">复制</button>
+        <a id="publishOpenLink" class="help-link" href="#" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button type="button" class="secondary" data-close="publishModal">关闭</button>
+      </div>
+      <div id="publishMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const STATUS_LABEL = { ok: "正常", low: "低风险", warn: "中风险", danger: "高风险" };
+    const GOAL_STATUS_LABEL = { ok: "已完成", late: "已完成但晚于计划", warn: "部分完成", danger: "未完成" };
+    const RISK_STATUS_LABEL = { ok: "正常", low: "低风险", warn: "中风险", danger: "未达预期" };
+    const STATUS_CYCLE = ["ok", "low", "warn", "danger"];
+    const GOAL_STATUS_CYCLE = ["ok", "late", "warn", "danger"];
+    const LAST_SPRINT_KEY = "qa-report-tool:sprint-summary:last-sprint";
+
+    let lastRev = { exec: 0 };
+    let lastExec = {};
+    let saveTimer = null;
+    let wired = false;
+
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+    function setMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok === true ? "ok" : ok === false ? "err" : "");
+    }
+    function formatApiDetail(detail) {
+      if (!detail) return "请求失败";
+      if (typeof detail === "string") return detail;
+      try { return JSON.stringify(detail); } catch { return String(detail); }
+    }
+    function splitEmails(raw) {
+      return String(raw || "").split(/[,;，；\s]+/).map((s) => s.trim()).filter(Boolean);
+    }
+    function currentSprint() { return ($("sprintSelect").value || "").trim(); }
+    function rememberSprint(sprint) {
+      const name = String(sprint || "").trim();
+      if (!name) return;
+      try { localStorage.setItem(LAST_SPRINT_KEY, name); } catch (_) {}
+    }
+    function readRememberedSprint() {
+      try { return (localStorage.getItem(LAST_SPRINT_KEY) || "").trim(); } catch (_) { return ""; }
+    }
+    function openModal(id) { $(id).classList.add("open"); }
+    function closeModal(id) { $(id).classList.remove("open"); }
+
+    /** 注入完整报告 HTML（保留 head 内样式，否则灰框总结无视觉区分） */
+  const REPORT_NAV_SECTIONS = [
+    { id: "sec-overview", label: "概览" },
+    { id: "sec-s1", label: "1. 风险" },
+    { id: "sec-s2", label: "2. 目标" },
+    { id: "sec-open-stories", label: "未完成 Story" },
+    { id: "sec-s3", label: "3. 范围" },
+    { id: "sec-s4", label: "4. 质量" },
+    { id: "sec-s5", label: "5. 团队" },
+  ];
+
+    function scrollToReportSection(target) {
+      if (!target) return;
+      if (target.tagName === "DETAILS") target.open = true;
+      const fold = target.closest("details.fold");
+      if (fold) fold.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function buildReportNav(navEl, mainEl) {
+      navEl.replaceChildren();
+      const title = document.createElement("div");
+      title.className = "report-nav-title";
+      title.textContent = "目录";
+      navEl.appendChild(title);
+      const ul = document.createElement("ul");
+      const links = [];
+      REPORT_NAV_SECTIONS.forEach(({ id, label }) => {
+        const target = mainEl.querySelector("#" + id);
+        if (!target) return;
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = "#" + id;
+        a.textContent = label;
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          scrollToReportSection(target);
+        });
+        li.appendChild(a);
+        ul.appendChild(li);
+        links.push({ a, target });
+      });
+      navEl.appendChild(ul);
+      if (!links.length) return;
+      const obs = new IntersectionObserver(
+        (entries) => {
+          const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          if (!visible.length) return;
+          const id = visible[0].target.id;
+          links.forEach(({ a, target }) => a.classList.toggle("active", target.id === id));
+        },
+        { rootMargin: "-20% 0px -55% 0px", threshold: [0, 0.1, 0.25] },
+      );
+      links.forEach(({ target }) => obs.observe(target));
+    }
+
+    function syncReportNavSticky() {
+      const topBar = document.querySelector(".top-bar");
+      const nav = $("reportNav");
+      if (!topBar || !nav) return;
+      const top = Math.ceil(topBar.getBoundingClientRect().height) + 8;
+      document.documentElement.style.setProperty("--report-nav-top", `${top}px`);
+      nav.style.maxHeight = `calc(100vh - ${top + 16}px)`;
+    }
+
+    function restoreMultilineFields(root) {
+      ["highlight", "concern"].forEach((key) => {
+        const el = root.querySelector(`[data-exec="${key}"]`);
+        if (!el) return;
+        if (el.querySelector("br")) return;
+        const raw = String(el.innerText || el.textContent || "").replace(/\u00a0/g, " ");
+        let next = raw;
+        if (!next.includes("\n")) {
+          next = next.replace(/([。．.!?！？])[ \t]+(?=\d+[\.．、])/g, "$1\n");
+        }
+        if (!next.includes("\n")) return;
+        el.innerHTML = next.split("\n").map((line) => esc(line)).join("<br>");
+      });
+    }
+
+    function injectReportHtml(container, html) {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const nav = $("reportNav");
+      container.replaceChildren();
+      doc.querySelectorAll("head style").forEach((node) => {
+        container.appendChild(node.cloneNode(true));
+      });
+      const wrap = doc.querySelector(".wrap");
+      if (wrap) container.appendChild(wrap.cloneNode(true));
+      else if (doc.body) {
+        [...doc.body.childNodes].forEach((node) => container.appendChild(node.cloneNode(true)));
+      }
+      restoreMultilineFields(container);
+      if (nav) {
+        nav.hidden = false;
+        buildReportNav(nav, container);
+        syncReportNavSticky();
+      }
+    }
+
+    document.querySelectorAll("[data-close]").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+    });
+
+    function cellText(el) {
+      if (!el) return "";
+      let t = String(el.innerText || el.textContent || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      const ph = el.getAttribute && el.getAttribute("data-placeholder");
+      if (ph && t === ph) return "";
+      if (t === "待填写" || t === "点击填写") return "";
+      return t;
+    }
+
+    function setNested(obj, path, value) {
+      const parts = path.split(".");
+      let cur = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const p = parts[i];
+        const nxt = parts[i + 1];
+        if (/^\d+$/.test(nxt)) {
+          if (!Array.isArray(cur[p])) cur[p] = [];
+        } else if (typeof cur[p] !== "object" || cur[p] === null || Array.isArray(cur[p])) {
+          cur[p] = {};
+        }
+        cur = cur[p];
+        if (/^\d+$/.test(nxt)) {
+          const idx = Number(nxt);
+          if (!cur[idx]) cur[idx] = {};
+          cur = cur[idx];
+          i += 1;
+        }
+      }
+      cur[parts[parts.length - 1]] = value;
+    }
+
+    function collectExecFromPreview(root) {
+      const exec = JSON.parse(JSON.stringify(lastExec || {}));
+      delete exec.scopeSummary;
+      delete exec.scopeMovedIn;
+      delete exec.scopeMovedOut;
+      delete exec.scopePlanNote;
+      root.querySelectorAll("[data-exec]").forEach((el) => {
+        const path = el.getAttribute("data-exec");
+        if (!path || el.classList.contains("exec-status")) return;
+        let val = cellText(el);
+        if (path === "workdays") {
+          exec.workdays = val === "" || val === "—" ? null : (Number(val) || null);
+          return;
+        }
+        if (path.startsWith("incompleteNotes.")) return;
+        setNested(exec, path, val);
+      });
+      root.querySelectorAll(".exec-status[data-exec]").forEach((el) => {
+        setNested(exec, el.getAttribute("data-exec"), el.getAttribute("data-value") || "warn");
+      });
+      root.querySelectorAll("[data-exec-group='scopeSummary']").forEach((el) => {
+        const typ = el.getAttribute("data-scope-type");
+        const field = el.getAttribute("data-field");
+        if (!typ || !field) return;
+        if (!exec.scopeSummary) exec.scopeSummary = {};
+        if (!exec.scopeSummary[typ]) exec.scopeSummary[typ] = {};
+        const val = cellText(el);
+        if (field === "churnRate") exec.scopeSummary[typ][field] = val;
+        else exec.scopeSummary[typ][field] = val === "" ? 0 : Number(val) || 0;
+      });
+      exec.incompleteNotes = exec.incompleteNotes || {};
+      root.querySelectorAll("tr[data-incomplete-key]").forEach((tr) => {
+        const key = tr.getAttribute("data-incomplete-key");
+        if (!key) return;
+        const cells = tr.querySelectorAll("td.exec-edit");
+        exec.incompleteNotes[key] = {
+          delayReason: cellText(cells[0]),
+          riskReportReason: cellText(cells[1]),
+        };
+      });
+      const goals = collectTableRows(root, "tbl-goals", ["goal", "expected", "actual"], "status");
+      if (goals) exec.goals = goals;
+      const risks = collectTableRows(root, "tbl-risks", ["title", "impact", "action", "owner", "due"], "level");
+      if (risks) exec.risks = risks;
+      const mgmt = collectTableRows(root, "tbl-mgmt", ["request", "impact", "proposal", "due"], null);
+      if (mgmt) exec.mgmtRequests = mgmt;
+      const scopeIn = collectTableRows(root, "tbl-scopeMovedIn", ["type", "id", "summary"], null);
+      if (scopeIn) exec.scopeMovedIn = scopeIn;
+      const scopeOut = collectTableRows(root, "tbl-scopeMovedOut", ["type", "id", "summary"], null);
+      if (scopeOut) exec.scopeMovedOut = scopeOut;
+      const cap = collectTableRows(root, "tbl-capacityFactors", ["factor", "impact"], null);
+      if (cap) exec.capacityFactors = cap;
+      return exec;
+    }
+
+    function collectTableRows(root, tableId, fields, statusField) {
+      const tbl = root.querySelector("#" + tableId);
+      if (!tbl) return null;
+      const rows = [];
+      tbl.querySelectorAll("tbody tr").forEach((tr) => {
+        const tds = [...tr.querySelectorAll("td")].filter((td) => !td.querySelector(".exec-status") && !td.querySelector(".exec-del"));
+        const row = {};
+        fields.forEach((f, i) => {
+          row[f] = cellText(tds[i]);
+        });
+        const st = tr.querySelector(".exec-status");
+        if (statusField && st) row[statusField] = st.getAttribute("data-value") || "warn";
+        const id = String(row.id || "").trim();
+        const summary = String(row.summary || "").trim();
+        if (fields.includes("summary") && !id && !summary) return;
+        if (fields.some((f) => row[f]) || (statusField && row[statusField])) rows.push(row);
+      });
+      return rows;
+    }
+
+    function applyStatusEl(el, value, labels) {
+      el.classList.remove("ok", "low", "late", "warn", "danger");
+      el.classList.add(value);
+      el.setAttribute("data-value", value);
+      const lab = el.querySelector(".exec-status-label");
+      if (lab) lab.textContent = labels[value] || value;
+    }
+    function cycleStatus(el) {
+      const isGoal = el.classList.contains("exec-goal-status");
+      const cycle = isGoal ? GOAL_STATUS_CYCLE : STATUS_CYCLE;
+      const cur = el.getAttribute("data-value") || "warn";
+      const idx = cycle.indexOf(cur);
+      return cycle[(idx < 0 ? 0 : idx + 1) % cycle.length];
+    }
+
+    function reindexTable(root, tableId, rowKind, fields, statusField) {
+      const tbl = root.querySelector("#" + tableId);
+      if (!tbl) return;
+      tbl.querySelectorAll("tbody tr").forEach((tr, idx) => {
+        tr.setAttribute("data-index", String(idx));
+        const tds = tr.querySelectorAll("td");
+        fields.forEach((f, i) => {
+          if (tds[i]) tds[i].setAttribute("data-exec", `${rowKind}.${idx}.${f}`);
+        });
+        const st = tr.querySelector(".exec-status");
+        if (st && statusField) st.setAttribute("data-exec", `${rowKind}.${idx}.${statusField}`);
+      });
+    }
+
+    function addTableRow(root, kind) {
+      const defs = {
+        goals: { id: "tbl-goals", fields: ["goal", "expected", "actual"], status: "status", goal: true,
+          cells: ["", "", ""] },
+        risks: { id: "tbl-risks", fields: ["title", "impact", "action", "owner", "due"], status: "level", statusAt: 2, risk: true,
+          cells: ["", "", "", "", ""] },
+        mgmtRequests: { id: "tbl-mgmt", fields: ["request", "impact", "proposal", "due"], status: null,
+          cells: ["", "", "", ""] },
+        scopeMovedIn: { id: "tbl-scopeMovedIn", fields: ["type", "id", "summary"], status: null,
+          cells: ["User Story", "", ""] },
+        scopeMovedOut: { id: "tbl-scopeMovedOut", fields: ["type", "id", "summary"], status: null,
+          cells: ["User Story", "", ""] },
+        capacityFactors: { id: "tbl-capacityFactors", fields: ["factor", "impact"], status: null,
+          cells: ["", ""] },
+      };
+      const def = defs[kind];
+      if (!def) return;
+      const tb = root.querySelector("#" + def.id + " tbody");
+      if (!tb) return;
+      const idx = tb.querySelectorAll("tr").length;
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-row", kind);
+      tr.setAttribute("data-index", String(idx));
+      const statusLabels = def.goal ? GOAL_STATUS_LABEL : (def.risk ? RISK_STATUS_LABEL : STATUS_LABEL);
+      const statusClass = def.goal ? " exec-goal-status" : (def.risk ? " exec-risk-status" : "");
+      const statusCell = (v) => {
+        const lab = statusLabels[v] || v;
+        return `<td><span class="status ${v} exec-status${statusClass}" data-exec="${kind}.${idx}.${def.status}" data-value="${v}" title="点击切换"><i></i><span class="exec-status-label">${lab}</span></span></td>`;
+      };
+      let html = "";
+      def.fields.forEach((f, i) => {
+        if (def.status && def.statusAt === i) html += statusCell("warn");
+        html += `<td class="exec-edit" contenteditable="true" spellcheck="false" data-exec="${kind}.${idx}.${f}">${esc(def.cells[i] || "")}</td>`;
+      });
+      if (def.status && (def.statusAt === undefined || def.statusAt >= def.fields.length)) html += statusCell("warn");
+      html += `<td><button type="button" class="exec-del" data-del-row="${kind}">删</button></td>`;
+      tr.innerHTML = html;
+      tb.appendChild(tr);
+      bindRowActions(tr, root);
+      scheduleSave(root);
+    }
+
+    function bindRowActions(tr, root) {
+      const del = tr.querySelector(".exec-del");
+      if (del) {
+        del.onclick = () => {
+          tr.remove();
+          scheduleSave(root);
+        };
+      }
+      tr.querySelectorAll(".exec-status").forEach((el) => {
+        el.onclick = () => {
+          const isGoal = el.classList.contains("exec-goal-status");
+          const isRisk = el.classList.contains("exec-risk-status");
+          const labels = isGoal ? GOAL_STATUS_LABEL : (isRisk ? RISK_STATUS_LABEL : STATUS_LABEL);
+          applyStatusEl(el, cycleStatus(el), labels);
+          scheduleSave(root);
+        };
+      });
+    }
+
+    function parseScopeDeviationPct(text) {
+      const s = String(text || "").trim().replace(/%/g, "");
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function formatDashboardPpDelta(cur, prev, lowerIsBetter) {
+      if (cur === null || prev === null) {
+        return { text: "—", tone: "", dir: "" };
+      }
+      const diff = Math.round((cur - prev) * 100) / 100;
+      if (Math.abs(diff) < 0.01) {
+        return { text: "0 pp", tone: "flat", dir: "flat" };
+      }
+      const improved = lowerIsBetter ? diff < 0 : diff > 0;
+      const tone = improved ? "good" : "bad";
+      const dir = diff > 0 ? "up" : "down";
+      const sign = diff > 0 ? "+" : "";
+      let text = `${sign}${diff} pp`;
+      if (lowerIsBetter && improved) text += "（改善）";
+      return { text, tone, dir };
+    }
+
+    function renderDashboardDeltaCell(cell, meta) {
+      if (!cell || !meta) return;
+      if (!meta.tone) {
+        cell.textContent = meta.text;
+        return;
+      }
+      const arrowUp = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.2 L10.2 9.2 H1.8 Z"/></svg>';
+      const arrowDown = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 9.8 L10.2 2.8 H1.8 Z"/></svg>';
+      const arrow = meta.dir === "up" ? arrowUp : meta.dir === "down" ? arrowDown : "";
+      cell.innerHTML = `<span class="delta ${meta.tone}">${arrow}${meta.text}</span>`;
+    }
+
+    function syncReopenDashboardDelta(root) {
+      if (!root) return;
+      const tr = root.querySelector("tr[data-dashboard-reopen]");
+      if (!tr) return;
+      const curEl = tr.querySelector("[data-exec='productionMetrics.reopenRate']");
+      const prevEl = tr.querySelector("[data-exec='productionMetrics.reopenRatePrev']");
+      const deltaEl = tr.querySelector("[data-dashboard-delta='reopenRate']");
+      if (!curEl || !prevEl || !deltaEl) return;
+      const curRaw = String(curEl.textContent || "").trim();
+      const prevRaw = String(prevEl.textContent || "").trim();
+      const cur = parseScopeDeviationPct(curRaw === "待填" ? "" : curRaw);
+      const prev = parseScopeDeviationPct(prevRaw === "待填" ? "" : prevRaw);
+      renderDashboardDeltaCell(deltaEl, formatDashboardPpDelta(cur, prev, true));
+    }
+
+    function syncScopeDeviationHighlights(root) {
+      if (!root) return;
+      root.querySelectorAll("[data-exec-group='scopeSummary'][data-field='churnRate']").forEach((el) => {
+        const n = parseScopeDeviationPct(el.textContent);
+        el.classList.toggle("scope-deviation-high", n !== null && n > 20);
+      });
+    }
+
+    function wirePreviewEdit(root) {
+      if (!root) return;
+      root.querySelectorAll(".exec-status").forEach((el) => {
+        el.onclick = () => {
+          const isGoal = el.classList.contains("exec-goal-status");
+          const isRisk = el.classList.contains("exec-risk-status");
+          const labels = isGoal ? GOAL_STATUS_LABEL : (isRisk ? RISK_STATUS_LABEL : STATUS_LABEL);
+          applyStatusEl(el, cycleStatus(el), labels);
+          scheduleSave(root);
+        };
+      });
+      root.querySelectorAll(".exec-edit[contenteditable]").forEach((el) => {
+        el.addEventListener("input", () => scheduleSave(root));
+        el.addEventListener("blur", () => {
+          if (el.matches("[data-field='churnRate']")) syncScopeDeviationHighlights(root);
+          if (
+            el.matches("[data-exec='productionMetrics.reopenRate']")
+            || el.matches("[data-exec='productionMetrics.reopenRatePrev']")
+          ) {
+            syncReopenDashboardDelta(root);
+          }
+          scheduleSave(root);
+        });
+      });
+      root.querySelectorAll(".exec-row-add").forEach((btn) => {
+        btn.onclick = () => addTableRow(root, btn.getAttribute("data-add"));
+      });
+      root.querySelectorAll("tr[data-row] .exec-del").forEach((btn) => {
+        btn.onclick = (ev) => {
+          const tr = ev.target.closest("tr");
+          if (tr) tr.remove();
+          scheduleSave(root);
+        };
+      });
+      syncScopeDeviationHighlights(root);
+      syncReopenDashboardDelta(root);
+    }
+
+    function scheduleSave(root) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveExec(root), 700);
+    }
+
+    async function saveExec(root) {
+      const sprint = currentSprint();
+      if (!sprint || !root || !root.querySelector(".wrap")) return;
+      const exec = collectExecFromPreview(root);
+      setMsg($("previewMsg"), "保存中…", true);
+      try {
+        const res = await fetch("/api/overrides/" + encodeURIComponent(sprint), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exec, expectedRev: { exec: Number(lastRev.exec || 0) } }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        lastRev = data.rev || lastRev;
+        lastExec = data.exec || exec;
+        rememberSprint(sprint);
+        setMsg($("previewMsg"), "已自动保存", true);
+      } catch (e) {
+        setMsg($("previewMsg"), "保存失败：" + (e.message || String(e)), false);
+        throw e;
+      }
+    }
+
+    async function flushSave(root) {
+      clearTimeout(saveTimer);
+      const target = root || $("preview");
+      if (!target || !target.querySelector(".wrap")) return;
+      try {
+        await saveExec(target);
+      } catch {
+        /* keep going so preview still loads; message already shown */
+      }
+    }
+
+    function persistExecKeepalive() {
+      const root = $("preview");
+      if (!root || !root.querySelector(".wrap")) return;
+      const sprint = currentSprint();
+      if (!sprint) return;
+      const exec = collectExecFromPreview(root);
+      fetch("/api/overrides/" + encodeURIComponent(sprint), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exec, expectedRev: { exec: Number(lastRev.exec || 0) } }),
+        keepalive: true,
+      });
+    }
+
+    async function loadSprintOptions() {
+      const [cachedRes, feishuRes] = await Promise.all([
+        fetch("/api/sprint-summary/status"),
+        fetch("/api/bug/sprints").catch(() => ({ ok: false })),
+      ]);
+      const cached = cachedRes.ok ? await cachedRes.json() : { cached: [] };
+      let feishuNames = [];
+      if (feishuRes.ok) {
+        const fd = await feishuRes.json();
+        feishuNames = (fd.sprints || []).map((s) => s.name);
+      }
+      const names = [...new Set([...(cached.cached || []), ...feishuNames])];
+      names.sort((a, b) => b.localeCompare(a));
+      const sel = $("sprintSelect");
+      const prev = sel.value || readRememberedSprint();
+      sel.innerHTML = "";
+      names.forEach((n) => {
+        const opt = document.createElement("option");
+        opt.value = n;
+        opt.textContent = n;
+        sel.appendChild(opt);
+      });
+      if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+      else if ((cached.cached || []).length) sel.value = cached.cached[0];
+      else if (names.length) sel.value = names[0];
+      if (sel.value) rememberSprint(sel.value);
+    }
+
+    async function loadStatus() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      const res = await fetch("/api/sprint-summary/status?sprint=" + encodeURIComponent(sprint));
+      const data = await res.json();
+      if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+      if (data.exists) {
+        const m = data.metrics || {};
+        const plan = data.plan || {};
+        const scope = data.scope || {};
+        const planPart = plan.exists
+          ? `Plan ${plan.frozenAt || "—"} · 移入 ${scope.movedIn ?? 0} / 移出 ${scope.movedOut ?? 0}`
+          : "尚未冻结 Plan（请到复盘页冻结，否则范围偏差无法计算）";
+        $("dataStatus").textContent =
+          `飞书快照 ${data.fetchedAt || "—"} · ${planPart} · 验收 Story ${m.acceptLabel || "—"} · 故事点 ${m.pointDone ?? "—"}/${m.pointPlan ?? "—"} · Bug ${m.bugFixed ?? "—"}/${m.bugTotal ?? "—"}`;
+      } else {
+        $("dataStatus").textContent = "尚无飞书快照，请点「刷新飞书」拉取当前状态后再生成";
+      }
+    }
+
+    async function preview() {
+      const sprint = currentSprint();
+      if (!sprint) return;
+      await flushSave($("preview"));
+      setMsg($("previewMsg"), "加载中…", true);
+      $("preview").innerHTML = '<div class="preview-placeholder">生成中…</div>';
+      if ($("reportNav")) $("reportNav").hidden = true;
+      try {
+        const [prevRes, ovRes] = await Promise.all([
+          fetch("/api/reports/sprint-summary/preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sprint }),
+          }),
+          fetch("/api/overrides/" + encodeURIComponent(sprint)),
+        ]);
+        const data = await prevRes.json();
+        if (!prevRes.ok) throw new Error(formatApiDetail(data.detail || data));
+        if (ovRes.ok) {
+          const ov = await ovRes.json();
+          lastRev = ov.rev || lastRev;
+        }
+        lastExec = (data.report || {}).exec || {};
+        injectReportHtml($("preview"), data.html || "");
+        wirePreviewEdit($("preview"));
+        const m = (data.report || {}).metrics || {};
+        $("previewMeta").textContent =
+          `验收 Story ${m.acceptLabel} · 故事点 ${m.pointDone}/${m.pointPlan} · Bug ${m.bugFixed}/${m.bugTotal} · DQS ${m.normDqs} · 点击灰框总结/待填项编辑`;
+        setMsg($("previewMsg"), "预览已更新 · 编辑后失焦自动保存", true);
+      } catch (e) {
+        setMsg($("previewMsg"), e.message || String(e), false);
+        $("preview").innerHTML = `<div class="preview-placeholder">${esc(e.message || String(e))}</div>`;
+        if ($("reportNav")) $("reportNav").hidden = true;
+      }
+    }
+
+    $("btnRefreshList").onclick = async () => {
+      try {
+        await loadSprintOptions();
+        await loadStatus();
+        setMsg($("toolbarMsg"), "列表已刷新", true);
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnRefreshSnapshot").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) {
+        setMsg($("toolbarMsg"), "请先选择 Sprint", false);
+        return;
+      }
+      setMsg($("toolbarMsg"), "刷新飞书中（可能需数十秒）…", true);
+      $("btnRefreshSnapshot").disabled = true;
+      try {
+        const res = await fetch("/api/retro/snapshot/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sprint }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg(
+          $("toolbarMsg"),
+          `快照完成：Story ${data.stories} · Task ${data.tasks} · TI ${data.techImprovements} · Bug ${data.bugs}`,
+          true
+        );
+        await loadSprintOptions();
+        await loadStatus();
+        await preview();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      } finally {
+        $("btnRefreshSnapshot").disabled = false;
+      }
+    };
+
+    $("btnPreview").onclick = () => preview();
+    $("sprintSelect").onchange = async () => {
+      rememberSprint(currentSprint());
+      await loadStatus();
+      await preview();
+    };
+
+    $("btnOpenSend").onclick = () => {
+      $("sendSubject").value = "";
+      setMsg($("sendMsg"), "", true);
+      openModal("sendModal");
+    };
+
+    function previewRoot() {
+      return $("preview");
+    }
+
+    $("btnPublish").onclick = async () => {
+      const sprint = currentSprint();
+      if (!sprint) {
+        setMsg($("toolbarMsg"), "请先选择 Sprint", false);
+        return;
+      }
+      setMsg($("toolbarMsg"), "发布中…", true);
+      $("btnPublish").disabled = true;
+      try {
+        const root = previewRoot();
+        const exec = root.querySelector(".wrap") ? collectExecFromPreview(root) : null;
+        const res = await fetch("/api/reports/sprint-summary/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sprint,
+            exec,
+            expectedRev: { exec: Number(lastRev.exec || 0) },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        if (data.rev) lastRev = data.rev;
+        const path = data.path || "";
+        const url = path.startsWith("http") ? path : `${location.origin}${path}`;
+        $("publishUrl").value = url;
+        $("publishOpenLink").href = url;
+        setMsg($("publishMsg"), `已发布 · ${data.publishedAt || ""}`, true);
+        setMsg($("toolbarMsg"), "发布成功，链接已生成", true);
+        openModal("publishModal");
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      } finally {
+        $("btnPublish").disabled = false;
+      }
+    };
+
+    $("btnCopyPublishUrl").onclick = async () => {
+      const url = $("publishUrl").value.trim();
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        setMsg($("publishMsg"), "链接已复制", true);
+      } catch {
+        $("publishUrl").select();
+        document.execCommand("copy");
+        setMsg($("publishMsg"), "链接已复制", true);
+      }
+    };
+
+    $("btnSend").onclick = async () => {
+      const sprint = currentSprint();
+      const to = splitEmails($("sendTo").value);
+      if (!to.length) {
+        setMsg($("sendMsg"), "请填写收件人", false);
+        return;
+      }
+      setMsg($("sendMsg"), "发送中…", true);
+      try {
+        await flushSave($("preview"));
+        const res = await fetch("/api/reports/sprint-summary/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sprint,
+            to,
+            cc: splitEmails($("sendCc").value),
+            subject: $("sendSubject").value.trim() || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(formatApiDetail(data.detail || data));
+        setMsg($("sendMsg"), "已发送：" + (data.subject || ""), true);
+      } catch (e) {
+        setMsg($("sendMsg"), e.message || String(e), false);
+      }
+    };
+
+    window.addEventListener("pagehide", persistExecKeepalive);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") persistExecKeepalive();
+    });
+
+    (async function init() {
+      try {
+        window.addEventListener("scroll", syncReportNavSticky, { passive: true });
+        window.addEventListener("resize", syncReportNavSticky);
+        syncReportNavSticky();
+        await loadSprintOptions();
+        await loadStatus();
+        await preview();
+      } catch (e) {
+        setMsg($("toolbarMsg"), e.message || String(e), false);
+      }
+    })();
+  </script>
+</body>
+</html>

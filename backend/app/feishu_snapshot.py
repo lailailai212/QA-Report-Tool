@@ -12,13 +12,16 @@ from .config import ROOT
 
 SNAPSHOT_DIR = ROOT / "exports" / "feishu"
 
-READY_YES_STATUSES = frozenset({"待测试", "测试中", "待验收"})
+READY_YES_STATUSES = frozenset(
+    {"待测试", "测试中", "待验收", "已验收", "待闭环", "已完成", "已关闭"}
+)
 
 # Story Status 文字色（邮件内联 style；未命中用默认灰）
 STORY_STATUS_COLOR_DEFAULT = "#64748B"
 STORY_STATUS_COLORS: dict[str, str] = {
     "待排期": "#94A3B8",
     "待产品设计评审": "#64748B",
+    "待技术评审": "#64748B",
     "产品设计中": "#0F766E",
     "开发中": "#1E5A96",
     "联调中": "#0284C7",
@@ -26,6 +29,8 @@ STORY_STATUS_COLORS: dict[str, str] = {
     "待测试": "#D97706",
     "测试中": "#1E4A7A",
     "待验收": "#059669",
+    "已验收": "#059669",
+    "待闭环": "#0F766E",
     "已完成": "#6B7280",
     "已关闭": "#6B7280",
 }
@@ -362,19 +367,26 @@ def aggregate_bugs(bugs: list[dict[str, Any]]) -> dict[str, Any]:
         key=lambda x: (-int(x.get("reopenTimes") or 0), str(x.get("priority") or ""))
     )
 
-    p0p1_rows = []
-    for b in bugs:
-        pri = _norm_priority(str(b.get("priority") or ""))
-        st = (b.get("status") or "").strip().lower()
-        if pri in {"P0", "P1"} and st not in CLOSED_LIKE:
-            p0p1_rows.append(b)
     _pri_rank = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
-    p0p1_rows.sort(
-        key=lambda b: (
+
+    def _open_sort_key(b: dict[str, Any]) -> tuple[int, str]:
+        return (
             _pri_rank.get(_norm_priority(str(b.get("priority") or "")), 99),
             str(b.get("summary") or b.get("name") or ""),
         )
-    )
+
+    p0p1_rows = []
+    open_rows = []
+    for b in bugs:
+        pri = _norm_priority(str(b.get("priority") or ""))
+        st = (b.get("status") or "").strip().lower()
+        if st in CLOSED_LIKE:
+            continue
+        open_rows.append(b)
+        if pri in {"P0", "P1"}:
+            p0p1_rows.append(b)
+    p0p1_rows.sort(key=_open_sort_key)
+    open_rows.sort(key=_open_sort_key)
 
     return {
         "total": len(bugs),
@@ -390,6 +402,7 @@ def aggregate_bugs(bugs: list[dict[str, Any]]) -> dict[str, Any]:
         "otherStatusCount": other_status_count,
         "reopenRows": reopen_rows,
         "p0p1Rows": p0p1_rows,
+        "openRows": open_rows,
     }
 
 

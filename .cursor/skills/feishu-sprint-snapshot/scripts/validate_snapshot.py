@@ -9,7 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-READY_YES = frozenset({"待测试", "测试中", "待验收"})
+# 与 backend/app/feishu_refresh.py SNAPSHOT_RULES / derive_ready 保持一致：
+# 进入「待测试」及之后（含已验收、待闭环）均视为已提测。
+DEFAULT_READY_YES = frozenset(
+    {"待测试", "测试中", "待验收", "已验收", "待闭环", "已完成", "已关闭"}
+)
 STORY_REQUIRED = (
     "id",
     "name",
@@ -80,6 +84,14 @@ def validate(
     errors.extend(_unique_ids(stories, "stories"))
     errors.extend(_unique_ids(bugs, "bugs"))
 
+    rules = data.get("rules") if isinstance(data.get("rules"), dict) else {}
+    listed = rules.get("readyYesStatuses")
+    ready_yes = (
+        frozenset(str(x).strip() for x in listed if str(x).strip())
+        if isinstance(listed, list) and listed
+        else DEFAULT_READY_YES
+    )
+
     for i, s in enumerate(stories):
         if not isinstance(s, dict):
             errors.append(f"stories[{i}] not an object")
@@ -89,7 +101,7 @@ def validate(
                 errors.append(f"stories[{i}] id={s.get('id')}: missing {k}")
         status = str(s.get("status") or "")
         ready = s.get("ready")
-        expect_ready = "Yes" if status in READY_YES else "No"
+        expect_ready = "Yes" if status in ready_yes else "No"
         if ready not in ("Yes", "No"):
             errors.append(f"stories[{i}] id={s.get('id')}: ready must be Yes/No")
         elif ready != expect_ready:

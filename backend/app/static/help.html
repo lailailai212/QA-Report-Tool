@@ -154,7 +154,7 @@
 
       <h3>1. 迭代一开始就要在 MeterSphere 建子计划</h3>
       <p>每个 Sprint 开始后，<strong>尽快</strong>在 MeterSphere 对应 Module（与 Sprint 同名，如 <code>OBIS-20260706-20260717</code>）下为相关 Story 创建<strong>子计划（TEST_PLAN）</strong>，并持续执行用例。</p>
-      <p>日报主表的每一行来自 MS 子计划；<strong>没有子计划 = 日报里不会出现这条 Story</strong>。</p>
+      <p>日报主表的每一行来自<strong>飞书该 Sprint 下的全部 Story</strong>。MeterSphere 子计划按名称（Summary）匹配后，只填充用例执行数。没有子计划时这一行仍会出现，执行列为 0。</p>
 
       <h3>2. 子计划名称尽量与飞书 Story 一致（支持模糊匹配）</h3>
       <table>
@@ -163,7 +163,7 @@
           <tr><td>推荐做法</td><td>与飞书 User Story 标题<strong>尽量一致</strong>（从飞书复制最稳）</td></tr>
           <tr><td>工具容错</td><td>不区分大小写；全半角/多余空格会规范化；去掉 MS 前缀如 <code>[100274]</code>；相似度 ≥ <strong>88%</strong> 也可匹配</td></tr>
           <tr><td>仍可能对不上</td><td>改名过多、关键词差太多，或两条 Story 太像（歧义时为防错挂会放弃匹配）</td></tr>
-          <tr><td>为何仍要对齐</td><td>匹配失败 → 该行 Status / Ready 为空</td></tr>
+          <tr><td>为何仍要对齐</td><td>匹配失败 → 该行仍在，但 Pass/Fail/NoRun 为 0</td></tr>
         </tbody>
       </table>
 
@@ -180,7 +180,7 @@
           <tr><td><strong>MeterSphere 子计划 + 执行</strong></td><td>MeterSphere</td><td>迭代开始后创建子计划（名尽量=飞书 Story）；执行用例，保证 Passed/Failed/<strong>Blocked</strong>/<strong>No Run</strong> 真实</td></tr>
           <tr><td><strong>Ready for Test（提测）</strong></td><td>「编辑 Ready for Test」弹窗 → <strong>保存 Ready</strong></td><td>提测后核对/修正 Yes/No、Ready Date、Comment；与 Reopen 分入口，互不覆盖</td></tr>
           <tr><td><strong>Bug Reopen</strong></td><td>「编辑 Bug Reopen」弹窗 → <strong>保存 Reopen</strong></td><td>维护 Priority / Status / Summary / Times；与 Ready 分入口，互不覆盖</td></tr>
-          <tr><td><strong>阻塞点 / Risk</strong></td><td>同步给发信人</td><td>把阻塞、风险说清楚；由发信人在「编辑 Test ENV / Risk」中汇总</td></tr>
+          <tr><td><strong>阻塞点 / 风险</strong></td><td>同步给发信人</td><td>把阻塞、风险说清楚；由发信人在「编辑 Test ENV / Risk」里按行填写<strong>风险、应对措施、执行人</strong></td></tr>
         </tbody>
       </table>
       <div class="note">Ready / Reopen 保存后，同 Sprint 的预览、发信、定时都会用。清空某 Story 的 Ready 三列并保存 → 该行恢复用飞书推导。多人同时改同一区块时，后保存且版本过期会被拒绝并自动重新加载；打开弹窗若有人在编会有提示。ENV/Risk、Ready、Reopen 互不影响。</div>
@@ -205,7 +205,9 @@
         <thead><tr><th>数据</th><th>在哪里</th><th>做什么</th></tr></thead>
         <tbody>
           <tr><td><strong>Test ENV</strong></td><td>「编辑 Test ENV / Risk」→ <strong>保存 ENV/Risk</strong></td><td>打开弹窗会拉最新数据；多选标签：<code>SIT / UAT1 / UAT2 / PRE1 / PRE2 / PROD</code></td></tr>
-          <tr><td><strong>Risk / Block</strong></td><td>同上</td><td><strong>审核并整理</strong>全员反馈的阻塞/风险，写成对外可读的说明 → 保存</td></tr>
+          <tr><td><strong>今日结论 / 需关注 / 风险等级</strong></td><td>同上</td><td>结论可留空（按计划线自动起草）；需关注写当日要升级的事；风险等级默认自动</td></tr>
+          <tr><td><strong>计划线</strong></td><td>「编辑计划线」→ <strong>保存计划线</strong></td><td>为每个环节设区间和状态门槛；可「按 Sprint 窗口预填」。保存后日报自动算本日应到 / 快慢</td></tr>
+          <tr><td><strong>风险 / 应对措施 / 执行人</strong></td><td>「编辑 Test ENV / Risk」</td><td><strong>审核并整理</strong>全员反馈，按行填写：风险、应对措施、执行人（可多条）→ 保存</td></tr>
           <tr><td><strong>收件人（To / CC）</strong></td><td>「收件人」按钮</td><td>维护默认收件人并保存；发信时可临时改，<strong>临时改不会写回默认</strong></td></tr>
           <tr><td><strong>飞书快照（按需）</strong></td><td>日报预览旁飞书图标 → 弹窗</td><td>Status/Ready/Bug 过旧时刷新；MCP 有限流，勿连点。日常靠工作日 <strong>20:20</strong> 自动刷</td></tr>
         </tbody>
@@ -215,7 +217,8 @@
       <ol>
         <li>Module 选对当前 Sprint → <strong>刷新预览</strong></li>
         <li>若飞书列明显过旧：点预览旁 <strong>飞书图标</strong> → 弹窗内刷新快照 → 再预览</li>
-        <li>打开「编辑 Test ENV / Risk」，填 / 改 <strong>Test ENV</strong>，审核 <strong>Risk/Block</strong> → <strong>保存 ENV/Risk</strong></li>
+        <li>打开「编辑计划线」，确认各环节区间与门槛 → <strong>保存计划线</strong>（可点「按 Sprint 窗口预填」）</li>
+        <li>打开「编辑 Test ENV / Risk」，填 / 改 <strong>Test ENV</strong>，审核 <strong>风险 / 应对措施 / 执行人</strong> 与今日结论 → <strong>保存 ENV/Risk</strong></li>
         <li>必要时分别打开「编辑 Ready for Test」/「编辑 Bug Reopen」做最后核对并各自保存</li>
         <li>再 <strong>刷新预览</strong>，确认主表、Bug、ENV、Risk 无误</li>
         <li><strong>手动发送</strong>，或确认定时任务已启用且收件人正确</li>
@@ -224,8 +227,9 @@
       <h3>发信人检查清单</h3>
       <ul class="check">
         <li>MS 侧子计划已建齐、名称与飞书足够接近（抽查预览 Status/Ready）</li>
+        <li>计划线已保存（各环节有区间）</li>
         <li>Test ENV 已保存</li>
-        <li>Risk/Block 已审核并保存</li>
+        <li>风险 / 应对措施 / 执行人已按行审核并保存</li>
         <li>收件人正确</li>
         <li>预览已刷新且数字、Ready、Bug 看起来合理</li>
         <li>再点发送</li>
@@ -239,12 +243,13 @@
         <tbody>
           <tr><td>Module + 刷新预览</td><td>全员</td><td>选 Sprint、核对日报</td></tr>
           <tr><td>飞书图标（预览旁）</td><td>发信人按需</td><td>弹窗刷新飞书快照（限流；日常 20:20 自动）</td></tr>
-          <tr><td>编辑 Test ENV / Risk</td><td>发信人</td><td>打开时拉最新；仅 ENV/Risk（独立弹窗）</td></tr>
+          <tr><td>编辑 Test ENV / Risk</td><td>发信人</td><td>打开时拉最新；ENV / 结论 / 风险表格（风险、措施、执行人）</td></tr>
+          <tr><td>编辑计划线</td><td>发信人</td><td>各环节区间与状态门槛；保存后自动算快慢</td></tr>
           <tr><td>编辑 Ready for Test</td><td>组员为主，发信人可终审</td><td>仅维护 Ready（独立弹窗）</td></tr>
           <tr><td>编辑 Bug Reopen</td><td>组员为主，发信人可终审</td><td>仅维护 Reopen（独立弹窗）</td></tr>
           <tr><td>收件人</td><td>发信人</td><td>默认 To/CC（仅此处保存默认）</td></tr>
           <tr><td>手动发送</td><td>发信人</td><td>立即发信（会重拉 MS）</td></tr>
-          <tr><td>定时任务</td><td>发信人</td><td>按星期/时刻自动发</td></tr>
+          <tr><td>定时任务</td><td>发信人</td><td>按星期/时刻自动发；可编辑/停用/试跑/删除</td></tr>
         </tbody>
       </table>
     </section>
@@ -256,12 +261,12 @@
 页面人工维护           ──┘
          │
          ├─ 组员：Ready for Test、Bug Reopen；（阻塞点同步给发信人写进 Risk）
-         └─ 发信人：Test ENV、Risk/Block、收件人</pre>
+         └─ 发信人：Test ENV、计划线、风险/应对措施、今日结论、收件人</pre>
     </section>
 
     <section id="faq">
       <h2>常见问题</h2>
-      <p><strong>预览没有我的 Story？</strong> → MS 未建子计划，或名称与飞书差太多，或 Module 不对。</p>
+      <p><strong>预览没有我的 Story？</strong> → 飞书快照未包含该 Sprint，或还没刷新快照。执行数全 0 → MS 未建子计划，或名称与飞书差太多。</p>
       <p><strong>Ready 和飞书不一致？</strong> → 可能已人工保存（人工优先）；清空三列保存可恢复飞书。</p>
       <p><strong>飞书 Status/Bug 整表过旧？</strong> → 发信人点预览旁飞书图标刷新；或等工作日 20:20 自动刷。组员一般不必点。</p>
       <p><strong>改完 Risk/Ready 邮件还是旧的？</strong> → 是否点了保存？是否刷新了预览？</p>

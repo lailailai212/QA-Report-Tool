@@ -20,7 +20,8 @@
 |------|------|------|
 | `collected < count` 且末页空 | session 过期或未传 session_id | 整类重拉 |
 | 只写了第一页 50 条 | 忘记翻页 | 必须循环到 count |
-| Bug 180 vs Sprint 字段 196 | 误用关联 Story 过滤 | 改回 `Bug.Sprint =` |
+| Bug 少了跨 Sprint 的几条 | 误用 `Sprint =`（多选字段精确等于） | 改用 `array_contains(\`Sprint\`, '{sprint}')` |
+| Bug 180 vs Sprint 字段 196 | 误用关联 Story 过滤 | 改回 Bug 自身 Sprint + `array_contains` |
 | UI 199 vs 快照 196 | 视图筛选 ≠ Sprint 字段 | 以 MQL count 为准并说明 |
 
 ## reopenTimes
