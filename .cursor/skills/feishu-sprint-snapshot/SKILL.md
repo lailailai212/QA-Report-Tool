@@ -92,8 +92,9 @@ WHERE array_contains(`Sprint`, '{sprint}')
 | `status` | Status **label**（勿用 key） |
 | `ready` | status ∈ {待测试, 测试中, 待验收, 已验收, 待闭环, 已完成, 已关闭} → `"Yes"`，否则 `"No"` |
 | `readyDate` | `status_time('待测试')` 取 `YYYY-MM-DD`；无则 `""` |
-| `expectedReadyDate` | 开发节点 `__排期_结束时间` 列表日期的 **max**；无则 `""` |
-| `comment` | 两者非空且 `readyDate > expectedReadyDate` → `"提测Delay"`，否则 `""` |
+| `expectedReadyDate` | 开发节点 `__排期_结束时间` 列表日期的 **max**；无则 `""`（仅存档，**不**用于 Delay 判定） |
+| `readyDeadline` | Sprint 第二周第一个工作日（开始日 + 7 天后的首个工作日，跳过周末）。例：`OBIS-20260907-20260918` → `2026-09-14` |
+| `comment` | 两者非空且 `readyDate` **晚于** `readyDeadline` → `"提测Delay"`，否则 `""`（当天提测不算 Delay） |
 | `url` | `https://project.feishu.cn/obis/userstory/detail/{id}` |
 
 MCP 返回字段名可能是 `待测试 进入时间`、`开发排期 结束时间` 等，按 `moql_field_list` 的 `name` / `key` 解析，不要假设固定下标。
@@ -138,6 +139,7 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
     "readyYesStatuses": ["待测试", "测试中", "待验收", "已验收", "待闭环", "已完成", "已关闭"],
     "readyDateFrom": "status_enter_待测试",
     "expectedReadyDateFrom": "开发节点排期结束日_max",
+    "readyDeadlineFrom": "sprint_week2_first_workday",
     "delayComment": "提测Delay",
     "reopen": "Testing/测试中 then To Do count; currently stubbed to 0 due to MCP op_record 7-day limit"
   },
@@ -155,7 +157,7 @@ python .cursor/skills/feishu-sprint-snapshot/scripts/validate_snapshot.py export
 ```
 - [ ] Story：collected == list.count，无重复 id
 - [ ] Bug：collected == list.count，无重复 id
-- [ ] 每条 story 含 id/name/status/ready/readyDate/expectedReadyDate/comment/url
+- [ ] 每条 story 含 id/name/status/ready/readyDate/expectedReadyDate/readyDeadline/comment/url
 - [ ] 每条 bug 含 id/name/summary/status/priority/reopenTimes/url
 - [ ] validate_snapshot.py 退出码 0
 - [ ] 已写归档 + 已覆盖 _latest.json

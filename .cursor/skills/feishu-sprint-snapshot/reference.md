@@ -28,6 +28,13 @@
 
 `get_workitem_op_record` 约 7 天窗，不能用于整 Sprint Reopen 统计。快照一律 `0`，并在 `rules.reopen` 注明。
 
+## 提测 Delay
+
+默认截止日期是 Sprint **第二周第一个工作日**（开始日 + 7 天后的首个工作日，跳过周末）。开发排期 `expectedReadyDate` 只存档，不参与判定。
+
+- 已提测：`readyDate` **晚于**该日才写 `comment=提测Delay`（当天提测不算 Delay）
+- 未提测：截止日期当天及之后仍未提测 → 日报 vs 计划为 `Behind`（快照 comment 仍只在已有 readyDate 时写 Delay）
+
 ## 与日报关系
 
 Web 读 `exports/feishu/{sprint}_latest.json`。刷新途径：

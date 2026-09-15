@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .feishu_snapshot import (
     aggregate_bugs,
+    derive_comment,
     enrich_reopen_rows_with_urls,
     load_all_snapshot_bugs,
     load_feishu_snapshot,
@@ -16,7 +17,15 @@ from .feishu_snapshot import (
     story_status_color,
 )
 from .ms_client import MeterSphereClient
-from .plan_line import evaluate_plan, is_submitted_status, row_is_ready, story_vs_plan, _status_rank
+from .plan_line import (
+    _status_rank,
+    default_ready_deadline,
+    evaluate_plan,
+    is_submitted_status,
+    plan_ready_deadline,
+    row_is_ready,
+    story_vs_plan,
+)
 from .override_store import (
     DEFAULT_EXIT_CRITERIA,
     OVERALL_RESULT_OPTIONS,
@@ -82,12 +91,20 @@ def _pct(numer: int, denom: int) -> str:
     return f"{round(numer * 100.0 / denom)}%"
 
 
+def _ready_deadline_iso(sprint: str, fs: dict[str, Any] | None = None) -> str:
+    deadline = default_ready_deadline(sprint)
+    if deadline:
+        return deadline.isoformat()
+    return str((fs or {}).get("readyDeadline") or "")
+
+
 def _story_detail_row(
     *,
     name: str,
     fs: dict[str, Any],
     plan: dict[str, Any] | None,
     stories_ov: dict[str, Any],
+    sprint: str = "",
 ) -> dict[str, Any]:
     exe = _plan_exec_counts(plan)
     design = exe["design"]
@@ -102,8 +119,9 @@ def _story_detail_row(
         ready = "Yes"
     ov_ready_date = str(so.get("readyDate") or "").strip() if "readyDate" in so else ""
     ready_date = ov_ready_date or (fs.get("readyDate") or "")
+    deadline_s = _ready_deadline_iso(sprint, fs)
     ov_comment = str(so.get("comment") or "").strip() if "comment" in so else ""
-    comment = ov_comment or (fs.get("comment") or "")
+    comment = ov_comment or derive_comment(ready_date, deadline_s)
     return {
         "story": name,
         "parentGroupName": (plan or {}).get("parentGroupName"),
@@ -124,7 +142,8 @@ def _story_detail_row(
         "readyComment": comment,
         "storyUrl": fs.get("url") or "",
         "readyOverridden": bool(so),
-        "expectedReadyDate": fs.get("expectedReadyDate") or "",
+        "expectedReadyDate": deadline_s,
+        "readyDeadline": deadline_s,
         "msMatched": bool(plan),
     }
 
@@ -142,6 +161,7 @@ def _build_story_rows(
     stories: list[dict[str, Any]],
     plans: list[dict[str, Any]],
     stories_ov: dict[str, Any],
+    sprint: str = "",
 ) -> list[dict[str, Any]]:
     """Feishu Sprint stories are the row source; MS execution is matched by summary."""
     remaining = list(plans)
@@ -158,6 +178,7 @@ def _build_story_rows(
                     fs=fs,
                     plan=plan,
                     stories_ov=stories_ov,
+                    sprint=sprint,
                 )
             )
     else:
@@ -167,6 +188,7 @@ def _build_story_rows(
                 fs={},
                 plan=p,
                 stories_ov=stories_ov,
+                sprint=sprint,
             )
             for p in plans
             if str(p.get("name") or "").strip()
@@ -240,6 +262,7 @@ def build_report(
         stories=stories,
         plans=list(raw.get("plans") or []),
         stories_ov=stories_ov,
+        sprint=sprint_name,
     )
 
     total_case = sum(int(r["caseNum"] or 0) for r in rows)
@@ -301,8 +324,21 @@ def build_report(
         today=today,
     )
     reviews = plan_eval.get("reviews") or {}
+    phases = list(plan_eval.get("phases") or [])
+    ready_end = plan_ready_deadline(phases)
+    if ready_end:
+        ready_end_s = ready_end.isoformat()
+        for row in rows:
+            row["readyDeadline"] = ready_end_s
+            row["expectedReadyDate"] = ready_end_s
     for row in rows:
-        vs = story_vs_plan(row, today=today, reviews=reviews)
+        vs = story_vs_plan(
+            row,
+            today=today,
+            reviews=reviews,
+            phases=phases,
+            sprint=sprint_name,
+        )
         row["vsPlan"] = vs.get("label") or ""
         row["vsPlanTone"] = vs.get("tone") or ""
         row["vsPlanVerdict"] = vs.get("verdict") or ""
@@ -584,12 +620,17 @@ def build_completion_report(
     story_done = 0
     if snapshot_stories:
         delay_count = 0
+        deadline_s = _ready_deadline_iso(sprint_name)
         for s in snapshot_stories:
             st = str(s.get("status") or "").strip() or "（空）"
             status_dist[st] = status_dist.get(st, 0) + 1
             if st in {"已完成", "已关闭"}:
                 story_done += 1
-            if _is_ready_delay(str(s.get("comment") or "")):
+            comment = derive_comment(
+                str(s.get("readyDate") or ""),
+                deadline_s or str(s.get("readyDeadline") or ""),
+            )
+            if _is_ready_delay(comment):
                 delay_count += 1
         story_total = len(snapshot_stories)
     else:

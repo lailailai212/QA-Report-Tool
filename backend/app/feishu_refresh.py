@@ -16,6 +16,7 @@ from typing import Any, Iterator
 from .config import ROOT, settings
 from .feishu_mcp import FeishuMcpError, fetch_sprint_raw
 from .feishu_snapshot import SNAPSHOT_DIR, derive_comment, derive_ready
+from .plan_line import default_ready_deadline
 from .timeutil import now_beijing, now_beijing_iso
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,7 @@ SNAPSHOT_RULES = {
     ],
     "readyDateFrom": "status_enter_待测试",
     "expectedReadyDateFrom": "开发节点排期结束日_max",
+    "readyDeadlineFrom": "sprint_week2_first_workday",
     "delayComment": "提测Delay",
     "reopen": (
         "Testing/测试中 then To Do count; currently stubbed to 0 "
@@ -227,7 +229,7 @@ def _norm_bug_status(status: str) -> str:
     return mapping.get(s.lower(), mapping.get(s, s))
 
 
-def map_story(item: dict[str, Any]) -> dict[str, Any]:
+def map_story(item: dict[str, Any], sprint: str = "") -> dict[str, Any]:
     fields = _field_map(item)
     item_id = _as_str(_pick_field(fields, "Item Id", "item_id"))
     name = _as_str(_pick_field(fields, "Summary", "summary"))
@@ -239,7 +241,8 @@ def map_story(item: dict[str, Any]) -> dict[str, Any]:
     )
     expected = _max_date_from_value(expected_raw) if expected_raw is not None else ""
     ready = derive_ready(status)
-    comment = derive_comment(ready_date, expected)
+    deadline = default_ready_deadline(sprint)
+    comment = derive_comment(ready_date, deadline.isoformat() if deadline else "")
     simple = settings.feishu_simple_name
     return {
         "id": item_id,
@@ -248,6 +251,7 @@ def map_story(item: dict[str, Any]) -> dict[str, Any]:
         "ready": ready,
         "readyDate": ready_date,
         "expectedReadyDate": expected,
+        "readyDeadline": deadline.isoformat() if deadline else "",
         "comment": comment,
         "url": f"https://project.feishu.cn/{simple}/userstory/detail/{item_id}",
     }
@@ -391,7 +395,7 @@ def refresh_sprint(sprint: str, *, trigger: str = "manual") -> dict[str, Any]:
             sprint_warning = raw.get("sprintResolveNote")
             expect_stories = int(raw["expectStories"])
             expect_bugs = int(raw["expectBugs"])
-            stories = [map_story(x) for x in raw["stories"]]
+            stories = [map_story(x, sprint=feishu_sprint or sprint) for x in raw["stories"]]
             bugs = [map_bug(x) for x in raw["bugs"]]
             logger.info(
                 "feishu refresh fetched module=%s feishu_sprint=%s",
