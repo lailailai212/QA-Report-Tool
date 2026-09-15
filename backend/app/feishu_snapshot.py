@@ -23,6 +23,7 @@ STORY_STATUS_COLORS: dict[str, str] = {
     "待产品设计评审": "#64748B",
     "待技术评审": "#64748B",
     "产品设计中": "#0F766E",
+    "技术设计中": "#0F766E",
     "开发中": "#1E5A96",
     "联调中": "#0284C7",
     "待提测": "#EA580C",
@@ -410,12 +411,13 @@ def derive_ready(status: str) -> str:
     return "Yes" if (status or "").strip() in READY_YES_STATUSES else "No"
 
 
-def derive_comment(ready_date: str, expected_ready_date: str) -> str:
-    if not ready_date or not expected_ready_date:
+def derive_comment(ready_date: str, deadline: str) -> str:
+    """提测 Delay：实际进入待测试的日期晚于截止日期（默认 Sprint 第二周首个工作日）。"""
+    if not ready_date or not deadline:
         return ""
     try:
         rd = date.fromisoformat(ready_date[:10])
-        ed = date.fromisoformat(expected_ready_date[:10])
+        ed = date.fromisoformat(deadline[:10])
     except ValueError:
         return ""
     return "提测Delay" if rd > ed else ""

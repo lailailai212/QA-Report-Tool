@@ -154,7 +154,7 @@
   {% endif %}
 
   <h2 id="plan">2. 测试计划线</h2>
-  <p class="hint">区间与状态门槛来自「编辑计划线」。本日应到按工作日线性插值；窗口结束日为硬门槛。</p>
+  <p class="hint">区间与状态门槛来自「编辑计划线」。本日应到按工作日线性插值；窗口结束日为硬门槛。下方 Story「vs 计划」在已设计划线时按各环节结束门槛判定。</p>
   <table class="data">
     <thead>
       <tr>
@@ -205,7 +205,7 @@
         <td>{% if row.storyUrl %}<a href="{{ row.storyUrl }}" target="_blank" rel="noopener noreferrer">{{ row.story }}</a>{% else %}{{ row.story }}{% endif %}</td>
         <td style="color:{{ row.storyStatusColor or '#737373' }};font-weight:600;white-space:nowrap;min-width:160px;">{{ row.storyStatus }}</td>
         <td>{{ row.readyForTesting }}</td>
-        <td>{{ row.expectedReadyDate or '—' }}</td>
+        <td>{{ row.readyDeadline or row.expectedReadyDate or '—' }}</td>
         <td>{{ row.readyDate or '—' }}</td>
         <td>{{ row.passed }} / {{ row.failed }} / {{ row.blocked }} / {{ row.noRun }}</td>
         <td class="num">{{ row.executablePassRate or '—' }}</td>

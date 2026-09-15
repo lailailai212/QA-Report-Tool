@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +35,35 @@ BUG_REQUIRED = (
     "reopenTimes",
     "url",
 )
+
+
+def _parse_iso_date(value: Any) -> date | None:
+    raw = str(value or "").strip()[:10]
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def _default_ready_deadline(sprint: str) -> date | None:
+    """Sprint 第二周第一个工作日（开始日 + 7 天后的首个工作日）。脚本自包含，不依赖 backend。"""
+    found = re.findall(r"(\d{8})", sprint or "")
+    if len(found) < 2:
+        return None
+    start = _parse_iso_date(f"{found[0][0:4]}-{found[0][4:6]}-{found[0][6:8]}")
+    end = _parse_iso_date(f"{found[1][0:4]}-{found[1][4:6]}-{found[1][6:8]}")
+    if not start:
+        return None
+    week2 = start + timedelta(days=7)
+    last = end if end and end >= week2 else week2 + timedelta(days=6)
+    cur = week2
+    while cur <= last:
+        if cur.weekday() < 5:
+            return cur
+        cur += timedelta(days=1)
+    return None
 
 
 def _fail(msg: str) -> None:
@@ -91,6 +122,9 @@ def validate(
         if isinstance(listed, list) and listed
         else DEFAULT_READY_YES
     )
+    sprint_name = str(data.get("sprint") or data.get("feishuSprint") or "")
+    sprint_deadline = _default_ready_deadline(sprint_name)
+    sprint_dl = sprint_deadline.isoformat() if sprint_deadline else ""
 
     for i, s in enumerate(stories):
         if not isinstance(s, dict):
@@ -108,13 +142,19 @@ def validate(
             errors.append(
                 f"stories[{i}] id={s.get('id')}: ready={ready} but status={status!r} => {expect_ready}"
             )
-        rd = str(s.get("readyDate") or "")
-        ed = str(s.get("expectedReadyDate") or "")
+        rd = str(s.get("readyDate") or "")[:10]
+        stored_dl = str(s.get("readyDeadline") or "")[:10]
+        dl = sprint_dl or stored_dl
         comment = str(s.get("comment") or "")
-        expect_comment = "提测Delay" if rd and ed and rd > ed else ""
+        expect_comment = "提测Delay" if rd and dl and rd > dl else ""
         if comment != expect_comment:
             errors.append(
-                f"stories[{i}] id={s.get('id')}: comment={comment!r} expected {expect_comment!r}"
+                f"stories[{i}] id={s.get('id')}: comment={comment!r} expected {expect_comment!r} "
+                f"(readyDate={rd or '-'} deadline={dl or '-'})"
+            )
+        if stored_dl and sprint_dl and stored_dl != sprint_dl:
+            errors.append(
+                f"stories[{i}] id={s.get('id')}: readyDeadline={stored_dl!r} expected {sprint_dl!r}"
             )
 
     for i, b in enumerate(bugs):

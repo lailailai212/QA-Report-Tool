@@ -29,6 +29,7 @@ STORY_STATUS_RANK: tuple[str, ...] = (
     "待产品设计评审",
     "待技术评审",
     "产品设计中",
+    "技术设计中",
     "开发中",
     "联调中",
     "待提测",
@@ -39,6 +40,16 @@ STORY_STATUS_RANK: tuple[str, ...] = (
     "待闭环",
     "已完成",
     "已关闭",
+)
+
+# Story 行 vs 计划：已设计划线时，靠后的环节优先作为落后原因
+_PHASE_BEHIND_PRIORITY = (
+    "accept",
+    "exec",
+    "ready",
+    "case_review",
+    "case_design",
+    "feature_design",
 )
 
 ACCEPT_DONE_STATUSES = frozenset({"已完成", "已关闭"})
@@ -143,6 +154,17 @@ def workdays(start: date, end: date) -> list[date]:
             out.append(cur)
         cur += timedelta(days=1)
     return out
+
+
+def default_ready_deadline(sprint: str) -> date | None:
+    """默认提测截止日期：Sprint 第二周第一个工作日（开始日 + 7 天后的首个工作日）。"""
+    start, end = parse_sprint_window(sprint)
+    if not start:
+        return None
+    week2 = start + timedelta(days=7)
+    last = end if end and end >= week2 else week2 + timedelta(days=6)
+    days = workdays(week2, last)
+    return days[0] if days else None
 
 
 def fmt_mmdd(value: date | None) -> str:
@@ -691,13 +713,153 @@ def _auto_conclusion(phases: list[dict[str, Any]], risk: str) -> str:
     return f"相对计划偏慢：{lead}。请按计划线跟进负责人和当日应对。"
 
 
-def story_vs_plan(
+def _story_meets_phase_gate(
+    row: dict[str, Any],
+    phase: dict[str, Any],
+    reviews: dict[str, dict[str, str]],
+) -> bool | None:
+    """本条 Story 是否达到该环节门槛。None = 此环节不适用于该行（跳过）。"""
+    gate = str(phase.get("gateType") or "").strip()
+    if gate == "exec_pct":
+        design = int(row.get("caseNum") or 0)
+        if design <= 0:
+            return None
+        ran = (
+            int(row.get("passed") or 0)
+            + int(row.get("failed") or 0)
+            + int(row.get("blocked") or 0)
+        )
+        target = float(phase.get("targetPct") or 100) / 100.0
+        return (ran / design) + 1e-9 >= target
+    if gate == "ready_count":
+        return row_is_ready(row)
+    if gate == "case_ready":
+        return int(row.get("caseNum") or 0) > 0
+    if gate == "review":
+        name = str(row.get("story") or "")
+        rv = reviews.get(name) or {}
+        result = rv.get("reviewResult") or row.get("reviewResult") or ""
+        return _is_review_pass(result)
+    if gate == "accept":
+        return str(row.get("storyStatus") or "").strip() in ACCEPT_DONE_STATUSES
+    gate_status = str(phase.get("gateStatus") or "").strip() or "开发中"
+    need = _status_rank(gate_status)
+    rank = _status_rank(str(row.get("storyStatus") or ""))
+    if rank < 0:
+        return False
+    return need < 0 or rank >= need
+
+
+def _enabled_dated_phases(phases: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for phase in phases or []:
+        if not phase.get("enabled"):
+            continue
+        if parse_iso_date(phase.get("start")) and parse_iso_date(phase.get("end")):
+            out.append(phase)
+    return out
+
+
+def plan_ready_deadline(phases: list[dict[str, Any]] | None) -> date | None:
+    """已启用「开发提测」环节的窗口结束日；没有则 None。"""
+    for phase in _enabled_dated_phases(phases):
+        if str(phase.get("id") or "") == "ready":
+            return parse_iso_date(phase.get("end"))
+    return None
+
+
+def _story_vs_configured_plan(
     row: dict[str, Any],
     *,
     today: date,
     reviews: dict[str, dict[str, str]],
+    phases: list[dict[str, Any]],
 ) -> dict[str, str]:
-    expected = parse_iso_date(row.get("expectedReadyDate"))
+    comment = str(row.get("readyComment") or "")
+    review = reviews.get(str(row.get("story") or ""), {})
+    notes: list[str] = []
+    if review.get("reviewResult"):
+        notes.append(f"评审{review['reviewResult']}")
+
+    missed: list[dict[str, Any]] = []
+    ready_phase: dict[str, Any] | None = None
+    for phase in phases:
+        if str(phase.get("id") or "") == "ready":
+            ready_phase = phase
+        start = parse_iso_date(phase.get("start"))
+        end = parse_iso_date(phase.get("end"))
+        if not start or not end:
+            continue
+        progress = _window_progress(start, end, today)
+        meets = _story_meets_phase_gate(row, phase, reviews)
+        if meets is None:
+            continue
+        if progress["state"] in {"due", "overdue"} and not meets:
+            missed.append({"phase": phase, "progress": progress, "end": end})
+
+    if missed:
+        order = {pid: i for i, pid in enumerate(_PHASE_BEHIND_PRIORITY)}
+        missed.sort(
+            key=lambda item: (
+                order.get(str(item["phase"].get("id") or ""), 99),
+                str(item["phase"].get("end") or ""),
+            )
+        )
+        hit = missed[0]
+        phase = hit["phase"]
+        end: date = hit["end"]
+        tone = "danger" if hit["progress"]["state"] == "overdue" else "warn"
+        name = str(phase.get("name") or "计划")
+        ready_date = parse_iso_date(row.get("readyDate"))
+        if str(phase.get("id") or "") == "ready" and ready_date and ready_date > end:
+            delta = (ready_date - end).days
+            return {
+                "verdict": "behind",
+                "tone": tone,
+                "label": "Ready Delay",
+                "note": comment or f"提测晚 {delta} 天（计划 {fmt_mmdd(end)}）",
+            }
+        return {
+            "verdict": "behind",
+            "tone": tone,
+            "label": "Behind",
+            "note": comment or f"{name}计划 {fmt_mmdd(end)}，尚未达标",
+        }
+
+    if ready_phase:
+        end = parse_iso_date(ready_phase.get("end"))
+        ready_date = parse_iso_date(row.get("readyDate"))
+        if end and ready_date and ready_date < end and row_is_ready(row):
+            return {
+                "verdict": "ahead",
+                "tone": "ok",
+                "label": "Ahead",
+                "note": comment or f"提前 {(end - ready_date).days} 天 Ready",
+            }
+
+    blocked = int(row.get("blocked") or 0)
+    if blocked:
+        notes.append(f"Block×{blocked}")
+    return {
+        "verdict": "on_track",
+        "tone": "ok",
+        "label": "On track",
+        "note": comment or ("；".join(notes)),
+    }
+
+
+def _story_vs_ready_deadline(
+    row: dict[str, Any],
+    *,
+    today: date,
+    reviews: dict[str, dict[str, str]],
+    sprint: str = "",
+) -> dict[str, str]:
+    expected = (
+        parse_iso_date(row.get("readyDeadline"))
+        or parse_iso_date(row.get("expectedReadyDate"))
+        or default_ready_deadline(sprint)
+    )
     ready_date = parse_iso_date(row.get("readyDate"))
     ready = row_is_ready(row)
     comment = str(row.get("readyComment") or "")
@@ -720,7 +882,7 @@ def story_vs_plan(
             "label": "Ready Delay",
             "note": comment or f"提测晚 {delta} 天",
         }
-    if expected and not ready and expected <= today:
+    if expected and not ready and today >= expected:
         return {
             "verdict": "behind",
             "tone": "warn",
@@ -743,6 +905,25 @@ def story_vs_plan(
         "label": "On track",
         "note": comment or ("；".join(notes)),
     }
+
+
+def story_vs_plan(
+    row: dict[str, Any],
+    *,
+    today: date,
+    reviews: dict[str, dict[str, str]],
+    phases: list[dict[str, Any]] | None = None,
+    sprint: str = "",
+) -> dict[str, str]:
+    """已设计划线（启用且有区间）时按各环节窗口结束门槛判定；否则退回默认提测截止日。"""
+    configured = _enabled_dated_phases(phases)
+    if configured:
+        return _story_vs_configured_plan(
+            row, today=today, reviews=reviews, phases=configured
+        )
+    return _story_vs_ready_deadline(
+        row, today=today, reviews=reviews, sprint=sprint
+    )
 
 
 def evaluate_plan(
